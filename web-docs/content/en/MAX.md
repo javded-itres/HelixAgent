@@ -2,8 +2,6 @@
 
 Helix integrates with [MAX](https://max.ru) — the Russian messenger platform — so you can run the same self-improving agent in personal and group chats without leaving a domestic ecosystem.
 
-> **Status:** available on `feature/max-messenger` — Long Polling (`helix max`), production webhook (`helix gateway start`), files, inline approvals.
-
 ```bash
 uv sync --extra max
 export MAX_ACCESS_TOKEN=...

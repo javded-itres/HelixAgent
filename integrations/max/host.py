@@ -295,7 +295,7 @@ class MaxHost:
 
     async def _mcp_install(self, what: str = "") -> None:
         self.transcript_write(
-            "MCP install via MAX UI — в PR4. Сейчас: `helix mcp install` в терминале."
+            "Установка MCP через MAX пока не поддерживается. Используйте: `helix mcp install` в терминале."
             + (f" (запрошено: {what})" if what else "")
         )
 
