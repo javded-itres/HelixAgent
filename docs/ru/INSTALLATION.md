@@ -24,27 +24,27 @@ Helix требует **Python 3.14+** и устанавливается как C
 
 ### PyPI — `helix` из любой папки
 
-Пакет на PyPI: **`helix-agent-ai`** (не `pip install helix` — это другой проект). Команда: **`helix`**.
+Пакет на PyPI: **`helix-agent`** (не `pip install helix` — это другой проект). Команда: **`helix`**.
 
 **Глобально (рекомендуется):**
 
 ```bash
-pipx install helix-agent-ai
-# или: uv tool install helix-agent-ai
+pipx install helix-agent
+# или: uv tool install helix-agent
 helix version
 ```
 
 **В venv** (после `source .venv/bin/activate`):
 
 ```bash
-pip install helix-agent-ai
+pip install helix-agent
 helix version
 ```
 
 **В пользовательский каталог** (`~/.local/bin` в PATH):
 
 ```bash
-pip install --user helix-agent-ai
+pip install --user helix-agent
 export PATH="$HOME/.local/bin:$PATH"
 helix version
 ```

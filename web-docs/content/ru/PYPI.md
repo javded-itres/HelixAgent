@@ -4,12 +4,12 @@
 
 ## Имя пакета
 
-На PyPI проект публикуется как **`helix-agent-ai`** (HelixAgentAi; имена `helix` и `helix-agent` заняты другими проектами).
+На PyPI проект публикуется как **`helix-agent`** (не `helix` — это другой пакет на PyPI).
 
 ```bash
-pip install helix-agent-ai
-pip install "helix-agent-ai[telegram,browser]"
-pip install "helix-agent-ai[all]"
+pip install helix-agent
+pip install "helix-agent[telegram,browser]"
+pip install "helix-agent[all]"
 ```
 
 Команда в терминале по-прежнему: **`helix`**.
@@ -19,12 +19,12 @@ pip install "helix-agent-ai[all]"
 ### 1. Аккаунт и имя
 
 - Регистрация на [pypi.org](https://pypi.org/account/register/)
-- Проверить, что `helix-agent-ai` свободен
+- Проверить, что `helix-agent` свободен
 - API-токен или Trusted Publishing с GitHub
 
 ### 2. Метаданные (уже в репозитории)
 
-- `pyproject.toml` — `name = "helix-agent-ai"`, зависимости, extras, `license-files`
+- `pyproject.toml` — `name = "helix-agent"`, зависимости, extras, `license-files`
 - `config.py` включён в wheel (обязательно для `from config import settings`)
 - `[project.scripts]` → `helix`
 
@@ -55,7 +55,7 @@ uv publish dist/*
 
 ### 5. Документация для пользователей
 
-После публикации обновить [INSTALLATION.md](INSTALLATION.md) и README: `pip install helix-agent-ai`.
+После публикации обновить [INSTALLATION.md](INSTALLATION.md) и README: `pip install helix-agent`.
 
 ## Ограничения
 

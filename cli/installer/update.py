@@ -20,7 +20,7 @@ from cli.installer.system import (
     install_helix,
 )
 
-PYPI_PACKAGE = "helix-agent-ai"
+PYPI_PACKAGE = "helix-agent"
 _VERSION_RE = re.compile(r"^v?(\d+\.\d+\.\d+)")
 
 
