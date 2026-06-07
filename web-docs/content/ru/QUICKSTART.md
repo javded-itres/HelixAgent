@@ -1,20 +1,41 @@
 # Быстрый старт
 
+## Установка (PyPI)
+
 ```bash
-uv sync
+pipx install HelixAgentAi
+# или: pip install HelixAgentAi  (в активированном venv)
+```
+
+Пакет: [HelixAgentAi на PyPI](https://pypi.org/project/HelixAgentAi/). Команда: `helix`.
+
+## Запуск
+
+```bash
 helix doctor
+helix models setup
 helix run "Привет"
 helix tui
 helix gateway start
 helix gateway status
-helix logs -l error          # ошибки runtime
-helix doctor --fix   # починка конфига (через default LLM)
+helix logs -l error
+helix doctor --fix
 ```
 
-Опционально:
+Опции:
 
 ```bash
-uv sync --extra telegram
-export TELEGRAM_BOT_TOKEN=...
-helix gateway start   # API + Telegram
+pipx install "HelixAgentAi[all]"
+helix telegram setup
+playwright install chromium
+helix hub browse
+helix mcp setup
 ```
+
+Обновление с PyPI:
+
+```bash
+helix update --channel pypi
+```
+
+См. [CLI.md](CLI.md) и [SLASH_COMMANDS.md](SLASH_COMMANDS.md).

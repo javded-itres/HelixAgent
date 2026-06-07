@@ -12,19 +12,24 @@ Helix targets **Python 3.12+** and is packaged as a Typer CLI (`helix`). Choose 
 
 Optional extras (install when needed):
 
-| Extra | Command | Enables |
-|-------|---------|---------|
-| `telegram` | `uv sync --extra telegram` | `helix telegram`, gateway Telegram companion |
-| `browser` | `uv sync --extra browser` + `playwright install chromium` | Playwright `browser_*` tools — see [BROWSER_TOOLS.md](BROWSER_TOOLS.md) |
-| `tui-web` | `uv sync --extra tui-web` | `helix tui --web` (browser-hosted TUI) |
-| `windows` | `uv sync --extra windows` | `psutil` for process-tree cleanup (optional on Windows) |
-| `all` | `uv sync --extra all` | telegram + browser + tui-web + windows |
+| Extra | PyPI (`pip` / `pipx`) | From source (`uv sync`) | Enables |
+|-------|----------------------|-------------------------|---------|
+| `telegram` | `pip install "HelixAgentAi[telegram]"` | `uv sync --extra telegram` | `helix telegram`, gateway Telegram |
+| `browser` | `pip install "HelixAgentAi[browser]"` | `uv sync --extra browser` | Playwright tools — [BROWSER_TOOLS.md](BROWSER_TOOLS.md) |
+| `voice` | `pip install "HelixAgentAi[voice]"` | `uv sync --extra voice` | Whisper voice notes in Telegram |
+| `tui-web` | `pip install "HelixAgentAi[tui-web]"` | `uv sync --extra tui-web` | `helix tui --web` |
+| `windows` | `pip install "HelixAgentAi[windows]"` | `uv sync --extra windows` | `psutil` process-tree cleanup |
+| `all` | `pip install "HelixAgentAi[all]"` | `uv sync --extra all` | all of the above |
+
+After the `browser` extra: `playwright install chromium`
 
 ## Quick install (recommended for users)
 
-### From PyPI
+### From PyPI (recommended)
 
-PyPI package name is **`HelixAgentAi`** (not `helix` — that name is used by another project).  
+Published on [pypi.org/project/HelixAgentAi](https://pypi.org/project/HelixAgentAi/) (current: **0.1.3**).
+
+Package name **`HelixAgentAi`** (not `helix` — that name is used by another project).  
 After install, the CLI command is **`helix`** in the environment’s `bin` directory.
 
 **Global CLI from any folder** (recommended — no manual PATH):
@@ -122,11 +127,13 @@ Profile data: `profiles/<name>/` (not in the project directory). Logs: [LOGS.md]
 ## Updates
 
 ```bash
-helix update              # auto: git pull + reinstall, or PyPI when published
-helix update --check      # check only
-helix update --channel git --repo /path/to/helix
-helix update --force      # reinstall even if version matches
+helix update --channel pypi    # upgrade from PyPI (recommended for pipx installs)
+helix update --check           # check only
+helix update --channel git --repo /path/to/HelixAgent
+helix update --force           # reinstall even if version matches
 ```
+
+Or manually: `pipx upgrade HelixAgentAi` / `pip install -U HelixAgentAi`
 
 ## Docker
 

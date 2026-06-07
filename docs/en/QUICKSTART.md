@@ -1,15 +1,24 @@
 # Quickstart
 
+## Install (PyPI)
+
 ```bash
-./scripts/install.sh   # or: uv sync && uv pip install -e .
-cp .env.example .env
+pipx install HelixAgentAi
+# or: pip install HelixAgentAi  (inside an activated venv)
+```
+
+Package: [HelixAgentAi on PyPI](https://pypi.org/project/HelixAgentAi/). CLI command: `helix`.
+
+## Run
+
+```bash
 helix doctor
 helix models setup
 helix run "Hello"
 helix tui              # primary UI; /help for slash commands
 helix gateway start
 helix gateway status
-helix logs -l error          # inspect failures
+helix logs -l error
 ```
 
 Repair config:
@@ -18,14 +27,20 @@ Repair config:
 helix doctor --fix
 ```
 
-Optional:
+Optional extras:
 
 ```bash
-uv sync --extra telegram
-export TELEGRAM_BOT_TOKEN=...
-helix gateway start
+pipx install "HelixAgentAi[all]"
+helix telegram setup
+playwright install chromium   # after [browser] extra
 helix hub browse
 helix mcp setup
+```
+
+Update from PyPI:
+
+```bash
+helix update --channel pypi
 ```
 
 See [CLI.md](CLI.md) and [SLASH_COMMANDS.md](SLASH_COMMANDS.md).

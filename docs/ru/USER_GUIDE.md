@@ -13,7 +13,7 @@
 2. [Требования](#2-требования)
 3. [Шаг 1 — Установить Python](#3-шаг-1--установить-python)
 4. [Шаг 2 — Установить UV (рекомендуется)](#4-шаг-2--установить-uv-рекомендуется)
-5. [Шаг 3 — Скачать и установить `.whl`](#5-шаг-3--скачать-и-установить-whl)
+5. [Шаг 3 — Установка с PyPI](#5-шаг-3--установка-с-pypi)
 6. [Шаг 4 — Первый запуск и профиль](#6-шаг-4--первый-запуск-и-профиль)
 7. [Шаг 5 — Настройка моделей через LiteLLM](#7-шаг-5--настройка-моделей-через-litellm)
 8. [Шаг 6 — Поиск в интернете (опционально)](#8-шаг-6--поиск-в-интернете-опционально)
@@ -95,78 +95,55 @@ uv --version
 
 ---
 
-## 5. Шаг 3 — Скачать и установить `.whl`
+## 5. Шаг 3 — Установка с PyPI
 
-### 5.1. Получить файл
+Пакет **[HelixAgentAi](https://pypi.org/project/HelixAgentAi/)** на PyPI; команда в терминале — **`helix`**.
 
-Файл wheel собирается из проекта:
-
-```bash
-uv build
-ls dist/
-# пример: helixagentai-0.1.0-py3-none-any.whl
-```
-
-Скопируйте `.whl` на целевую машину (USB, общая папка, артефакт CI).
-
-> Имя пакета: **`HelixAgentAi`**.  
 > Не используйте `pip install helix` — на PyPI это **другой** проект.
 
-### 5.2. Установка через **uv** (рекомендуется)
-
-**Глобально (как отдельная утилита):**
+### 5.1. Глобально (рекомендуется)
 
 ```bash
-uv tool install /путь/к/helixagentai-0.1.0-py3-none-any.whl
+pipx install HelixAgentAi
 helix version
 ```
 
-**В виртуальное окружение:**
+С extras (Telegram, браузер, веб-TUI, голос):
 
 ```bash
-mkdir -p ~/helix-env && cd ~/helix-env
-uv venv --python 3.12
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-uv pip install /путь/к/helixagentai-0.1.0-py3-none-any.whl
-helix version
+pipx install "HelixAgentAi[all]"
 ```
 
-**С дополнительными возможностями** (Telegram, браузер, веб-TUI, голос):
+Альтернатива: `uv tool install HelixAgentAi`
 
-```bash
-uv pip install "/путь/к/helixagentai-0.1.0-py3-none-any.whl[all]"
-# или выборочно:
-uv pip install "/путь/к/helixagentai-0.1.0-py3-none-any.whl[telegram,browser,tui-web,voice]"
-```
-
-### 5.3. Установка через **pip**
-
-**Глобально (pipx — рекомендуется для CLI):**
-
-```bash
-pipx install /путь/к/helixagentai-0.1.0-py3-none-any.whl
-helix version
-```
-
-**В venv:**
+### 5.2. Виртуальное окружение
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install /путь/к/helixagentai-0.1.0-py3-none-any.whl
-pip install "/путь/к/helixagentai-0.1.0-py3-none-any.whl[telegram]"
+pip install HelixAgentAi
+pip install "HelixAgentAi[telegram]"
 helix version
 ```
 
-**В пользовательский каталог** (`~/.local/bin`):
+### 5.3. Пользовательский каталог (`~/.local/bin`)
 
 ```bash
-pip install --user /путь/к/helixagentai-0.1.0-py3-none-any.whl
+pip install --user HelixAgentAi
 export PATH="$HOME/.local/bin:$PATH"
 helix version
 ```
 
-### 5.4. Проверка после установки
+### 5.4. Альтернатива — установка из `.whl`
+
+Для офлайн-машин или артефактов CI:
+
+```bash
+uv build && ls dist/helixagentai-*.whl
+pipx install /путь/к/helixagentai-0.1.3-py3-none-any.whl
+```
+
+### 5.5. Проверка после установки
 
 ```bash
 helix --help

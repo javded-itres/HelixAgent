@@ -2,6 +2,8 @@
 
 Руководство по выпуску пакета **Helix** на [PyPI](https://pypi.org).
 
+> **Опубликовано:** [HelixAgentAi 0.1.3](https://pypi.org/project/HelixAgentAi/) — `pipx install HelixAgentAi`.
+
 ## Имя пакета
 
 На PyPI проект публикуется как **`HelixAgentAi`** (не `helix` — это другой пакет на PyPI).

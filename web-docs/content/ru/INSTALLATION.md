@@ -12,19 +12,24 @@ Helix требует **Python 3.12+** и устанавливается как C
 
 Опциональные extras:
 
-| Extra | Команда | Назначение |
-|-------|---------|------------|
-| `telegram` | `uv sync --extra telegram` | Telegram-бот |
-| `browser` | `uv sync --extra browser` | Playwright `browser_*` — [BROWSER_TOOLS.md](BROWSER_TOOLS.md) |
-| `tui-web` | `uv sync --extra tui-web` | `helix tui --web` |
-| `windows` | `uv sync --extra windows` | `psutil` для остановки дерева процессов (опционально на Windows) |
-| `all` | `uv sync --extra all` | telegram + browser + tui-web + windows |
+| Extra | PyPI (`pip` / `pipx`) | Из исходников (`uv sync`) | Назначение |
+|-------|----------------------|---------------------------|------------|
+| `telegram` | `pip install "HelixAgentAi[telegram]"` | `uv sync --extra telegram` | Telegram-бот |
+| `browser` | `pip install "HelixAgentAi[browser]"` | `uv sync --extra browser` | Playwright — [BROWSER_TOOLS.md](BROWSER_TOOLS.md) |
+| `voice` | `pip install "HelixAgentAi[voice]"` | `uv sync --extra voice` | Голосовые сообщения (Whisper) |
+| `tui-web` | `pip install "HelixAgentAi[tui-web]"` | `uv sync --extra tui-web` | `helix tui --web` |
+| `windows` | `pip install "HelixAgentAi[windows]"` | `uv sync --extra windows` | `psutil` для процессов |
+| `all` | `pip install "HelixAgentAi[all]"` | `uv sync --extra all` | всё выше |
+
+После `browser`: `playwright install chromium`
 
 ## Быстрая установка (пользователям)
 
-### PyPI — `helix` из любой папки
+### PyPI — `helix` из любой папки (рекомендуется)
 
-Пакет на PyPI: **`HelixAgentAi`** (не `pip install helix` — это другой проект). Команда: **`helix`**.
+Опубликовано: [pypi.org/project/HelixAgentAi](https://pypi.org/project/HelixAgentAi/) (версия **0.1.3**).
+
+Пакет **`HelixAgentAi`** (не `pip install helix` — это другой проект). Команда: **`helix`**.
 
 **Глобально (рекомендуется):**
 
@@ -81,9 +86,11 @@ helix models setup
 ## Обновление
 
 ```bash
-helix update
+helix update --channel pypi
 helix update --check
 ```
+
+Или: `pipx upgrade HelixAgentAi` / `pip install -U HelixAgentAi`
 
 ## Docker
 

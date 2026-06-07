@@ -5,23 +5,37 @@
 ## Требования
 
 - Python **3.12+**
-- [uv](https://github.com/astral-sh/uv)
 - OpenAI-совместимый LLM (Ollama, LiteLLM, OpenAI, Groq, …)
+- [pipx](https://pipx.pypa.io/) (рекомендуется) или `pip` в venv
 
-## 1. Установка
+## 1. Установка с PyPI
+
+Пакет **[HelixAgentAi](https://pypi.org/project/HelixAgentAi/)** на PyPI; команда в терминале — **`helix`**.
 
 ```bash
-git clone https://github.com/javded-itres/HelixAgent.git
-cd HelixAgent
-./scripts/install.sh
-cp .env.example .env
+pipx install HelixAgentAi
+# опционально: Telegram, браузер, веб-TUI, голос:
+pipx install "HelixAgentAi[all]"
+
+helix version
+helix doctor
 ```
 
-[INSTALLATION.md](INSTALLATION.md)
-
-## 2. Диагностика
+В виртуальном окружении вместо pipx:
 
 ```bash
+python -m venv .venv && source .venv/bin/activate
+pip install HelixAgentAi
+```
+
+Не используйте `pip install helix` — это **другой** пакет на PyPI.
+
+**Разработчикам** (из git): [INSTALLATION.md](INSTALLATION.md)
+
+## 2. Первичная настройка
+
+```bash
+mkdir -p ~/.helix
 helix doctor
 helix doctor --fix
 ```
@@ -47,8 +61,10 @@ helix config show
 ## 5. Опции
 
 ```bash
-uv sync --extra telegram
-uv sync --extra browser
+pipx install "HelixAgentAi[telegram]"
+helix telegram setup
+pipx install "HelixAgentAi[browser]"
+playwright install chromium
 helix hub browse
 helix mcp setup
 ```

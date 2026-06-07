@@ -5,24 +5,39 @@ Follow this checklist for a working Helix install on a new machine.
 ## Requirements
 
 - Python **3.12+**
-- [uv](https://github.com/astral-sh/uv) (recommended)
 - An OpenAI-compatible LLM ([Ollama](https://ollama.com), LiteLLM, OpenAI, Groq, …)
+- [pipx](https://pipx.pypa.io/) (recommended) or `pip` in a venv
 
-## 1. Install
+## 1. Install from PyPI
+
+Package **[HelixAgentAi](https://pypi.org/project/HelixAgentAi/)** on PyPI; terminal command **`helix`**.
 
 ```bash
-git clone https://github.com/javded-itres/HelixAgent.git
-cd HelixAgent
-./scripts/install.sh
-# or: uv sync && uv pip install -e .
-cp .env.example .env
+pipx install HelixAgentAi
+# optional extras (Telegram, browser, web TUI, voice):
+pipx install "HelixAgentAi[all]"
+
+helix version
+helix doctor
 ```
 
-Details: [INSTALLATION.md](INSTALLATION.md)
-
-## 2. Diagnose
+Inside a virtualenv instead of pipx:
 
 ```bash
+python -m venv .venv && source .venv/bin/activate
+pip install HelixAgentAi
+```
+
+Do not run `pip install helix` — that installs an unrelated package.
+
+**Developers** (from git): [INSTALLATION.md](INSTALLATION.md#developer-install-from-source)
+
+## 2. First-time config
+
+```bash
+mkdir -p ~/.helix
+# On first run Helix may seed ~/.helix/.env; or copy from the repo:
+# cp .env.example ~/.helix/.env
 helix doctor
 helix doctor --fix    # optional: repair config.yaml
 ```
@@ -49,11 +64,13 @@ In TUI or Telegram, type **`/help`** for slash commands: [SLASH_COMMANDS.md](SLA
 ## 5. Optional features
 
 ```bash
-uv sync --extra telegram    # helix telegram setup
-uv sync --extra browser     # Playwright tools — BROWSER_TOOLS.md
-uv sync --extra tui-web     # helix tui --web
-helix hub browse            # external skills
-helix mcp setup             # MCP servers
+pipx install "HelixAgentAi[telegram]"   # or reinstall with [all]
+helix telegram setup
+pipx install "HelixAgentAi[browser]"
+playwright install chromium            # after browser extra
+pipx install "HelixAgentAi[tui-web]"   # helix tui --web
+helix hub browse
+helix mcp setup
 ```
 
 ## Production

@@ -2,11 +2,12 @@
 
 **Helix** is a self-improving AI agent with persistent memory, a skills system, tool calling, MCP integration, and multiple interfaces: CLI, TUI, API gateway, and Telegram.
 
+[![PyPI](https://img.shields.io/pypi/v/HelixAgentAi.svg)](https://pypi.org/project/HelixAgentAi/)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-en%20%7C%20ru-blue)](docs/README.md)
 
-**Website:** [helix-agent.ru](https://helix-agent.ru) · **GitHub:** [javded-itres/HelixAgent](https://github.com/javded-itres/HelixAgent) · **Documentation:** [English](docs/en/README.md) · [Русский](docs/ru/README.md) · **Donate:** [support the project](https://messenger.online.sberbank.ru/sl/uwKJ687QKl7d1a1Ui)
+**Website:** [helix-agent.ru](https://helix-agent.ru) · **PyPI:** [HelixAgentAi](https://pypi.org/project/HelixAgentAi/) · **GitHub:** [javded-itres/HelixAgent](https://github.com/javded-itres/HelixAgent) · **Docs:** [EN](docs/en/README.md) · [RU](docs/ru/README.md) · **Donate:** [support](https://messenger.online.sberbank.ru/sl/uwKJ687QKl7d1a1Ui)
 
 ---
 
@@ -27,18 +28,22 @@
 
 ### Install
 
-**PyPI** (Python 3.12+). Package: `HelixAgentAi` (HelixAgent), command: `helix`:
+**Install from PyPI** (Python 3.12+). Package: [`HelixAgentAi`](https://pypi.org/project/HelixAgentAi/), CLI command: `helix`:
 
 ```bash
-pipx install HelixAgentAi          # global CLI (recommended)
-# or in a venv:
+pipx install HelixAgentAi              # global CLI (recommended)
+pipx install "HelixAgentAi[all]"       # + telegram, browser, tui-web, voice
+
+# or in a virtualenv:
 pip install HelixAgentAi
-pip install "HelixAgentAi[all]"    # telegram + browser + tui-web
+pip install "HelixAgentAi[telegram,browser]"
 ```
 
-Do not use `pip install helix` — that is a different package on PyPI.
+Do not use `pip install helix` — that is a **different** package on PyPI.
 
-**From source:**
+Update later: `helix update --channel pypi`
+
+**From source (developers):**
 
 ```bash
 git clone https://github.com/javded-itres/HelixAgent.git

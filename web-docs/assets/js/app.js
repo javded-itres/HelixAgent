@@ -6,6 +6,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
 const GITHUB_URL = "https://github.com/javded-itres/HelixAgent";
+const PYPI_URL = "https://pypi.org/project/HelixAgentAi/";
 
 const I18N = {
   en: {
@@ -23,6 +24,9 @@ const I18N = {
     hero_title_accent: "AI Agent",
     hero_lead: "Persistent memory, skills, tool calling, MCP integration, and multiple interfaces — CLI, TUI, API gateway, and Telegram.",
     get_started: "Get Started",
+    install_pypi: "pipx install HelixAgentAi",
+    install_pypi_hint: "PyPI package HelixAgentAi · CLI command helix",
+    install_pypi_link: "View on PyPI",
     architecture_link: "Architecture",
     donate: "Support the project",
     github: "GitHub",
@@ -59,6 +63,9 @@ const I18N = {
     hero_title_accent: "AI-агент",
     hero_lead: "Постоянная память, навыки, вызов инструментов, MCP и несколько интерфейсов — CLI, TUI, API gateway и Telegram.",
     get_started: "Начать",
+    install_pypi: "pipx install HelixAgentAi",
+    install_pypi_hint: "Пакет HelixAgentAi на PyPI · команда helix",
+    install_pypi_link: "Открыть на PyPI",
     architecture_link: "Архитектура",
     donate: "Поддержать проект",
     github: "GitHub",
@@ -279,6 +286,11 @@ function renderHome() {
       <div class="hero-badge">🧬 DNA-inspired · Agent Platform</div>
       <h1>${t("hero_title")} <span>${t("hero_title_accent")}</span></h1>
       <p class="hero-lead">${t("hero_lead")}</p>
+      <div class="hero-install">
+        <code class="hero-install-cmd">${t("install_pypi")}</code>
+        <span class="hero-install-hint">${t("install_pypi_hint")}</span>
+        <a href="${PYPI_URL}" class="hero-install-link" target="_blank" rel="noopener noreferrer">${t("install_pypi_link")} ↗</a>
+      </div>
       <div class="hero-actions">
         <a href="#/installation" class="btn btn-primary">${t("get_started")}</a>
         <a href="#/architecture" class="btn btn-ghost">${t("architecture_link")}</a>

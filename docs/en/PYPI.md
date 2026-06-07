@@ -2,6 +2,8 @@
 
 This guide covers packaging, naming, and releasing **Helix** on [PyPI](https://pypi.org).
 
+> **Published:** [HelixAgentAi 0.1.3](https://pypi.org/project/HelixAgentAi/) — install with `pipx install HelixAgentAi`.
+
 ## Package name
 
 The PyPI distribution name is **`HelixAgentAi`** (not `helix` — that name is used by another project).
@@ -11,7 +13,7 @@ The PyPI distribution name is **`HelixAgentAi`** (not `helix` — that name is u
 | `helix` | Taken (MIT LL mutation framework) |
 | `helix-ai` | Taken (ML toolkit) |
 | `helix-agent` | Available (not used) |
-| **`HelixAgentAi`** | Used by this project |
+| **`HelixAgentAi`** | **Published** — [pypi.org/project/HelixAgentAi](https://pypi.org/project/HelixAgentAi/) |
 
 Install:
 
