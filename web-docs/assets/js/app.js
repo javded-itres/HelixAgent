@@ -45,6 +45,12 @@ const GITHUB_URL = "https://github.com/javded-itres/HelixAgent";
 const PYPI_URL = "https://pypi.org/project/HelixAgentAi/";
 const DONATE_URL = "https://messenger.online.sberbank.ru/sl/uwKJ687QKl7d1a1Ui";
 const SITE_URL = "https://helix-agent.ru";
+const YANDEX_METRIKA_ID = 109712139;
+
+function trackMetrikaPageView() {
+  if (typeof ym !== "function") return;
+  ym(YANDEX_METRIKA_ID, "hit", location.href, { title: document.title });
+}
 
 const I18N = {
   en: {
@@ -482,6 +488,7 @@ function renderMarketing() {
   document.title = state.lang === "ru"
     ? "Helix — AI-агент · Российская разработка"
     : "Helix — AI Agent · Made in Russia";
+  trackMetrikaPageView();
 }
 
 function renderDocsHub() {
@@ -513,6 +520,7 @@ function renderDocsHub() {
   `;
 
   document.title = state.lang === "ru" ? "Документация — Helix" : "Documentation — Helix";
+  trackMetrikaPageView();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -566,6 +574,7 @@ async function renderDoc(slug, scrollAnchor = null) {
     main.replaceChildren(makeBreadcrumb(t("nav_home"), t("nav_docs"), entry.title), container, footer);
 
     document.title = `${entry.heading} — Helix`;
+    trackMetrikaPageView();
     if (scrollAnchor && scrollToAnchor(scrollAnchor)) {
       history.replaceState(null, "", `#${scrollAnchor}`);
     } else if (!scrollAnchor) {
