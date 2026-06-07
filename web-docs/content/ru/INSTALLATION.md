@@ -1,12 +1,12 @@
 # Установка
 
-Helix требует **Python 3.14+** и устанавливается как CLI-команда `helix`.
+Helix требует **Python 3.12+** и устанавливается как CLI-команда `helix`.
 
 ## Требования
 
 | Компонент | Примечание |
 |-----------|------------|
-| Python | 3.14+ |
+| Python | 3.12+ |
 | [uv](https://github.com/astral-sh/uv) | Рекомендуется |
 | LLM | OpenAI-совместимый API (Ollama, LiteLLM, OpenAI, Groq, …) |
 

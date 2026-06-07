@@ -9,7 +9,7 @@ description = "Self-improving AI agent with memory, skills, MCP, CLI, and TUI"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 authors = [{ name = "Pavel Lukyanov" }]
 keywords = ["ai", "agent", "llm", "cli", "mcp", "tools", "langgraph"]
 classifiers = [
@@ -19,6 +19,8 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
@@ -44,12 +46,6 @@ dependencies = [
     "dishka>=1.10.1",
     "mcp>=1.2.0",
     "croniter>=2.0.0",
-    "aiogram>=3.15.0",
-    "faster-whisper>=1.1.0",
-    "playwright>=1.49.0",
-    "textual-serve>=1.1.3",
-    "psutil>=6.0.0",
-    "pypdf>=4.0.0",
 ]
 
 [project.optional-dependencies]
@@ -135,7 +131,7 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-target-version = "py314"
+target-version = "py312"
 line-length = 100
 src = ["core", "cli", "api", "integrations", "tests"]
 
@@ -144,7 +140,7 @@ select = ["E", "F", "I", "UP"]
 ignore = ["E501"]
 
 [tool.mypy]
-python_version = "3.14"
+python_version = "3.12"
 packages = ["core", "cli", "api"]
 ignore_missing_imports = true
 warn_return_any = false

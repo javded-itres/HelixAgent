@@ -8,10 +8,22 @@ import aiohttp_jinja2
 from aiohttp import web
 
 from cli.tui.web_security import append_query_token, token_from_request
-from textual_serve.server import Server, to_int
 
 
-class HelixWebTuiServer(Server):
+def _textual_serve() -> tuple[type, Any]:
+    try:
+        from textual_serve.server import Server, to_int
+    except ImportError as e:
+        raise RuntimeError(
+            "Web TUI requires textual-serve. Install with: pip install 'helix-agent[tui-web]'"
+        ) from e
+    return Server, to_int
+
+
+_Server, to_int = _textual_serve()
+
+
+class HelixWebTuiServer(_Server):
     """textual-serve Server that requires a shared secret on / and /ws."""
 
     def __init__(self, *args, web_token: str, **kwargs) -> None:

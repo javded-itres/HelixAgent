@@ -50,7 +50,7 @@ Helix — AI-агент с:
 
 | Компонент | Версия / примечание |
 |-----------|---------------------|
-| **Python** | **3.14+** (`requires-python` в `pyproject.toml`) |
+| **Python** | **3.12+** (`requires-python` в `pyproject.toml`) |
 | **uv** | рекомендуется для установки зависимостей |
 | **LLM** | OpenAI-совместимый API (в этой инструкции — **LiteLLM**) |
 | **Node.js / npx** | нужен для многих MCP-серверов (`helix doctor` проверит) |
@@ -61,7 +61,7 @@ Helix — AI-агент с:
 ## 3. Шаг 1 — Установить Python
 
 1. Откройте [https://www.python.org/downloads/](https://www.python.org/downloads/).
-2. Скачайте **Python 3.14** или новее.
+2. Скачайте **Python 3.12** или новее.
 3. Установите. На Windows отметьте **«Add Python to PATH»**.
 4. Проверьте в терминале:
 
@@ -71,7 +71,7 @@ python3 --version
 python --version
 ```
 
-Должно быть **3.14.x** или выше.
+Должно быть **3.12.x** или выше.
 
 ---
 
@@ -125,7 +125,7 @@ helix version
 
 ```bash
 mkdir -p ~/helix-env && cd ~/helix-env
-uv venv --python 3.14
+uv venv --python 3.12
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 uv pip install /путь/к/helix_agent-0.1.0-py3-none-any.whl
 helix version
@@ -831,7 +831,7 @@ helix logs -l error -n 50
 
 ## Быстрый чеклист «с нуля до чата»
 
-1. Python 3.14+  
+1. Python 3.12+  
 2. `uv` или `pip`  
 3. `uv pip install helix_agent-….whl` (или `pipx install …`)  
 4. `~/.helix/.env` с `LITELLM_API_BASE` и `LITELLM_API_KEY`  

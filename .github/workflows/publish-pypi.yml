@@ -25,10 +25,15 @@ jobs:
 
       - uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.14"
+          python-version: "3.12"
 
       - name: Build
-        run: uv build
+        env:
+          HELIX_NO_VERSION_BUMP: "1"
+        run: uv build --no-sources
+
+      - name: Validate artifacts
+        run: uv run twine check dist/*
 
       - name: Publish to TestPyPI
         if: inputs.testpypi

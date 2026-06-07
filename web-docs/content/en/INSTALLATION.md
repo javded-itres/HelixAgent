@@ -1,12 +1,12 @@
 # Installation
 
-Helix targets **Python 3.14+** and is packaged as a Typer CLI (`helix`). Choose one of the paths below depending on whether you run from source or want a global command.
+Helix targets **Python 3.12+** and is packaged as a Typer CLI (`helix`). Choose one of the paths below depending on whether you run from source or want a global command.
 
 ## Requirements
 
 | Requirement | Notes |
 |-------------|--------|
-| Python | 3.14 or newer |
+| Python | 3.12 or newer |
 | [uv](https://github.com/astral-sh/uv) | Recommended for deps and `uv run` |
 | LLM endpoint | OpenAI-compatible API (Ollama, LiteLLM, OpenAI, Groq, …) |
 
@@ -147,7 +147,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for production layout, systemd, and CI.
 | Symptom | Action |
 |---------|--------|
 | `helix: command not found` | Re-run `helix install` or add `~/.local/bin` to PATH |
-| Python version error | Install Python 3.14+; `uv python install 3.14` |
+| Python version error | Install Python 3.12+; `uv python install 3.12` |
 | Import errors after pull | `helix update --force` or `uv sync && uv pip install -e .` |
 | Doctor reports missing provider | `helix models setup` or `helix doctor --fix` |
 

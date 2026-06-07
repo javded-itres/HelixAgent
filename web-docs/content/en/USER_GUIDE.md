@@ -50,7 +50,7 @@ Data is stored in **`~/.helix/`** (Linux/macOS) or **`%LOCALAPPDATA%\Helix\`** (
 
 | Component | Version / note |
 |-----------|--------------|
-| **Python** | **3.14+** (`requires-python` in `pyproject.toml`) |
+| **Python** | **3.12+** (`requires-python` in `pyproject.toml`) |
 | **uv** | recommended for installing dependencies |
 | **LLM** | OpenAI-compatible API (this guide uses **LiteLLM**) |
 | **Node.js / npx** | required for many MCP servers (`helix doctor` will check) |
@@ -61,7 +61,7 @@ Data is stored in **`~/.helix/`** (Linux/macOS) or **`%LOCALAPPDATA%\Helix\`** (
 ## 3. Step 1 — Install Python
 
 1. Open [https://www.python.org/downloads/](https://www.python.org/downloads/).
-2. Download **Python 3.14** or newer.
+2. Download **Python 3.12** or newer.
 3. Install. On Windows, check **“Add Python to PATH”**.
 4. Verify in the terminal:
 
@@ -71,7 +71,7 @@ python3 --version
 python --version
 ```
 
-You should see **3.14.x** or higher.
+You should see **3.12.x** or higher.
 
 ---
 
@@ -125,7 +125,7 @@ helix version
 
 ```bash
 mkdir -p ~/helix-env && cd ~/helix-env
-uv venv --python 3.14
+uv venv --python 3.12
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 uv pip install /path/to/helix_agent-0.1.0-py3-none-any.whl
 helix version
@@ -831,7 +831,7 @@ More: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), [DOCTOR.md](DOCTOR.md).
 
 ## Quick checklist: from zero to chat
 
-1. Python 3.14+  
+1. Python 3.12+  
 2. `uv` or `pip`  
 3. `uv pip install helix_agent-….whl` (or `pipx install …`)  
 4. `~/.helix/.env` with `LITELLM_API_BASE` and `LITELLM_API_KEY`  

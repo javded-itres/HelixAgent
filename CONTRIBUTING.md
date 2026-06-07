@@ -7,8 +7,8 @@ Thank you for contributing. This document covers local setup, conventions, and h
 ```bash
 git clone https://github.com/javded-itres/HelixAgent.git
 cd HelixAgent
-uv sync
-uv pip install -e .
+uv sync --all-extras
+uv pip install -e ".[all]"
 cp .env.example .env
 helix doctor
 ```
@@ -41,7 +41,7 @@ Architecture overview: [docs/en/ARCHITECTURE.md](docs/en/ARCHITECTURE.md).
 
 ## Conventions
 
-- Python **3.14+**, async-first for agent code
+- Python **3.12+**, async-first for agent code
 - Profiles and user data under `~/.helix/profiles/`, not in the repo
 - New tools extend `BaseTool` in `core/tools/`
 - Agent behavior changes should go through `core/agent_execution.py` and events in `core/agent_events.py`

@@ -36,7 +36,11 @@ def _telegram_extra_installed() -> bool:
 
 def _install_telegram_extra() -> bool:
     uv = __import__("shutil").which("uv")
-    cmd = [uv, "sync", "--extra", "telegram"] if uv else [sys.executable, "-m", "pip", "install", "aiogram>=3.15.0"]
+    cmd = (
+        [uv, "sync", "--extra", "telegram"]
+        if uv
+        else [sys.executable, "-m", "pip", "install", "helix-agent[telegram]"]
+    )
     print_info("Installing Telegram dependencies…")
     try:
         subprocess.run(cmd, check=True, timeout=300)

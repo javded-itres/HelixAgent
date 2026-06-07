@@ -2,7 +2,7 @@
 
 **Helix** is a self-improving AI agent with persistent memory, a skills system, tool calling, MCP integration, and multiple interfaces: CLI, TUI, API gateway, and Telegram.
 
-[![Python](https://img.shields.io/badge/python-3.14%2B-blue.svg)](https://python.org)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://python.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Docs](https://img.shields.io/badge/docs-en%20%7C%20ru-blue)](docs/README.md)
 
@@ -27,7 +27,7 @@
 
 ### Install
 
-**PyPI** (Python 3.14+). Package: `helix-agent` (HelixAgent), command: `helix`:
+**PyPI** (Python 3.12+). Package: `helix-agent` (HelixAgent), command: `helix`:
 
 ```bash
 pipx install helix-agent          # global CLI (recommended)

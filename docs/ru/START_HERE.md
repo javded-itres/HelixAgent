@@ -4,7 +4,7 @@
 
 ## Требования
 
-- Python **3.14+**
+- Python **3.12+**
 - [uv](https://github.com/astral-sh/uv)
 - OpenAI-совместимый LLM (Ollama, LiteLLM, OpenAI, Groq, …)
 

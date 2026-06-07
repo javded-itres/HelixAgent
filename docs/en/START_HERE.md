@@ -4,7 +4,7 @@ Follow this checklist for a working Helix install on a new machine.
 
 ## Requirements
 
-- Python **3.14+**
+- Python **3.12+**
 - [uv](https://github.com/astral-sh/uv) (recommended)
 - An OpenAI-compatible LLM ([Ollama](https://ollama.com), LiteLLM, OpenAI, Groq, …)
 

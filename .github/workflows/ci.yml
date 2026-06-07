@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master, "refactor/**", "feature/**"]
+    branches: [main, master, "release/**", "refactor/**", "feature/**"]
   pull_request:
 
 jobs:
@@ -10,7 +10,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            python: "3.12"
+          - os: ubuntu-latest
+            python: "3.13"
+          - os: ubuntu-latest
+            python: "3.14"
+          - os: windows-latest
+            python: "3.14"
+          - os: macos-latest
+            python: "3.14"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -18,9 +28,10 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
+          python-version: ${{ matrix.python }}
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --all-extras
 
       - name: Ruff
         run: uv run ruff check core cli api integrations tests
@@ -31,12 +42,40 @@ jobs:
       - name: Doctor (dry run)
         run: uv run helix doctor --no-llm
 
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - name: Install dev dependencies
+        run: uv sync --group dev
+
+      - name: Build package
+        env:
+          HELIX_NO_VERSION_BUMP: "1"
+        run: uv build --no-sources
+
+      - name: Validate artifacts
+        run: uv run twine check dist/*
+
+      - name: Smoke install wheel
+        run: |
+          uv venv /tmp/helix-smoke --python 3.12
+          uv pip install --python /tmp/helix-smoke/bin/python dist/helix_agent-*.whl
+          /tmp/helix-smoke/bin/helix version
+          /tmp/helix-smoke/bin/helix --help
+
   security:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
-      - run: uv sync
+      - run: uv sync --all-extras
       - name: Scan for committed secrets patterns
         run: |
           ! rg -i 'sk-[a-zA-Z0-9]{20,}' --glob '!*.md' --glob '!.github/**' || (echo "Possible API key in repo" && exit 1)

@@ -35,7 +35,7 @@ Update `PYPI_PACKAGE` in `cli/installer/update.py` if the distribution name chan
    - Token: Account → API tokens → scope `helix-agent` (after first upload) or entire account for first release
 3. **Unique name** — confirm `helix-agent` is free: `curl -s https://pypi.org/pypi/helix-agent/json | head`
 4. **Version** — bump in `pyproject.toml` and `cli/__init__.py` together
-5. **Python 3.14+** — reflected in `requires-python`; PyPI users need 3.14
+5. **Python 3.12+** — reflected in `requires-python`
 
 ## What is already configured
 
@@ -45,7 +45,7 @@ Update `PYPI_PACKAGE` in `cli/installer/update.py` if the distribution name chan
 | Packages | `cli`, `core`, `api`, `integrations` |
 | Root settings module | `config.py` (force-included in wheel) |
 | Console script | `helix = cli.main:main` |
-| Extras | `browser`, `telegram`, `tui-web`, `all` |
+| Extras | `browser`, `telegram`, `voice`, `tui-web`, `windows`, `all` |
 | License | `LICENSE` + `license-files` |
 
 ## Local build check
@@ -53,7 +53,7 @@ Update `PYPI_PACKAGE` in `cli/installer/update.py` if the distribution name chan
 ```bash
 uv sync --group dev
 rm -rf dist
-uv build
+HELIX_NO_VERSION_BUMP=1 uv build --no-sources
 ls -la dist/
 # helix_agent-0.1.0-py3-none-any.whl
 # helix_agent-0.1.0.tar.gz
@@ -62,7 +62,7 @@ ls -la dist/
 Verify install in a clean venv:
 
 ```bash
-uv venv /tmp/helix-test --python 3.14
+uv venv /tmp/helix-test --python 3.12
 uv pip install --python /tmp/helix-test/bin/python dist/helix_agent-*.whl
 /tmp/helix-test/bin/helix version
 /tmp/helix-test/bin/python -c "from config import settings; print('ok')"
@@ -151,7 +151,7 @@ See `.github/workflows/publish-pypi.yml` (manual `workflow_dispatch`).
 
 - [ ] Version bumped in `pyproject.toml` and `cli/__init__.py`
 - [ ] `uv build` succeeds
-- [ ] Wheel installs in clean 3.14 venv; `helix --help` works
+- [ ] Wheel installs in clean 3.12 venv; `helix --help` works
 - [ ] `from config import settings` works (packaged `config.py`)
 - [x] README and repository URLs updated
 - [ ] Tests pass (`pytest -m "not llm"`)
@@ -169,8 +169,8 @@ After publish, update:
 
 ## Known limitations
 
-- **Python 3.14 only** — narrow audience until you lower `requires-python` and test on 3.12/3.13
-- **Heavy dependencies** — ChromaDB, LangGraph; first install may be slow
+- **Heavy core dependencies** — ChromaDB, LangGraph; first install may be slow
+- **Optional extras** — Telegram, browser, voice, and web TUI require `pip install "helix-agent[all]"` (or specific extras)
 - **Playwright** — `browser` extra requires `playwright install chromium` after pip install
 - **No bundled `.env.example` in wheel** — document copying from GitHub or `helix doctor`
 

@@ -32,7 +32,7 @@ pip install "helix-agent[all]"
 
 1. Поднять версию в `pyproject.toml` и `cli/__init__.py`
 2. `uv build` — без ошибок
-3. Проверить установку wheel в чистом venv Python 3.14
+3. Проверить установку wheel в чистом venv Python 3.12
 4. `uv run pytest -m "not llm"`
 5. Обновить `docs/CHANGELOG.md`
 6. Тег `v0.1.0`
@@ -59,7 +59,7 @@ uv publish dist/*
 
 ## Ограничения
 
-- Только **Python 3.14+**
+- Только **Python 3.12+**
 - Тяжёлые зависимости (ChromaDB, LangGraph)
 - Для browser: после pip — `playwright install chromium`
 

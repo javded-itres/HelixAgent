@@ -2,6 +2,11 @@
 
 ## 0.1.3 — 2026-06-07
 
+### Changed
+- PyPI distribution renamed to **`helix-agent`**; Python **`>=3.12`**; heavy deps moved to extras (`browser`, `telegram`, `voice`, `tui-web`, `windows`, `all`)
+- CI: Python 3.12/3.13/3.14 matrix, `build` job with `twine check` and wheel smoke install
+- Publish workflow: `HELIX_NO_VERSION_BUMP=1`, `uv build --no-sources`
+
 ### Added
 - **web-docs** — dark documentation site with search, EN/RU, mobile layout (`helix docs`)
 - **Gateway docs companion** — optional `--with-docs` / `HELIX_GATEWAY_WITH_DOCS`

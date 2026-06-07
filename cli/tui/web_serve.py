@@ -31,7 +31,7 @@ def run_tui_web(
         from textual_serve.server import Server  # noqa: F401 — import check
     except ImportError as e:
         raise RuntimeError(
-            "Web TUI requires textual-serve. Install with: uv sync --extra tui-web"
+            "Web TUI requires textual-serve. Install with: pip install 'helix-agent[tui-web]'"
         ) from e
 
     from config import settings
