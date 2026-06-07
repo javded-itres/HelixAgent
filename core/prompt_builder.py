@@ -10,6 +10,7 @@ def build_system_prompt(
     relevant_memories: str = "",
     *,
     profile_name: str | None = None,
+    locale: str | None = None,
 ) -> str:
     """Build the system prompt for the agent.
 
@@ -83,6 +84,14 @@ Remember: You are a helpful, capable agent that learns and improves with each ta
 """
 
     from core.env_loader import format_env_context_block
+    from core.i18n.locale import LocaleStore, normalize_locale
+    from core.i18n.messages import t
+
+    ui_locale = normalize_locale(locale)
+    if profile_name and locale is None:
+        ui_locale = LocaleStore(profile_name).get()
+
+    lang_block = t("prompt.lang_block", ui_locale)
 
     # Format the prompt
     formatted_prompt = prompt.format(
@@ -96,7 +105,7 @@ Remember: You are a helpful, capable agent that learns and improves with each ta
 
     from core.project.helix_md import append_helix_project_context
 
-    return append_helix_project_context(formatted_prompt)
+    return append_helix_project_context(f"{formatted_prompt}\n\n{lang_block}")
 
 
 def format_tools_description(tools_schemas: List[Dict[str, Any]]) -> str:

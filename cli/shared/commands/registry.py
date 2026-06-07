@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-SLASH_COMMANDS: list[tuple[str, str]] = [
+from core.i18n.messages import t
+
+_STATIC_SLASH_COMMANDS: list[tuple[str, str]] = [
     ("/help", "Show help"),
     ("/status", "Profile, mode, session status"),
     ("/clear", "Clear transcript"),
@@ -70,7 +72,22 @@ SLASH_COMMANDS: list[tuple[str, str]] = [
     ("/subagent-spawn", "Spawn sub-agent: /subagent-spawn <type> <task>"),
     ("/subagent-result", "Sub-agent result by job id"),
     ("/subagent-terminate", "Stop a sub-agent by job id"),
+    ("/lang", "Switch interface language (en / ru)"),
 ]
+
+SLASH_COMMANDS: list[tuple[str, str]] = list(_STATIC_SLASH_COMMANDS)
+
+
+def slash_commands_for_locale(locale: str | None = None) -> list[tuple[str, str]]:
+    """Static slash commands with localized /lang description."""
+    loc = locale or "en"
+    out: list[tuple[str, str]] = []
+    for cmd, desc in _STATIC_SLASH_COMMANDS:
+        if cmd == "/lang":
+            out.append((cmd, t("lang.cmd_desc", loc)))
+        else:
+            out.append((cmd, desc))
+    return out
 
 
 def all_slash_commands(
@@ -78,9 +95,10 @@ def all_slash_commands(
     *,
     agent_slot: str = "main",
     skill_assignments: dict | None = None,
+    locale: str | None = None,
 ) -> list[tuple[str, str]]:
     """Static commands plus dynamic hub skill slash commands."""
-    out = list(SLASH_COMMANDS)
+    out = slash_commands_for_locale(locale)
     if skills_dir is None:
         return out
     try:

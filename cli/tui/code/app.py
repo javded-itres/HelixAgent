@@ -228,7 +228,10 @@ class HelixCodeApp(App):
             ctx = " · " + re.sub(r"\[/?[^\]]+\]", "", self._cached_context_display)
         sess = self.session_display_name or "session"
         model = getattr(self, "_resolved_model", self.config.model)
-        line = f"{self.profile} · {model}{stream} · {cwd} · {mode} · {sess}{ctx}"
+        from core.i18n import LocaleStore
+
+        lang = LocaleStore(self.profile).get().upper()
+        line = f"{self.profile} · {lang} · {model}{stream} · {cwd} · {mode} · {sess}{ctx}"
         self.set_status_line(line)
 
     # --- Persistence ---
@@ -679,35 +682,28 @@ class HelixCodeApp(App):
         return shortcut_label(binding.key)
 
     def action_help(self) -> None:
+        from core.i18n import LocaleStore, t
+
+        lang = LocaleStore(self.profile).get()
         clr = shortcut_label("ctrl+l")
         end = shortcut_label("ctrl+end")
         copy_k = primary_copy_shortcut_label()
         quit_k = shortcut_label("ctrl+q") if is_macos() else shortcut_label("ctrl+c")
         lines = [
-            "[bold]Helix code UI[/bold]",
-            "  Enter — send    Shift+Enter — newline",
-            f"  {quit_k} — quit  {clr} — clear  {end} — bottom  Shift+Tab — mode",
-            f"  F2 or /open — copy window ({copy_k} copies there)",
-            "  In chat: select text → Copy bar (no shortcut for last message)",
+            f"[bold]{t('tui.help.title', lang)}[/bold]",
+            t("tui.help.keys1", lang),
+            t("tui.help.keys2", lang, quit=quit_k, clear=clr, end=end),
+            t("tui.help.keys3", lang, copy=copy_k),
+            t("tui.help.keys4", lang),
         ]
         if is_macos():
             lines.extend(
                 [
-                    "  ⌃↑/⌃↓/⌃PgUp/PgDn — scroll transcript (macOS-friendly)",
-                    "  RU keyboard: ,help and .help work like /help; / = Shift+7",
+                    t("tui.help.macos_scroll", lang),
+                    t("tui.help.macos_ru_kb", lang),
                 ]
             )
-        lines.extend(
-            [
-            "",
-            "  /help /clear /stream /mode /metrics /stop",
-            "  /copy [/tool|/all]  /open",
-            "  /new /sessions /switch N /session name <x>",
-            "  /profile [name|N]  /memory <q>  /last [/N]  /tools",
-            "  /yes /no  /plan-confirm|auto|refine|reject",
-            "  /mcp [/list|/install <key|url>|/assign|/test|/tools]",
-            ]
-        )
+        lines.extend(["", t("tui.help.slash", lang)])
         self.transcript_write("\n".join(lines) + "\n")
 
     def _transcript_scroll(self, *, lines: int = 0, page: bool = False, home: bool = False) -> None:

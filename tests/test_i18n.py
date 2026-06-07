@@ -1,0 +1,72 @@
+"""Tests for UI locale store and translations."""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import pytest
+
+import cli.core as cli_core
+from core.i18n import LocaleStore, host_locale, set_host_locale, t
+from core.prompt_builder import build_system_prompt
+
+
+def _patch_helix_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    root = tmp_path / "helix"
+    profiles = root / "profiles"
+    profiles.mkdir(parents=True)
+    monkeypatch.setenv("HELIX_HOME", str(root))
+    monkeypatch.setattr(cli_core, "HELIX_HOME", root)
+    monkeypatch.setattr(cli_core, "PROFILES_DIR", profiles)
+    return root
+
+
+class _FakeHost:
+    def __init__(self, profile: str = "i18n_test") -> None:
+        self.profile = profile
+
+
+def test_default_locale_is_en(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_helix_home(tmp_path, monkeypatch)
+    store = LocaleStore("default_en")
+    assert store.get() == "en"
+    assert t("cleared", store.get()) == "Chat cleared"
+
+
+def test_set_locale_ru(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_helix_home(tmp_path, monkeypatch)
+    store = LocaleStore("default_ru")
+    assert store.set("ru") == "ru"
+    assert store.get() == "ru"
+    assert t("cleared", "ru") == "Чат очищен"
+
+
+def test_lang_set_message_no_locale_kwarg_conflict() -> None:
+    assert t("lang.set", "en", code="EN") == "Interface language set to EN"
+    assert t("lang.set", "ru", code="RU") == "Язык интерфейса: RU"
+
+
+def test_set_locale_rejects_unknown(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_helix_home(tmp_path, monkeypatch)
+    store = LocaleStore("default_bad")
+    with pytest.raises(ValueError):
+        store.set("de")
+
+
+def test_host_locale_helpers(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_helix_home(tmp_path, monkeypatch)
+    host = _FakeHost("host_helpers")
+    assert host_locale(host) == "en"
+    assert set_host_locale(host, "ru") == "ru"
+    assert host_locale(host) == "ru"
+
+
+def test_prompt_includes_russian_instruction(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _patch_helix_home(tmp_path, monkeypatch)
+    LocaleStore("work").set("ru")
+    prompt = build_system_prompt(
+        tools_description="- **read_file**: read",
+        active_skills=[],
+        profile_name="work",
+    )
+    assert "на русском" in prompt.lower()

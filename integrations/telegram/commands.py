@@ -5,32 +5,35 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-# (command without /, description ≤ 256 chars for Bot API)
-TELEGRAM_MENU_COMMANDS: list[tuple[str, str]] = [
-    ("help", "Справка по командам"),
-    ("status", "Профиль, режим, сессия"),
-    ("models", "Сменить LLM модель"),
-    ("menu", "Панель управления"),
-    ("mode", "Режим выполнения"),
-    ("profile", "Профиль Helix"),
-    ("stream", "Стриминг вкл/выкл"),
-    ("sessions", "Список сессий"),
-    ("switch", "Сессия по номеру"),
-    ("clear", "Очистить контекст чата"),
-    ("stop", "Остановить задачу"),
-    ("mcp", "MCP серверы (доп. инструменты)"),
-    ("new", "Новая сессия"),
-    ("memory", "Поиск в памяти"),
-    ("skills", "Список навыков (skills)"),
-    ("subagents", "Субагенты: список задач"),
-    ("tools", "Последние вызовы tools"),
-    ("last", "Последний результат tool"),
-    ("metrics", "Метрики агента"),
-    ("compress", "Сжать контекст диалога"),
-    ("init", "Анализ проекта → .helix/HELIX.md"),
-    ("cron", "Периодические задачи (cron)"),
-    ("yes", "Подтвердить действие"),
-    ("no", "Отклонить действие"),
+from core.i18n import DEFAULT_LOCALE, LocaleStore, t
+
+# (command without /, description key in messages catalog)
+_TELEGRAM_COMMAND_KEYS: list[tuple[str, str]] = [
+    ("help", "tg.cmd.help"),
+    ("status", "tg.cmd.status"),
+    ("models", "tg.cmd.models"),
+    ("menu", "tg.cmd.menu"),
+    ("mode", "tg.cmd.mode"),
+    ("profile", "tg.cmd.profile"),
+    ("stream", "tg.cmd.stream"),
+    ("sessions", "tg.cmd.sessions"),
+    ("switch", "tg.cmd.switch"),
+    ("clear", "tg.cmd.clear"),
+    ("stop", "tg.cmd.stop"),
+    ("mcp", "tg.cmd.mcp"),
+    ("new", "tg.cmd.new"),
+    ("memory", "tg.cmd.memory"),
+    ("skills", "tg.cmd.skills"),
+    ("subagents", "tg.cmd.subagents"),
+    ("tools", "tg.cmd.tools"),
+    ("last", "tg.cmd.last"),
+    ("metrics", "tg.cmd.metrics"),
+    ("compress", "tg.cmd.compress"),
+    ("init", "tg.cmd.init"),
+    ("cron", "tg.cmd.cron"),
+    ("lang", "tg.cmd.lang"),
+    ("yes", "tg.cmd.yes"),
+    ("no", "tg.cmd.no"),
 ]
 
 
@@ -45,18 +48,26 @@ class TelegramCommandSpec:
         return cls(command=command, description=description, slash=f"/{command}")
 
 
-def command_specs() -> list[TelegramCommandSpec]:
-    return [TelegramCommandSpec.from_pair(c, d) for c, d in TELEGRAM_MENU_COMMANDS]
+def telegram_menu_commands(locale: str | None = None) -> list[tuple[str, str]]:
+    loc = locale or DEFAULT_LOCALE
+    return [(cmd, t(key, loc)) for cmd, key in _TELEGRAM_COMMAND_KEYS]
 
 
-async def register_bot_commands(bot: Any) -> list[str]:
+def command_specs(locale: str | None = None) -> list[TelegramCommandSpec]:
+    return [
+        TelegramCommandSpec.from_pair(cmd, desc)
+        for cmd, desc in telegram_menu_commands(locale)
+    ]
+
+
+async def register_bot_commands(bot: Any, *, locale: str | None = None) -> list[str]:
     """Register commands in Telegram menu (side button + autocomplete)."""
     try:
         from aiogram.types import BotCommand, BotCommandScopeDefault, MenuButtonCommands
     except ImportError:
         return []
 
-    specs = command_specs()
+    specs = command_specs(locale)
     commands = [
         BotCommand(command=spec.command, description=spec.description[:256])
         for spec in specs
@@ -87,45 +98,37 @@ async def sync_bot_menu(profile: str = "default") -> list[str]:
     except ImportError as e:
         raise ImportError("uv sync --extra telegram") from e
 
+    locale = LocaleStore(profile).get()
     bot = Bot(token=settings.bot_token)
     try:
-        return await register_bot_commands(bot)
+        return await register_bot_commands(bot, locale=locale)
     finally:
         await bot.session.close()
 
 
-def help_message_html() -> str:
+def help_message_html(locale: str | None = None) -> str:
     """HTML help for /help and /start."""
+    loc = locale or DEFAULT_LOCALE
     lines = [
-        "<b>Helix — команды</b>",
+        f"<b>{escape_html_simple(t('tg.help.title', loc))}</b>",
         "",
-        "<b>Чат</b>",
-        "Отправьте текст — агент ответит одним живым сообщением.",
+        f"<b>{escape_html_simple(t('tg.help.chat', loc))}</b>",
+        escape_html_simple(t("tg.help.chat_body", loc)),
         "",
-        "<b>Команды</b> (меню слева от поля ввода):",
+        f"<b>{escape_html_simple(t('tg.help.commands', loc))}</b>",
     ]
-    for spec in command_specs():
-        lines.append(f"• <code>/{spec.command}</code> — {escape_html_simple(spec.description)}")
+    for spec in command_specs(loc):
+        lines.append(
+            f"• <code>/{spec.command}</code> — {escape_html_simple(spec.description)}"
+        )
     lines.extend(
         [
             "",
-            "<b>Кнопки</b>",
-            "<code>/mode</code> <code>/profile</code> <code>/sessions</code> <code>/stream</code> — выбор кнопками",
-            "<code>/models</code> — смена LLM на лету (до следующего сообщения)",
-            "<code>/status</code> <code>/menu</code> — панель быстрых действий",
+            f"<b>{escape_html_simple(t('tg.help.buttons', loc))}</b>",
+            escape_html_simple(t("tg.help.buttons_body", loc)),
             "",
-            "<b>Дополнительно</b>",
-            "• <code>/memory запрос</code> — семантический поиск",
-            "• <code>/compress</code> — сжать историю диалога (освободить окно контекста)",
-            "• <code>/init</code> — глубокий анализ проекта в .helix/HELIX.md",
-            "• <code>/profile имя</code> — смена профиля текстом",
-            "• <code>/plan-confirm</code> · <code>/plan-reject</code> — план",
-            "• <code>/cron</code> — периодические задачи (список, вкл/выкл, удаление)",
-            "  <code>/cron add every day at 9 :: задача</code>",
-            "• <code>/mcp</code> — меню MCP серверов (list / install / assign / remove / test / tools)",
-            "  <code>/mcp remove имя</code> — удалить MCP сервер",
-            "",
-            "Подтверждения: кнопки под сообщением или <code>/yes</code> <code>/no</code>",
+            f"<b>{escape_html_simple(t('tg.help.extra', loc))}</b>",
+            escape_html_simple(t("tg.help.extra_body", loc)),
         ]
     )
     return "\n".join(lines)

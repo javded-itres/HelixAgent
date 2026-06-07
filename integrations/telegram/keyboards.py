@@ -278,25 +278,28 @@ def models_provider_keyboard(
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def status_menu_keyboard() -> Any:
+def status_menu_keyboard(locale: str | None = None) -> Any:
     from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+    from core.i18n.messages import t
+
+    loc = locale or "en"
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [
-                InlineKeyboardButton(text="Режим", callback_data=_cb("r", "mode")),
-                InlineKeyboardButton(text="Профиль", callback_data=_cb("r", "profile")),
+                InlineKeyboardButton(text=t("tg.menu.mode", loc), callback_data=_cb("r", "mode")),
+                InlineKeyboardButton(text=t("tg.menu.profile", loc), callback_data=_cb("r", "profile")),
             ],
             [
-                InlineKeyboardButton(text="Сессии", callback_data=_cb("r", "sessions")),
-                InlineKeyboardButton(text="Стриминг", callback_data=_cb("r", "stream")),
+                InlineKeyboardButton(text=t("tg.menu.sessions", loc), callback_data=_cb("r", "sessions")),
+                InlineKeyboardButton(text=t("tg.menu.streaming", loc), callback_data=_cb("r", "stream")),
             ],
             [
-                InlineKeyboardButton(text="Модели", callback_data=_cb("r", "models")),
+                InlineKeyboardButton(text=t("tg.menu.models", loc), callback_data=_cb("r", "models")),
                 InlineKeyboardButton(text="Tools", callback_data=_cb("r", "tools")),
             ],
             [
-                InlineKeyboardButton(text="Сжать контекст", callback_data=_cb("r", "compress")),
+                InlineKeyboardButton(text=t("tg.menu.compress", loc), callback_data=_cb("r", "compress")),
             ],
             [
                 InlineKeyboardButton(text="Cron", callback_data=_cb("r", "cron")),

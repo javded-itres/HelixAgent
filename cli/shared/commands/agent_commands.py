@@ -7,6 +7,7 @@ from typing import Any
 
 from cli.shared.commands.registry import SLASH_COMMANDS
 from cli.shared.slash_input import is_mode_slash, is_models_slash, normalize_slash_input
+from core.i18n import host_locale, set_host_locale, t
 from core.plan_review.review_guard import PlanReviewChoice
 from core.security.confirmation import ConfirmationChoice
 
@@ -23,8 +24,13 @@ class AgentCommands:
         cmd = normalize_slash_input(command.strip())
         lower = cmd.lower()
         h = self.host
+        lang = host_locale(h)
 
         try:
+            if lower.startswith("/lang"):
+                await self._lang(cmd, lang)
+                return
+
             if lower in ("/clear", "/cls"):
                 h.action_clear_chat()
 
@@ -54,7 +60,7 @@ class AgentCommands:
                 else:
                     h.streaming_enabled = not h.streaming_enabled
                 st = "on" if h.streaming_enabled else "off"
-                h.transcript_write(f"[dim]streaming {st}[/dim]")
+                h.transcript_write(f"[dim]{t('streaming', lang, state=st)}[/dim]")
                 h._refresh_status_bar()
 
             elif is_models_slash(cmd):
@@ -68,15 +74,13 @@ class AgentCommands:
                 elif hasattr(h, "_interactive"):
                     await h._interactive.show_models()
                 else:
-                    h.transcript_write(
-                        "Модели: настройте agent_models в профиле (helix models)"
-                    )
+                    h.transcript_write(t("models_hint", lang))
 
             elif is_mode_slash(cmd):
                 parts = lower.split()
                 if len(parts) > 1 and parts[1] in h._execution_modes:
                     h._execution_mode_index = h._execution_modes.index(parts[1])
-                    h.transcript_write(f"[dim]mode → {parts[1]}[/dim]")
+                    h.transcript_write(f"[dim]{t('mode_set', lang, mode=parts[1])}[/dim]")
                 else:
                     await h.action_cycle_execution_mode()
                 h._refresh_status_bar()
@@ -95,14 +99,14 @@ class AgentCommands:
                 if len(parts) >= 2 and parts[1].isdigit():
                     h.run_worker(h._switch_to_session(int(parts[1])))
                 else:
-                    h.transcript_write("[yellow]Usage: /switch N[/yellow]")
+                    h.transcript_write(f"[yellow]{t('usage_switch', lang)}[/yellow]")
 
             elif lower.startswith("/session name"):
                 parts = cmd.split(maxsplit=2)
                 if len(parts) >= 3:
                     h._rename_current_session(parts[2].strip())
                 else:
-                    h.transcript_write("[yellow]Usage: /session name <name>[/yellow]")
+                    h.transcript_write(f"[yellow]{t('usage_session_name', lang)}[/yellow]")
 
             elif lower.startswith("/profile"):
                 await self._profile(cmd)
@@ -110,14 +114,14 @@ class AgentCommands:
             elif lower.startswith("/memory-clear") or lower == "/memory clear":
                 h._memory_search_query = ""
                 h._memory_search_results = []
-                h.transcript_write("[dim]memory search cleared[/dim]")
+                h.transcript_write(f"[dim]{t('memory_cleared', lang)}[/dim]")
 
             elif lower.startswith("/memory"):
                 query = cmd[7:].strip() if len(cmd) > 7 else ""
                 if query:
                     h.run_worker(h._search_memory(query))
                 else:
-                    h.transcript_write("[yellow]Usage: /memory <query>[/yellow]")
+                    h.transcript_write(f"[yellow]{t('usage_memory', lang)}[/yellow]")
 
             elif lower in ("/last", "/last-tool"):
                 h._show_full_tool_result(0)
@@ -136,11 +140,11 @@ class AgentCommands:
                 text = h._transcript_store.last_tool()
                 if not text and h._recent_tool_results:
                     text = h._recent_tool_results[-1]["full_result"]
-                h.copy_text(text or "", label="last tool output copied")
+                h.copy_text(text or "", label=t("copy_tool", lang))
 
             elif lower in ("/copy all", "/copy-all", "/copy log"):
                 body = h._transcript_store.format_all()
-                h.copy_text(body, label="full transcript copied")
+                h.copy_text(body, label=t("copy_all", lang))
 
             elif lower in ("/open", "/view", "/transcript"):
                 h.action_open_transcript()
@@ -199,11 +203,11 @@ class AgentCommands:
                 pass
 
             else:
-                h.transcript_write(f"[yellow]Unknown: {cmd}[/yellow]")
-                h.transcript_write("[dim]Type /help[/dim]")
+                h.transcript_write(f"[yellow]{t('unknown_cmd', lang, cmd=cmd)}[/yellow]")
+                h.transcript_write(f"[dim]{t('type_help', lang)}[/dim]")
 
         except Exception as e:
-            h.transcript_write(f"[red]Command failed: {e}[/red]")
+            h.transcript_write(f"[red]{t('command_failed', lang, error=e)}[/red]")
 
     async def _status(self, h: Any) -> None:
         if hasattr(h, "action_status"):
@@ -211,9 +215,10 @@ class AgentCommands:
             if asyncio.iscoroutine(result):
                 await result
             return
+        lang = host_locale(h)
         mode = h._execution_modes[h._execution_mode_index]
         h.transcript_write(
-            f"[dim]profile {h.profile} · mode {mode} · session {h.conversation_id}[/dim]"
+            f"[dim]{t('status_line', lang, profile=h.profile, mode=mode, session=h.conversation_id)}[/dim]"
         )
 
     async def _metrics(self) -> None:
@@ -223,10 +228,30 @@ class AgentCommands:
 
             h.transcript_write(format_metrics_message(metrics.get_summary()))
         except Exception as e:
-            h.transcript_write(f"metrics error: {e}")
+            h.transcript_write(t("metrics_error", host_locale(h), error=e))
+
+    async def _lang(self, command: str, lang: str) -> None:
+        h = self.host
+        parts = command.split()
+        if len(parts) == 1:
+            h.transcript_write(t("lang.current", lang, code=lang.upper()))
+            h.transcript_write(t("lang.usage", lang))
+            return
+        target = parts[1].strip().lower()
+        try:
+            new_lang = set_host_locale(h, target)
+        except ValueError:
+            h.transcript_write(t("lang.invalid", lang, value=parts[1]))
+            return
+        h.transcript_write(t("lang.set", new_lang, code=new_lang.upper()))
+        if hasattr(h, "_refresh_status_bar"):
+            h._refresh_status_bar()
+        if hasattr(h, "_sync_telegram_menu"):
+            await h._sync_telegram_menu()
 
     async def _profile(self, command: str) -> None:
         h = self.host
+        lang = host_locale(h)
         parts = command.split()
         profiles = h._get_available_profiles()
         if len(parts) >= 2:
@@ -236,17 +261,17 @@ class AgentCommands:
                 if 0 <= idx < len(profiles):
                     h.run_worker(h._switch_profile(profiles[idx]))
                 else:
-                    h.transcript_write("[red]invalid profile number[/red]")
+                    h.transcript_write(f"[red]{t('invalid_profile_num', lang)}[/red]")
             elif target in profiles:
                 h.run_worker(h._switch_profile(target))
             else:
-                h.transcript_write(f"[red]unknown profile: {target}[/red]")
+                h.transcript_write(f"[red]{t('unknown_profile', lang, name=target)}[/red]")
         else:
-            lines = ["[bold]Profiles[/bold]"]
+            lines = [f"[bold]{t('profiles_title', lang)}[/bold]"]
             for i, p in enumerate(profiles, 1):
                 mark = " *" if p == h.profile else ""
                 lines.append(f"  {i}. {p}{mark}")
-            lines.append("[dim]/profile <name|N>[/dim]")
+            lines.append(f"[dim]{t('usage_profile', lang)}[/dim]")
             h.transcript_write("\n".join(lines))
 
     async def _try_skill_slash(self, h: Any, command: str) -> bool:
@@ -299,7 +324,7 @@ class AgentCommands:
 
         if not is_skill_allowed_for_agent(skill, agent_slot, assignments):
             h.transcript_write(
-                f"[yellow]Skill /{skill_name} is not assigned to agent '{agent_slot}'[/yellow]"
+                f"[yellow]{t('skill_not_assigned', host_locale(h), name=skill_name, slot=agent_slot)}[/yellow]"
             )
             return True
 

@@ -274,7 +274,10 @@ class HelixTelegramBot:
 
         @dp.startup()
         async def _on_startup() -> None:
-            registered = await register_bot_commands(bot)
+            from core.i18n import LocaleStore
+
+            locale = LocaleStore(settings.profile).get()
+            registered = await register_bot_commands(bot, locale=locale)
             if registered:
                 print(f"Telegram menu: {len(registered)} commands", flush=True)
             from integrations.telegram.voice_handler import warm_local_whisper_model_async

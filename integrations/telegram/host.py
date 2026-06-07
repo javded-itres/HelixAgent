@@ -10,7 +10,8 @@ from cli.shared.rich_text import content_to_plain_text
 from cli.shared.slash_input import is_slash_command, normalize_slash_input
 from integrations.telegram.live_presenter import TelegramLivePresenter
 from integrations.telegram.typing_indicator import TypingIndicator
-from integrations.telegram.commands import help_message_html
+from core.i18n import host_locale, t
+from integrations.telegram.commands import help_message_html, sync_bot_menu
 from integrations.telegram.interactive import TelegramInteractive
 from integrations.telegram.markdown import (
     markdown_to_telegram_html,
@@ -140,10 +141,16 @@ class TelegramHost:
     def action_clear_chat(self) -> None:
         self._session._transcript_store.clear()
         self._session._recent_tool_results.clear()
-        self.transcript_write("cleared")
+        self.transcript_write(t("cleared", host_locale(self)))
 
     def action_help(self) -> None:
-        asyncio.create_task(self._send_html(help_message_html()))
+        asyncio.create_task(self._send_html(help_message_html(host_locale(self))))
+
+    async def _sync_telegram_menu(self) -> None:
+        try:
+            await sync_bot_menu(self.profile)
+        except Exception:
+            pass
 
     async def action_status(self) -> None:
         await self._interactive.show_status()
@@ -160,19 +167,22 @@ class TelegramHost:
         )
 
     def action_copy_output(self) -> None:
+        lang = host_locale(self)
         text = self._session._transcript_store.last_assistant()
         if text:
-            self.copy_text(text, label="copied")
+            self.copy_text(text, label=t("copy_label", lang))
         else:
-            self.transcript_write("nothing to copy")
+            self.transcript_write(t("copy_nothing", lang))
 
     def action_open_transcript(self) -> None:
+        lang = host_locale(self)
         body = self._session._transcript_store.format_all()
-        self.copy_text(body or "empty", label="transcript")
+        self.copy_text(body or t("transcript_empty", lang), label="transcript")
 
     def copy_text(self, text: str, *, label: str = "copied") -> None:
+        lang = host_locale(self)
         if not text or not text.strip():
-            self.transcript_write("nothing to copy")
+            self.transcript_write(t("copy_nothing", lang))
             return
         # Split long content across multiple messages instead of hard truncating.
         if len(text) > 3800:
