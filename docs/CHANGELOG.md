@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.4 — 2026-06-07
+
+### Added
+- **web-docs** — marketing landing page (advantages, capabilities, use cases, Russian software emphasis)
+- Separate **Documentation** tab with hub, sidebar navigation, and search
+
+### Changed
+- Site default language set to **Russian** (`ru`)
+- Install guides and PyPI docs updated for `HelixAgentAi`
+
 ## 0.1.3 — 2026-06-07
 
 ### Changed
