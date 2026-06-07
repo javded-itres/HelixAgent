@@ -14,6 +14,7 @@ from cli.services.docs_site import docs_url, resolve_web_docs_dir
 from cli.services.gateway_state import update_docs_info, update_telegram_pid
 from cli.utils.ports import resolve_listen_port
 from cli.utils.rich_console import print_info, print_success, print_warning
+from integrations.max.gateway_routes import max_enabled, max_should_webhook
 from integrations.telegram.config import load_telegram_settings, telegram_aiogram_available
 
 
@@ -135,6 +136,12 @@ async def _run_supervisor_async(
         companions.append("telegram (needs: uv sync --extra telegram)")
     else:
         companions.append("telegram (disabled)")
+    if max_should_webhook(profile):
+        companions.append("max (webhook)")
+    elif max_enabled(profile):
+        companions.append("max (polling — use helix max)")
+    else:
+        companions.append("max (disabled)")
     print_info(f"Companion services: {', '.join(companions)}")
 
     docs_proc = _docs_subprocess(docs_host, docs_port) if with_docs else None

@@ -10,7 +10,7 @@
 
 ```bash
 pip install HelixAgentAi
-pip install "HelixAgentAi[telegram,browser]"
+pip install "HelixAgentAi[telegram,max,browser]"
 pip install "HelixAgentAi[all]"
 ```
 

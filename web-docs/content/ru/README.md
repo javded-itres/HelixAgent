@@ -19,6 +19,7 @@
 - [HUB.md](HUB.md) — каталоги навыков
 - [GATEWAY.md](GATEWAY.md) — API gateway
 - [TELEGRAM.md](TELEGRAM.md) — Telegram
+- [MAX.md](MAX.md) — **бот для мессенджера MAX**
 - [BROWSER_TOOLS.md](BROWSER_TOOLS.md) — Playwright
 
 ## Эксплуатация

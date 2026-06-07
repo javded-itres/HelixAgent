@@ -28,6 +28,7 @@ helix -p work status
 | `config` | config.yaml |
 | `models` | Провайдеры и маршрутизация |
 | `telegram` | Telegram-бот |
+| `max` | Бот для мессенджера MAX |
 | `gateway` | API gateway |
 | `cron` | Планировщик задач (в gateway) |
 | `logs` | Просмотр логов, ротация, debug |
@@ -234,6 +235,27 @@ helix telegram sync-menu
 ```
 
 [TELEGRAM.md](TELEGRAM.md)
+
+---
+
+## `helix max`
+
+Требует `uv sync --extra max` и `MAX_ACCESS_TOKEN`.
+
+| Подкоманда | Описание |
+|------------|----------|
+| `setup` | Токен, allowlist, режим webhook/polling, сохранение |
+| *(по умолчанию)* | Long Polling (dev/test) |
+| `status` | `GET /me`, подписки webhook |
+
+```bash
+helix max setup
+helix max
+helix max status
+```
+
+Продакшен: `helix gateway start` (webhook через `POST /subscriptions`).  
+См. [MAX.md](MAX.md).
 
 ---
 

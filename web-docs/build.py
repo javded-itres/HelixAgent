@@ -28,6 +28,7 @@ NAV = [
     ("HUB", {"en": "Hub & Skills", "ru": "Hub и навыки"}),
     ("GATEWAY", {"en": "API Gateway", "ru": "API Gateway"}),
     ("TELEGRAM", {"en": "Telegram", "ru": "Telegram"}),
+    ("MAX", {"en": "MAX Messenger", "ru": "MAX"}),
     ("BROWSER_TOOLS", {"en": "Browser Tools", "ru": "Браузер"}),
     ("ARCHITECTURE", {"en": "Architecture", "ru": "Архитектура"}),
     ("SECURITY", {"en": "Security", "ru": "Безопасность"}),

@@ -69,7 +69,14 @@ const I18N = {
     mkt_hero_title: "Self-improving",
     mkt_hero_accent: "AI agent",
     mkt_hero_lead:
-      "Helix is a production-ready agent platform: persistent memory, skills, tool calling, MCP, and CLI, TUI, API gateway, and Telegram — deploy on your infrastructure with local or cloud LLMs.",
+      "Helix is a production-ready agent platform: persistent memory, skills, tool calling, MCP, and CLI, TUI, API gateway, Telegram, and MAX messenger — deploy on your infrastructure with local or cloud LLMs.",
+    mkt_max_badge: "Unique feature",
+    mkt_max_title: "MAX messenger integration",
+    mkt_max_text:
+      "Helix is among the first open-source AI agents with native MAX support — the Russian messenger platform. Same memory, skills, MCP, and slash commands as TUI and Telegram, with webhook production mode via gateway.",
+    mkt_max_link: "MAX integration guide",
+    mkt_adv_5_t: "MAX messenger",
+    mkt_adv_5_d: "Native bot for MAX — domestic messenger, webhook-ready, inline approvals, shared agent brain.",
     mkt_ru_title: "Russian engineering",
     mkt_ru_text:
       "Helix is developed in Russia by the IT-RES team. Open source (MIT), on-premise deployment, support for Ollama and LiteLLM — your data stays under your control. Domestic software you can audit and extend.",
@@ -90,13 +97,16 @@ const I18N = {
     mkt_use_2_d: "Scheduled jobs, gateway API, `helix run` in scripts and CI pipelines.",
     mkt_use_3_t: "Telegram assistant",
     mkt_use_3_d: "Mobile access with voice notes, file handling, and the same agent brain.",
-    mkt_use_4_t: "API gateway",
-    mkt_use_4_d: "OpenAI-compatible HTTP API for apps, bots, and internal services.",
+    mkt_use_4_t: "MAX messenger bot",
+    mkt_use_4_d: "Reach users on the Russian MAX platform — personal and group chats with full agent capabilities.",
+    mkt_use_5_t: "API gateway",
+    mkt_use_5_d: "OpenAI-compatible HTTP API for apps, bots, and internal services.",
     mkt_how_title: "Interfaces",
     mkt_how_tui: "Full-screen TUI — daily work, tools, hub, MCP",
     mkt_how_chat: "Terminal REPL — lightweight chat",
     mkt_how_run: "One-shot queries and scripting",
     mkt_how_gw: "Background HTTP gateway + optional docs site",
+    mkt_how_max: "MAX bot — webhook (prod) or polling (dev)",
     install_pypi: "pipx install HelixAgentAi",
     install_pypi_hint: "PyPI · CLI command: helix",
     install_pypi_link: "PyPI",
@@ -120,7 +130,9 @@ const I18N = {
     feat_security: "Security",
     feat_security_desc: "Auth, rate limits, whitelist, confirmations.",
     feat_interfaces: "Interfaces",
-    feat_interfaces_desc: "TUI, chat, run, gateway, Telegram.",
+    feat_interfaces_desc: "TUI, chat, run, gateway, Telegram, MAX.",
+    feat_max: "MAX messenger",
+    feat_max_desc: "Native integration with the Russian MAX platform — unique among open agents.",
   },
   ru: {
     tagline: "Самообучающийся агент",
@@ -138,7 +150,14 @@ const I18N = {
     mkt_hero_title: "Самообучающийся",
     mkt_hero_accent: "AI-агент",
     mkt_hero_lead:
-      "Helix — платформа AI-агентов для продакшена: память, навыки, инструменты, MCP и интерфейсы CLI, TUI, API gateway и Telegram. Развёртывание на своей инфраструктуре с локальными или облачными LLM.",
+      "Helix — платформа AI-агентов для продакшена: память, навыки, инструменты, MCP и интерфейсы CLI, TUI, API gateway, Telegram и мессенджер MAX. Развёртывание на своей инфраструктуре с локальными или облачными LLM.",
+    mkt_max_badge: "Уникальная особенность",
+    mkt_max_title: "Интеграция с мессенджером MAX",
+    mkt_max_text:
+      "Helix — один из первых open-source AI-агентов с нативной поддержкой MAX. Та же память, навыки, MCP и слэш-команды, что в TUI и Telegram. Продакшен через webhook и `helix gateway start`.",
+    mkt_max_link: "Руководство по интеграции MAX",
+    mkt_adv_5_t: "Мессенджер MAX",
+    mkt_adv_5_d: "Нативный бот для MAX — отечественная платформа, webhook, inline-подтверждения, общий мозг агента.",
     mkt_ru_title: "Отечественная разработка",
     mkt_ru_text:
       "Helix разработан в России командой IT-RES. Открытый исходный код (MIT), установка on-premise, поддержка Ollama и LiteLLM — данные остаются под вашим контролем. Российское ПО, которое можно проверить и расширить.",
@@ -159,13 +178,16 @@ const I18N = {
     mkt_use_2_d: "Cron-задачи, API gateway, `helix run` в скриптах и CI.",
     mkt_use_3_t: "Telegram-бот",
     mkt_use_3_d: "Мобильный доступ, голосовые сообщения, файлы — тот же агент.",
-    mkt_use_4_t: "API gateway",
-    mkt_use_4_d: "HTTP API в формате OpenAI для приложений и внутренних сервисов.",
+    mkt_use_4_t: "Бот для MAX",
+    mkt_use_4_d: "Доступ к пользователям MAX — личные и групповые чаты с полным функционалом агента.",
+    mkt_use_5_t: "API gateway",
+    mkt_use_5_d: "HTTP API в формате OpenAI для приложений и внутренних сервисов.",
     mkt_how_title: "Как работать с Helix",
     mkt_how_tui: "Полноэкранный TUI — основной интерфейс",
     mkt_how_chat: "Чат в терминале — лёгкий REPL",
     mkt_how_run: "Одиночные запросы и скрипты",
     mkt_how_gw: "Фоновый HTTP gateway",
+    mkt_how_max: "Бот MAX — webhook (prod) или polling (dev)",
     install_pypi: "pipx install HelixAgentAi",
     install_pypi_hint: "PyPI · команда: helix",
     install_pypi_link: "PyPI",
@@ -189,13 +211,15 @@ const I18N = {
     feat_security: "Безопасность",
     feat_security_desc: "Auth, лимиты, whitelist, подтверждения.",
     feat_interfaces: "Интерфейсы",
-    feat_interfaces_desc: "TUI, chat, run, gateway, Telegram.",
+    feat_interfaces_desc: "TUI, chat, run, gateway, Telegram, MAX.",
+    feat_max: "Мессенджер MAX",
+    feat_max_desc: "Нативная интеграция с российской платформой MAX — уникально среди open-source агентов.",
   },
 };
 
 const NAV_SECTIONS = {
   getting_started: ["installation", "start-here", "quickstart", "configuration"],
-  interfaces: ["cli", "slash-commands", "tui", "hub", "gateway", "telegram", "browser-tools"],
+  interfaces: ["cli", "slash-commands", "tui", "hub", "gateway", "telegram", "max", "browser-tools"],
   operations: ["security", "deployment", "doctor", "logs", "pypi", "troubleshooting", "user-guide"],
   architecture: ["architecture", "readme"],
 };
@@ -398,6 +422,7 @@ function renderSidebar() {
 
 function featureCardsHtml() {
   const feats = [
+    ["feat_max", "feat_max_desc", "💬"],
     ["feat_tools", "feat_tools_desc", "⚡"],
     ["feat_memory", "feat_memory_desc", "🧠"],
     ["feat_skills", "feat_skills_desc", "📚"],
@@ -450,8 +475,19 @@ function renderMarketing() {
       </div>
     </section>
 
+    <section class="max-callout">
+      <div class="max-callout-icon" aria-hidden="true">💬</div>
+      <div>
+        <span class="max-callout-badge">${t("mkt_max_badge")}</span>
+        <h2>${t("mkt_max_title")}</h2>
+        <p>${t("mkt_max_text")}</p>
+        <a href="${docHref("max")}" class="max-callout-link">${t("mkt_max_link")} →</a>
+      </div>
+    </section>
+
     <h2 class="section-title">${t("mkt_adv_title")}</h2>
     <div class="advantages-grid">
+      <article class="advantage-card"><h3>${t("mkt_adv_5_t")}</h3><p>${t("mkt_adv_5_d")}</p></article>
       <article class="advantage-card"><h3>${t("mkt_adv_1_t")}</h3><p>${t("mkt_adv_1_d")}</p></article>
       <article class="advantage-card"><h3>${t("mkt_adv_2_t")}</h3><p>${t("mkt_adv_2_d")}</p></article>
       <article class="advantage-card"><h3>${t("mkt_adv_3_t")}</h3><p>${t("mkt_adv_3_d")}</p></article>
@@ -467,6 +503,7 @@ function renderMarketing() {
       <article class="use-case-card"><span class="use-case-num">02</span><h3>${t("mkt_use_2_t")}</h3><p>${t("mkt_use_2_d")}</p></article>
       <article class="use-case-card"><span class="use-case-num">03</span><h3>${t("mkt_use_3_t")}</h3><p>${t("mkt_use_3_d")}</p></article>
       <article class="use-case-card"><span class="use-case-num">04</span><h3>${t("mkt_use_4_t")}</h3><p>${t("mkt_use_4_d")}</p></article>
+      <article class="use-case-card"><span class="use-case-num">05</span><h3>${t("mkt_use_5_t")}</h3><p>${t("mkt_use_5_d")}</p></article>
     </div>
 
     <h2 class="section-title">${t("mkt_how_title")}</h2>
@@ -475,6 +512,7 @@ function renderMarketing() {
       <div class="how-card"><code>helix chat-command</code><p>${t("mkt_how_chat")}</p></div>
       <div class="how-card"><code>helix run "…"</code><p>${t("mkt_how_run")}</p></div>
       <div class="how-card"><code>helix gateway start</code><p>${t("mkt_how_gw")}</p></div>
+      <div class="how-card"><code>helix max</code><p>${t("mkt_how_max")}</p></div>
     </div>
 
     <section class="cta-band">

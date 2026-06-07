@@ -15,11 +15,12 @@ Optional extras (install when needed):
 | Extra | PyPI (`pip` / `pipx`) | From source (`uv sync`) | Enables |
 |-------|----------------------|-------------------------|---------|
 | `telegram` | `pip install "HelixAgentAi[telegram]"` | `uv sync --extra telegram` | `helix telegram`, gateway Telegram |
+| `max` | `pip install "HelixAgentAi[max]"` | `uv sync --extra max` | `helix max`, gateway MAX webhook, PDF files |
 | `browser` | `pip install "HelixAgentAi[browser]"` | `uv sync --extra browser` | Playwright tools — [BROWSER_TOOLS.md](BROWSER_TOOLS.md) |
 | `voice` | `pip install "HelixAgentAi[voice]"` | `uv sync --extra voice` | Whisper voice notes in Telegram |
 | `tui-web` | `pip install "HelixAgentAi[tui-web]"` | `uv sync --extra tui-web` | `helix tui --web` |
 | `windows` | `pip install "HelixAgentAi[windows]"` | `uv sync --extra windows` | `psutil` process-tree cleanup |
-| `all` | `pip install "HelixAgentAi[all]"` | `uv sync --extra all` | all of the above |
+| `all` | `pip install "HelixAgentAi[all]"` | `uv sync --extra all` | all of the above (includes `pypdf` for Telegram/MAX files) |
 
 After the `browser` extra: `playwright install chromium`
 

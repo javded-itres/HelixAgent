@@ -1,6 +1,6 @@
 # Helix Doctor
 
-Диагностика профилей, LLM, gateway, Telegram и настроек безопасности.
+Диагностика профилей, LLM, gateway, Telegram, MAX и настроек безопасности.
 
 ## Использование
 
@@ -34,6 +34,8 @@ LLM (default LLM профиля):
 - LLM endpoint и модель
 - Gateway state / health
 - Telegram token и allowlist
+- MAX: токен, allowlist, webhook URL/secret (коды `max.*`)
+- MAX file extras (`max.files_extra_missing` при включённых PDF-файлах)
 - Production: pepper, CORS, auth, code executor
 
 После исправлений смотрите runtime-логи: `helix logs -l error` — [LOGS.md](LOGS.md).

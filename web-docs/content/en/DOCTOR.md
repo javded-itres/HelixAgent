@@ -1,6 +1,6 @@
 # Helix Doctor
 
-Diagnostics for profiles, LLM, gateway, Telegram, and security settings.
+Diagnostics for profiles, LLM, gateway, Telegram, MAX, and security settings.
 
 ## Usage
 
@@ -35,6 +35,8 @@ LLM fixes (default profile LLM):
 - LLM endpoint and model availability
 - Gateway stale state / health
 - Telegram token and allowlist
+- MAX access token, allowlist, webhook URL/secret (`max.*` findings)
+- MAX file extras (`max.files_extra_missing` when PDF extraction enabled)
 - Production: pepper, CORS, auth, code executor
 
 After fixes, inspect runtime logs: `helix logs -l error` — see [LOGS.md](LOGS.md).

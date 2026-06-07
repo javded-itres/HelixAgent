@@ -19,6 +19,7 @@ from cli.commands.install_cmd import app as install_app
 from cli.commands.update_cmd import app as update_app
 from cli.commands.docs import app as docs_app
 from cli.commands.telegram import register_telegram_command
+from cli.commands.max import register_max_command
 
 # Create Typer app
 app = typer.Typer(
@@ -34,6 +35,7 @@ app.add_typer(memory.app, name="memory")
 app.add_typer(config.app, name="config")
 app.add_typer(models.app, name="models")
 register_telegram_command(app)
+register_max_command(app)
 app.add_typer(gateway.app, name="gateway")
 app.add_typer(doctor.app, name="doctor")
 app.add_typer(mcp_app, name="mcp")

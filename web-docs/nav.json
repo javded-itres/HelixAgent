@@ -66,6 +66,12 @@
     "file_key": "TELEGRAM"
   },
   {
+    "slug": "max",
+    "en": "MAX Messenger",
+    "ru": "MAX",
+    "file_key": "MAX"
+  },
+  {
     "slug": "browser-tools",
     "en": "Browser Tools",
     "ru": "Браузер",

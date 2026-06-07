@@ -45,8 +45,15 @@ async def lifespan(app: FastAPI):
     gateway_deps.api_key_manager = api_key_manager
     gateway_deps.rate_limiter = rate_limiter
 
+    from integrations.max.gateway_routes import init_max_webhook, shutdown_max_webhook
+
+    import os
+
+    await init_max_webhook(os.getenv("HELIX_PROFILE", "default"))
+
     yield
 
+    await shutdown_max_webhook()
     await app.state.dishka_container.close()
 
 
@@ -74,6 +81,10 @@ _agent_request_lock = asyncio.Lock()
 _dishka_container = create_async_container(resolve_gateway_runtime_config())
 setup_dishka(container=_dishka_container, app=app)
 
+from integrations.max.gateway_routes import register_max_routes
+
+register_max_routes(app)
+
 
 @app.get("/")
 async def root():
@@ -89,11 +100,15 @@ async def root():
 @app.get("/health")
 async def health():
     """Health check endpoint."""
+    from integrations.max.gateway_routes import max_gateway_state
+
+    max_state = max_gateway_state()
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
         "agent_ready": agent is not None and agent._initialized,
         "require_auth": settings.effective_require_auth,
+        "max_webhook": max_state is not None and max_state.subscribed,
     }
 
 

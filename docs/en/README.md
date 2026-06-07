@@ -1,6 +1,6 @@
 # Helix Documentation (English)
 
-Helix is a self-improving AI agent with memory, skills, tool calling, MCP, CLI, TUI, API gateway, and Telegram.
+Helix is a self-improving AI agent with memory, skills, tool calling, MCP, CLI, TUI, API gateway, Telegram, and MAX messenger.
 
 **Install from PyPI:** `pipx install HelixAgentAi` — [pypi.org/project/HelixAgentAi](https://pypi.org/project/HelixAgentAi/)
 
@@ -19,6 +19,7 @@ Helix is a self-improving AI agent with memory, skills, tool calling, MCP, CLI, 
 - [HUB.md](HUB.md) — `helix hub`, catalogs, `skill_assignments`
 - [GATEWAY.md](GATEWAY.md) — `helix gateway start|stop|status|reload`
 - [TELEGRAM.md](TELEGRAM.md) — Telegram bot
+- [MAX.md](MAX.md) — **MAX messenger bot** (Russian platform)
 - [BROWSER_TOOLS.md](BROWSER_TOOLS.md) — Playwright `browser_*` tools
 
 ## Packaging

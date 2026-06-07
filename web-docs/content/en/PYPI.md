@@ -21,7 +21,7 @@ Install:
 pipx install HelixAgentAi
 # or inside a venv:
 pip install HelixAgentAi
-pip install "HelixAgentAi[telegram,browser,tui-web]"
+pip install "HelixAgentAi[telegram,max,browser,tui-web]"
 ```
 
 The console command is **`helix`** (registered via `[project.scripts]` → `cli.main:main`).  
@@ -48,7 +48,7 @@ Update `PYPI_PACKAGE` in `cli/installer/update.py` if the distribution name chan
 | Packages | `cli`, `core`, `api`, `integrations` |
 | Root settings module | `config.py` (force-included in wheel) |
 | Console script | `helix = cli.main:main` |
-| Extras | `browser`, `telegram`, `voice`, `tui-web`, `windows`, `all` |
+| Extras | `browser`, `telegram`, `max`, `voice`, `tui-web`, `windows`, `all` |
 | License | `LICENSE` + `license-files` |
 
 ## Local build check
@@ -223,7 +223,7 @@ After publish, update:
 ## Known limitations
 
 - **Heavy core dependencies** — ChromaDB, LangGraph; first install may be slow
-- **Optional extras** — Telegram, browser, voice, and web TUI require `pip install "HelixAgentAi[all]"` (or specific extras)
+- **Optional extras** — Telegram, MAX, browser, voice, and web TUI require `pip install "HelixAgentAi[all]"` (or specific extras)
 - **Playwright** — `browser` extra requires `playwright install chromium` after pip install
 - **No bundled `.env.example` in wheel** — document copying from GitHub or `helix doctor`
 

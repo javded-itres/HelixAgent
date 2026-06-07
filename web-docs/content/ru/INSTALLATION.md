@@ -15,11 +15,12 @@ Helix требует **Python 3.12+** и устанавливается как C
 | Extra | PyPI (`pip` / `pipx`) | Из исходников (`uv sync`) | Назначение |
 |-------|----------------------|---------------------------|------------|
 | `telegram` | `pip install "HelixAgentAi[telegram]"` | `uv sync --extra telegram` | Telegram-бот |
+| `max` | `pip install "HelixAgentAi[max]"` | `uv sync --extra max` | `helix max`, MAX webhook, PDF-файлы |
 | `browser` | `pip install "HelixAgentAi[browser]"` | `uv sync --extra browser` | Playwright — [BROWSER_TOOLS.md](BROWSER_TOOLS.md) |
 | `voice` | `pip install "HelixAgentAi[voice]"` | `uv sync --extra voice` | Голосовые сообщения (Whisper) |
 | `tui-web` | `pip install "HelixAgentAi[tui-web]"` | `uv sync --extra tui-web` | `helix tui --web` |
 | `windows` | `pip install "HelixAgentAi[windows]"` | `uv sync --extra windows` | `psutil` для процессов |
-| `all` | `pip install "HelixAgentAi[all]"` | `uv sync --extra all` | всё выше |
+| `all` | `pip install "HelixAgentAi[all]"` | `uv sync --extra all` | всё выше (включая `pypdf` для Telegram/MAX) |
 
 После `browser`: `playwright install chromium`
 

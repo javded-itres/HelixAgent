@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased (`feature/max-messenger`)
+
+### Added
+- **MAX messenger** documentation — [docs/en/MAX.md](en/MAX.md), [docs/ru/MAX.md](ru/MAX.md)
+- Marketing site: MAX integration highlighted as a unique feature; docs nav entry `max`
+- **PR1 — MAX foundation:** `integrations/max/` HTTP client, config, Long Polling, `helix max setup|run|status`, ping/pong + allowlist
+- **PR2 — Agent bridge:** `MaxChatSession`, `MaxHost`, live message edits, HelixAgent + streaming, slash commands
+- **PR3 — Webhook + gateway:** `POST /max/webhook`, `POST /subscriptions` on `helix gateway start`, companion status in supervisor
+- **PR4 — Interactive:** `message_callback`, inline approvals/plan review, slash parity with inline pickers
+- **PR5 — Media:** inbound file/image/video/audio, `POST /uploads` outbound attachments, `HELIX_MAX_FILES_ENABLED`
+- **PR6 — Release:** PyPI extra `max` (pypdf), `helix doctor` MAX checks (`max.*` findings)
+
 ## 0.1.5 — 2026-06-07
 
 ### Added

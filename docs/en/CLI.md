@@ -31,6 +31,7 @@ helix --help
 | `config` | View/edit profile YAML |
 | `models` | Providers and `agent_models` routing |
 | `telegram` | Telegram bot setup and run |
+| `max` | MAX messenger bot setup and run |
 | `gateway` | API gateway supervisor |
 | `cron` | Scheduled agent tasks (gateway scheduler) |
 | `logs` | View, filter, rotate logs; debug mode |
@@ -368,7 +369,7 @@ helix doctor --no-llm
 helix -p prod doctor
 ```
 
-Checks: `~/.helix` writable, profile YAML, providers, hub lockfile, MCP env placeholders, skill assignments, gateway state, Telegram, platform (OS, PATH tools), production security.  
+Checks: `~/.helix` writable, profile YAML, providers, hub lockfile, MCP env placeholders, skill assignments, gateway state, Telegram, MAX, platform (OS, PATH tools), production security.  
 Details: [DOCTOR.md](DOCTOR.md).
 
 ---
@@ -446,6 +447,27 @@ helix telegram sync-menu
 
 Or start with gateway: `helix gateway start` (when Telegram enabled in profile/env).  
 See [TELEGRAM.md](TELEGRAM.md).
+
+---
+
+## `helix max`
+
+Requires `uv sync --extra max` and `MAX_ACCESS_TOKEN`.
+
+| Subcommand | Description |
+|------------|-------------|
+| `setup` | Token, allowlist, webhook/polling mode, save config |
+| *(default)* | Start Long Polling (dev/test) |
+| `status` | `GET /me`, webhook subscriptions |
+
+```bash
+helix max setup
+helix max
+helix max status
+```
+
+Production: `helix gateway start` (webhook via `POST /subscriptions`).  
+See [MAX.md](MAX.md).
 
 ---
 
