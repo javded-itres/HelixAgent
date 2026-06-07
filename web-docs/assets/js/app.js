@@ -97,7 +97,7 @@ const NAV_SECTIONS = {
 };
 
 let state = {
-  lang: localStorage.getItem("helix-docs-lang") || "en",
+  lang: localStorage.getItem("helix-docs-lang") || "ru",
   nav: [],
   searchIndex: [],
   activeSlug: null,
