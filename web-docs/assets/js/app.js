@@ -1,5 +1,5 @@
 /**
- * Helix Documentation Site — SPA with search, i18n, markdown rendering.
+ * Helix site — marketing landing + documentation SPA.
  */
 
 const $ = (sel, root = document) => root.querySelector(sel);
@@ -7,85 +7,147 @@ const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
 const GITHUB_URL = "https://github.com/javded-itres/HelixAgent";
 const PYPI_URL = "https://pypi.org/project/HelixAgentAi/";
+const DONATE_URL = "https://messenger.online.sberbank.ru/sl/uwKJ687QKl7d1a1Ui";
+const SITE_URL = "https://helix-agent.ru";
 
 const I18N = {
   en: {
     tagline: "Self-Improving Agent",
+    nav_home: "Home",
+    nav_docs: "Documentation",
     search_placeholder: "Search documentation…",
     loading: "Loading…",
-    home: "Home",
     docs: "Documentation",
     getting_started: "Getting Started",
     interfaces: "Interfaces",
     operations: "Operations",
     architecture: "Architecture",
     no_results: "No results found",
-    hero_title: "Self-Improving",
-    hero_title_accent: "AI Agent",
-    hero_lead: "Persistent memory, skills, tool calling, MCP integration, and multiple interfaces — CLI, TUI, API gateway, and Telegram.",
-    get_started: "Get Started",
+    mkt_badge_ru: "🇷🇺 Made in Russia · Russian software",
+    mkt_hero_title: "Self-improving",
+    mkt_hero_accent: "AI agent",
+    mkt_hero_lead:
+      "Helix is a production-ready agent platform: persistent memory, skills, tool calling, MCP, and CLI, TUI, API gateway, and Telegram — deploy on your infrastructure with local or cloud LLMs.",
+    mkt_ru_title: "Russian engineering",
+    mkt_ru_text:
+      "Helix is developed in Russia by the IT-RES team. Open source (MIT), on-premise deployment, support for Ollama and LiteLLM — your data stays under your control. Domestic software you can audit and extend.",
+    mkt_adv_title: "Why Helix",
+    mkt_adv_1_t: "Learns from work",
+    mkt_adv_1_d: "Successful tasks become reusable skills — the agent improves over time, not just one-off chats.",
+    mkt_adv_2_t: "Remembers context",
+    mkt_adv_2_d: "SQLite + ChromaDB: conversations and semantic search across sessions and profiles.",
+    mkt_adv_3_t: "Enterprise-ready",
+    mkt_adv_3_d: "API keys, rate limits, command whitelist, gateway auth, Docker and systemd deployment.",
+    mkt_adv_4_t: "Your models",
+    mkt_adv_4_d: "Ollama, LiteLLM, OpenAI-compatible APIs — no vendor lock-in for inference.",
+    mkt_feat_title: "Capabilities",
+    mkt_use_title: "How teams use Helix",
+    mkt_use_1_t: "Developer copilot",
+    mkt_use_1_d: "Repo-aware agent in TUI: files, shell, MCP tools, slash commands, subagents.",
+    mkt_use_2_t: "Automation & cron",
+    mkt_use_2_d: "Scheduled jobs, gateway API, `helix run` in scripts and CI pipelines.",
+    mkt_use_3_t: "Telegram assistant",
+    mkt_use_3_d: "Mobile access with voice notes, file handling, and the same agent brain.",
+    mkt_use_4_t: "API gateway",
+    mkt_use_4_d: "OpenAI-compatible HTTP API for apps, bots, and internal services.",
+    mkt_how_title: "Interfaces",
+    mkt_how_tui: "Full-screen TUI — daily work, tools, hub, MCP",
+    mkt_how_chat: "Terminal REPL — lightweight chat",
+    mkt_how_run: "One-shot queries and scripting",
+    mkt_how_gw: "Background HTTP gateway + optional docs site",
     install_pypi: "pipx install HelixAgentAi",
-    install_pypi_hint: "PyPI package HelixAgentAi · CLI command helix",
-    install_pypi_link: "View on PyPI",
-    architecture_link: "Architecture",
+    install_pypi_hint: "PyPI · CLI command: helix",
+    install_pypi_link: "PyPI",
+    cta_docs: "Read documentation",
+    cta_install: "Installation guide",
     donate: "Support the project",
     github: "GitHub",
-    features_title: "Core Capabilities",
-    docs_title: "Explore Documentation",
-    footer: "Helix Agent · MIT License · Built from docs/en & docs/ru",
-    feat_tools: "Tool Calling",
-    feat_tools_desc: "Files, shell, web search, code execution, optional Playwright browser tools.",
-    feat_memory: "Persistent Memory",
-    feat_memory_desc: "SQLite conversations + ChromaDB semantic search across sessions.",
-    feat_skills: "Skills System",
-    feat_skills_desc: "Markdown skills with auto-generation and hub catalogs (ClawHub, Hermes).",
-    feat_mcp: "MCP Integration",
-    feat_mcp_desc: "Configure Model Context Protocol servers per agent and profile.",
-    feat_models: "Multi-Provider",
-    feat_models_desc: "Ollama, LiteLLM, OpenAI, Groq, and any OpenAI-compatible API.",
+    docs_hub_lead: "Guides, CLI reference, deployment, and troubleshooting.",
+    docs_hub_title: "Documentation",
+    footer: "Helix · Russian software · MIT License",
+    feat_tools: "Tool calling",
+    feat_tools_desc: "Files, shell, web, code, optional Playwright browser.",
+    feat_memory: "Memory",
+    feat_memory_desc: "SQLite + ChromaDB semantic search.",
+    feat_skills: "Skills",
+    feat_skills_desc: "Markdown skills, Hub catalogs, auto-generation.",
+    feat_mcp: "MCP",
+    feat_mcp_desc: "Model Context Protocol per agent and profile.",
+    feat_models: "Multi-provider",
+    feat_models_desc: "Ollama, LiteLLM, OpenAI, Groq, compatible APIs.",
     feat_security: "Security",
-    feat_security_desc: "API keys, rate limits, command whitelist, confirmation prompts.",
+    feat_security_desc: "Auth, rate limits, whitelist, confirmations.",
     feat_interfaces: "Interfaces",
-    feat_interfaces_desc: "TUI, chat REPL, one-shot run, HTTP gateway, Telegram bot.",
+    feat_interfaces_desc: "TUI, chat, run, gateway, Telegram.",
   },
   ru: {
     tagline: "Самообучающийся агент",
+    nav_home: "Главная",
+    nav_docs: "Документация",
     search_placeholder: "Поиск по документации…",
     loading: "Загрузка…",
-    home: "Главная",
     docs: "Документация",
     getting_started: "Начало работы",
     interfaces: "Интерфейсы",
     operations: "Эксплуатация",
     architecture: "Архитектура",
     no_results: "Ничего не найдено",
-    hero_title: "Самообучающийся",
-    hero_title_accent: "AI-агент",
-    hero_lead: "Постоянная память, навыки, вызов инструментов, MCP и несколько интерфейсов — CLI, TUI, API gateway и Telegram.",
-    get_started: "Начать",
+    mkt_badge_ru: "🇷🇺 Российская разработка · отечественное ПО",
+    mkt_hero_title: "Самообучающийся",
+    mkt_hero_accent: "AI-агент",
+    mkt_hero_lead:
+      "Helix — платформа AI-агентов для продакшена: память, навыки, инструменты, MCP и интерфейсы CLI, TUI, API gateway и Telegram. Развёртывание на своей инфраструктуре с локальными или облачными LLM.",
+    mkt_ru_title: "Отечественная разработка",
+    mkt_ru_text:
+      "Helix разработан в России командой IT-RES. Открытый исходный код (MIT), установка on-premise, поддержка Ollama и LiteLLM — данные остаются под вашим контролем. Российское ПО, которое можно проверить и расширить.",
+    mkt_adv_title: "Преимущества",
+    mkt_adv_1_t: "Учится на задачах",
+    mkt_adv_1_d: "Успешные сценарии превращаются в навыки — агент развивается, а не забывает контекст после чата.",
+    mkt_adv_2_t: "Помнит контекст",
+    mkt_adv_2_d: "SQLite + ChromaDB: диалоги и семантический поиск по сессиям и профилям.",
+    mkt_adv_3_t: "Готов к продакшену",
+    mkt_adv_3_d: "API-ключи, rate limit, whitelist команд, auth gateway, Docker и systemd.",
+    mkt_adv_4_t: "Ваши модели",
+    mkt_adv_4_d: "Ollama, LiteLLM, OpenAI-совместимые API — без привязки к одному вендору.",
+    mkt_feat_title: "Возможности",
+    mkt_use_title: "Сценарии использования",
+    mkt_use_1_t: "Помощник разработчика",
+    mkt_use_1_d: "TUI с доступом к репозиторию: файлы, shell, MCP, слэш-команды, субагенты.",
+    mkt_use_2_t: "Автоматизация",
+    mkt_use_2_d: "Cron-задачи, API gateway, `helix run` в скриптах и CI.",
+    mkt_use_3_t: "Telegram-бот",
+    mkt_use_3_d: "Мобильный доступ, голосовые сообщения, файлы — тот же агент.",
+    mkt_use_4_t: "API gateway",
+    mkt_use_4_d: "HTTP API в формате OpenAI для приложений и внутренних сервисов.",
+    mkt_how_title: "Как работать с Helix",
+    mkt_how_tui: "Полноэкранный TUI — основной интерфейс",
+    mkt_how_chat: "Чат в терминале — лёгкий REPL",
+    mkt_how_run: "Одиночные запросы и скрипты",
+    mkt_how_gw: "Фоновый HTTP gateway",
     install_pypi: "pipx install HelixAgentAi",
-    install_pypi_hint: "Пакет HelixAgentAi на PyPI · команда helix",
-    install_pypi_link: "Открыть на PyPI",
-    architecture_link: "Архитектура",
+    install_pypi_hint: "PyPI · команда: helix",
+    install_pypi_link: "PyPI",
+    cta_docs: "Открыть документацию",
+    cta_install: "Руководство по установке",
     donate: "Поддержать проект",
     github: "GitHub",
-    features_title: "Возможности",
-    docs_title: "Разделы документации",
-    footer: "Helix Agent · MIT License · Собрано из docs/en и docs/ru",
+    docs_hub_lead: "Установка, справочник CLI, развёртывание и решение проблем.",
+    docs_hub_title: "Документация",
+    footer: "Helix · Российское ПО · MIT License",
     feat_tools: "Инструменты",
-    feat_tools_desc: "Файлы, shell, веб-поиск, выполнение кода, браузер Playwright.",
+    feat_tools_desc: "Файлы, shell, веб, код, браузер Playwright.",
     feat_memory: "Память",
-    feat_memory_desc: "SQLite + ChromaDB для семантического поиска по сессиям.",
+    feat_memory_desc: "SQLite + семантический поиск ChromaDB.",
     feat_skills: "Навыки",
-    feat_skills_desc: "Markdown-навыки, автогенерация, каталоги Hub.",
+    feat_skills_desc: "Markdown-навыки, Hub, автогенерация.",
     feat_mcp: "MCP",
-    feat_mcp_desc: "Model Context Protocol серверы на агента и профиль.",
+    feat_mcp_desc: "Model Context Protocol на агента и профиль.",
     feat_models: "Провайдеры",
-    feat_models_desc: "Ollama, LiteLLM, OpenAI, Groq и OpenAI-совместимые API.",
+    feat_models_desc: "Ollama, LiteLLM, OpenAI, Groq и др.",
     feat_security: "Безопасность",
-    feat_security_desc: "API-ключи, rate limit, whitelist команд, подтверждения.",
+    feat_security_desc: "Auth, лимиты, whitelist, подтверждения.",
     feat_interfaces: "Интерфейсы",
-    feat_interfaces_desc: "TUI, chat REPL, run, HTTP gateway, Telegram.",
+    feat_interfaces_desc: "TUI, chat, run, gateway, Telegram.",
   },
 };
 
@@ -98,17 +160,14 @@ const NAV_SECTIONS = {
 
 let state = {
   lang: localStorage.getItem("helix-docs-lang") || "ru",
+  viewMode: "marketing",
   nav: [],
   searchIndex: [],
   activeSlug: null,
 };
 
-marked.setOptions({
-  gfm: true,
-  breaks: false,
-});
+marked.setOptions({ gfm: true, breaks: false });
 
-/** GitHub-compatible heading slug (matches TOC anchors in USER_GUIDE.md). */
 function githubSlug(text) {
   return text
     .toLowerCase()
@@ -142,23 +201,18 @@ function isMobileLayout() {
 function syncHeaderHeight() {
   const header = $(".header");
   if (!header) return;
-  const height = Math.ceil(header.getBoundingClientRect().height);
-  document.documentElement.style.setProperty("--header-h", `${height}px`);
+  document.documentElement.style.setProperty("--header-h", `${Math.ceil(header.getBoundingClientRect().height)}px`);
 }
 
 function setupHeaderHeightSync() {
   const header = $(".header");
   if (!header) return;
-
   syncHeaderHeight();
-
   if (typeof ResizeObserver !== "undefined") {
-    const observer = new ResizeObserver(() => syncHeaderHeight());
-    observer.observe(header);
-    return;
+    new ResizeObserver(() => syncHeaderHeight()).observe(header);
+  } else {
+    window.addEventListener("resize", syncHeaderHeight);
   }
-
-  window.addEventListener("resize", syncHeaderHeight);
 }
 
 function setMobileSidebarOpen(open) {
@@ -166,12 +220,10 @@ function setMobileSidebarOpen(open) {
   const backdrop = $("#sidebar-backdrop");
   const toggle = $("#menu-toggle");
   if (!sidebar) return;
-
   sidebar.classList.toggle("open", open);
   backdrop?.classList.toggle("open", open);
   document.body.classList.toggle("sidebar-open", open);
   if (backdrop) backdrop.hidden = !open;
-
   if (toggle) {
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
     toggle.textContent = open ? "✕" : "☰";
@@ -182,20 +234,31 @@ function closeMobileSidebar() {
   if (isMobileLayout()) setMobileSidebarOpen(false);
 }
 
-/** `#/page` → route; `#/` or `#` → home; `#anchor` → in-page scroll. */
+/** `#/` marketing · `#/docs` hub · `#/docs/slug` or `#/slug` doc · `#anchor` in-page */
 function parseHash() {
   const raw = location.hash.slice(1);
-  if (!raw || raw === "/") return { type: "home" };
-  if (raw.startsWith("/")) {
-    const path = raw.slice(1);
-    if (!path) return { type: "home" };
-    const slash = path.indexOf("/");
-    const slug = slash >= 0 ? path.slice(0, slash) : path;
-    const anchor = slash >= 0 ? path.slice(slash + 1) : null;
-    if (!slug) return { type: "home" };
-    return { type: "page", slug, anchor };
+  if (!raw || raw === "/") return { type: "marketing" };
+
+  if (!raw.startsWith("/")) {
+    return { type: "anchor", anchor: raw };
   }
-  return { type: "anchor", anchor: raw };
+
+  let path = raw.slice(1);
+  if (!path) return { type: "marketing" };
+
+  if (path === "docs") return { type: "docs-hub" };
+
+  if (path.startsWith("docs/")) path = path.slice(5);
+
+  const slash = path.indexOf("/");
+  const slug = slash >= 0 ? path.slice(0, slash) : path;
+  const anchor = slash >= 0 ? path.slice(slash + 1) : null;
+  if (!slug) return { type: "docs-hub" };
+  return { type: "doc", slug, anchor };
+}
+
+function docHref(slug) {
+  return `#/docs/${slug}`;
 }
 
 function scrollToAnchor(anchor) {
@@ -212,7 +275,27 @@ function t(key) {
 }
 
 function footerHtml() {
-  return `${t("footer")} · <a href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer">${t("github")}</a>`;
+  return `${t("footer")} · <a href="${SITE_URL}">helix-agent.ru</a> · <a href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer">${t("github")}</a>`;
+}
+
+function setViewMode(mode) {
+  state.viewMode = mode;
+  const app = $(".app");
+  app?.classList.toggle("marketing-layout", mode === "marketing");
+  app?.classList.toggle("docs-layout", mode === "docs");
+  $("#search-wrap")?.classList.toggle("is-hidden", mode === "marketing");
+  $("#menu-toggle")?.classList.toggle("is-hidden", mode === "marketing");
+  if (mode === "marketing") closeMobileSidebar();
+  updateSiteNav();
+}
+
+function updateSiteNav() {
+  $$(".site-nav-link").forEach((link) => {
+    const view = link.dataset.view;
+    const active = (view === "marketing" && state.viewMode === "marketing")
+      || (view === "docs" && state.viewMode === "docs");
+    link.classList.toggle("active", active);
+  });
 }
 
 function applyI18n() {
@@ -228,10 +311,7 @@ function applyI18n() {
 }
 
 async function loadData() {
-  const [navRes, indexRes] = await Promise.all([
-    fetch("nav.json"),
-    fetch("search-index.json"),
-  ]);
+  const [navRes, indexRes] = await Promise.all([fetch("nav.json"), fetch("search-index.json")]);
   state.nav = await navRes.json();
   state.searchIndex = await indexRes.json();
 }
@@ -248,7 +328,6 @@ function renderSidebar() {
   const nav = $("#sidebar-nav");
   const items = navItemsForLang();
   const bySlug = Object.fromEntries(items.map((i) => [i.slug, i]));
-
   let html = "";
 
   const addSection = (key, slugs) => {
@@ -257,13 +336,13 @@ function renderSidebar() {
     html += `<div class="sidebar-section"><div class="sidebar-label">${t(key)}</div>`;
     for (const item of sectionItems) {
       const active = state.activeSlug === item.slug ? " active" : "";
-      html += `<a href="#/${item.slug}" class="nav-link${active}" data-slug="${item.slug}">${item.label}</a>`;
+      html += `<a href="${docHref(item.slug)}" class="nav-link${active}" data-slug="${item.slug}">${item.label}</a>`;
     }
     html += "</div>";
   };
 
   html += `<div class="sidebar-section"><div class="sidebar-label">${t("docs")}</div>`;
-  html += `<a href="#/" class="nav-link${!state.activeSlug ? " active" : ""}" data-slug="">${t("home")}</a>`;
+  html += `<a href="#/docs" class="nav-link${state.activeSlug === null && state.viewMode === "docs" ? " active" : ""}">${t("docs_hub_title")}</a>`;
   html += "</div>";
 
   addSection("getting_started", NAV_SECTIONS.getting_started);
@@ -274,86 +353,138 @@ function renderSidebar() {
   nav.innerHTML = html;
 }
 
-function renderHome() {
+function featureCardsHtml() {
+  const feats = [
+    ["feat_tools", "feat_tools_desc", "⚡"],
+    ["feat_memory", "feat_memory_desc", "🧠"],
+    ["feat_skills", "feat_skills_desc", "📚"],
+    ["feat_mcp", "feat_mcp_desc", "🔌"],
+    ["feat_models", "feat_models_desc", "🌐"],
+    ["feat_security", "feat_security_desc", "🛡️"],
+    ["feat_interfaces", "feat_interfaces_desc", "🖥️"],
+  ];
+  return feats
+    .map(
+      ([title, desc, icon]) => `
+      <div class="feature-card">
+        <div class="feature-icon">${icon}</div>
+        <h3>${t(title)}</h3>
+        <p>${t(desc)}</p>
+      </div>`,
+    )
+    .join("");
+}
+
+function renderMarketing() {
   state.activeSlug = null;
+  setViewMode("marketing");
   renderSidebar();
   const main = $("#main-content");
-
-  const aspects = navItemsForLang().filter((i) => i.slug !== "readme");
+  main.className = "content marketing-content";
 
   main.innerHTML = `
-    <section class="hero">
-      <div class="hero-badge">🧬 DNA-inspired · Agent Platform</div>
-      <h1>${t("hero_title")} <span>${t("hero_title_accent")}</span></h1>
-      <p class="hero-lead">${t("hero_lead")}</p>
+    <section class="hero marketing-hero">
+      <div class="hero-badge hero-badge-ru">${t("mkt_badge_ru")}</div>
+      <h1>${t("mkt_hero_title")} <span>${t("mkt_hero_accent")}</span></h1>
+      <p class="hero-lead">${t("mkt_hero_lead")}</p>
       <div class="hero-install">
         <code class="hero-install-cmd">${t("install_pypi")}</code>
         <span class="hero-install-hint">${t("install_pypi_hint")}</span>
         <a href="${PYPI_URL}" class="hero-install-link" target="_blank" rel="noopener noreferrer">${t("install_pypi_link")} ↗</a>
       </div>
       <div class="hero-actions">
-        <a href="#/installation" class="btn btn-primary">${t("get_started")}</a>
-        <a href="#/architecture" class="btn btn-ghost">${t("architecture_link")}</a>
-        <a href="https://messenger.online.sberbank.ru/sl/uwKJ687QKl7d1a1Ui" class="btn btn-donate" target="_blank" rel="noopener noreferrer">♥ ${t("donate")}</a>
+        <a href="#/docs" class="btn btn-primary">${t("cta_docs")}</a>
+        <a href="${docHref("installation")}" class="btn btn-ghost">${t("cta_install")}</a>
+        <a href="${DONATE_URL}" class="btn btn-donate" target="_blank" rel="noopener noreferrer">♥ ${t("donate")}</a>
       </div>
     </section>
 
-    <section class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">⚡</div>
-        <h3>${t("feat_tools")}</h3>
-        <p>${t("feat_tools_desc")}</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🧠</div>
-        <h3>${t("feat_memory")}</h3>
-        <p>${t("feat_memory_desc")}</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📚</div>
-        <h3>${t("feat_skills")}</h3>
-        <p>${t("feat_skills_desc")}</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🔌</div>
-        <h3>${t("feat_mcp")}</h3>
-        <p>${t("feat_mcp_desc")}</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🌐</div>
-        <h3>${t("feat_models")}</h3>
-        <p>${t("feat_models_desc")}</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🛡️</div>
-        <h3>${t("feat_security")}</h3>
-        <p>${t("feat_security_desc")}</p>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🖥️</div>
-        <h3>${t("feat_interfaces")}</h3>
-        <p>${t("feat_interfaces_desc")}</p>
+    <section class="ru-callout">
+      <div class="ru-callout-flag" aria-hidden="true">🇷🇺</div>
+      <div>
+        <h2>${t("mkt_ru_title")}</h2>
+        <p>${t("mkt_ru_text")}</p>
       </div>
     </section>
 
-    <h2 class="section-title">${t("docs_title")}</h2>
+    <h2 class="section-title">${t("mkt_adv_title")}</h2>
+    <div class="advantages-grid">
+      <article class="advantage-card"><h3>${t("mkt_adv_1_t")}</h3><p>${t("mkt_adv_1_d")}</p></article>
+      <article class="advantage-card"><h3>${t("mkt_adv_2_t")}</h3><p>${t("mkt_adv_2_d")}</p></article>
+      <article class="advantage-card"><h3>${t("mkt_adv_3_t")}</h3><p>${t("mkt_adv_3_d")}</p></article>
+      <article class="advantage-card"><h3>${t("mkt_adv_4_t")}</h3><p>${t("mkt_adv_4_d")}</p></article>
+    </div>
+
+    <h2 class="section-title">${t("mkt_feat_title")}</h2>
+    <section class="features-grid">${featureCardsHtml()}</section>
+
+    <h2 class="section-title">${t("mkt_use_title")}</h2>
+    <div class="use-cases-grid">
+      <article class="use-case-card"><span class="use-case-num">01</span><h3>${t("mkt_use_1_t")}</h3><p>${t("mkt_use_1_d")}</p></article>
+      <article class="use-case-card"><span class="use-case-num">02</span><h3>${t("mkt_use_2_t")}</h3><p>${t("mkt_use_2_d")}</p></article>
+      <article class="use-case-card"><span class="use-case-num">03</span><h3>${t("mkt_use_3_t")}</h3><p>${t("mkt_use_3_d")}</p></article>
+      <article class="use-case-card"><span class="use-case-num">04</span><h3>${t("mkt_use_4_t")}</h3><p>${t("mkt_use_4_d")}</p></article>
+    </div>
+
+    <h2 class="section-title">${t("mkt_how_title")}</h2>
+    <div class="how-grid">
+      <div class="how-card"><code>helix tui</code><p>${t("mkt_how_tui")}</p></div>
+      <div class="how-card"><code>helix chat-command</code><p>${t("mkt_how_chat")}</p></div>
+      <div class="how-card"><code>helix run "…"</code><p>${t("mkt_how_run")}</p></div>
+      <div class="how-card"><code>helix gateway start</code><p>${t("mkt_how_gw")}</p></div>
+    </div>
+
+    <section class="cta-band">
+      <p>${t("install_pypi")}</p>
+      <a href="#/docs" class="btn btn-primary">${t("cta_docs")}</a>
+    </section>
+
+    <footer class="footer">${footerHtml()}</footer>
+  `;
+
+  document.title = state.lang === "ru"
+    ? "Helix — AI-агент · Российская разработка"
+    : "Helix — AI Agent · Made in Russia";
+}
+
+function renderDocsHub() {
+  state.activeSlug = null;
+  setViewMode("docs");
+  renderSidebar();
+  const main = $("#main-content");
+  main.className = "content";
+  const aspects = navItemsForLang().filter((i) => i.slug !== "readme");
+
+  main.innerHTML = `
+    <section class="docs-hub">
+      <h1>${t("docs_hub_title")}</h1>
+      <p class="docs-hub-lead">${t("docs_hub_lead")}</p>
+      <div class="hero-install">
+        <code class="hero-install-cmd">${t("install_pypi")}</code>
+        <a href="${PYPI_URL}" class="hero-install-link" target="_blank" rel="noopener noreferrer">${t("install_pypi_link")} ↗</a>
+      </div>
+    </section>
     <div class="aspects-grid">
       ${aspects.map((a) => `
-        <a href="#/${a.slug}" class="aspect-link">
+        <a href="${docHref(a.slug)}" class="aspect-link">
           <span>${a.label}</span>
           <span class="arrow">→</span>
         </a>
       `).join("")}
     </div>
-
     <footer class="footer">${footerHtml()}</footer>
   `;
+
+  document.title = state.lang === "ru" ? "Документация — Helix" : "Documentation — Helix";
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 async function renderDoc(slug, scrollAnchor = null) {
   state.activeSlug = slug;
+  setViewMode("docs");
   renderSidebar();
   const main = $("#main-content");
+  main.className = "content";
   const entry = state.searchIndex.find((e) => e.lang === state.lang && e.slug === slug);
 
   if (!entry) {
@@ -362,7 +493,11 @@ async function renderDoc(slug, scrollAnchor = null) {
   }
 
   main.innerHTML = `
-    <div class="breadcrumb"><a href="#/">${t("home")}</a> / ${entry.title}</div>
+    <div class="breadcrumb">
+      <a href="#/">${t("nav_home")}</a> /
+      <a href="#/docs">${t("nav_docs")}</a> /
+      ${entry.title}
+    </div>
     <div class="doc-loading">${t("loading")}</div>
   `;
 
@@ -380,7 +515,7 @@ async function renderDoc(slug, scrollAnchor = null) {
       if (!href || href.startsWith("http")) return;
       if (href.endsWith(".md")) {
         const name = href.replace(/^\.\//, "").replace(".md", "").toLowerCase().replace(/_/g, "-");
-        a.setAttribute("href", `#/${name}`);
+        a.setAttribute("href", docHref(name));
         return;
       }
       if (href.startsWith("#") && !href.startsWith("#/")) {
@@ -395,13 +530,13 @@ async function renderDoc(slug, scrollAnchor = null) {
     main.replaceChildren();
     const breadcrumb = document.createElement("div");
     breadcrumb.className = "breadcrumb";
-    breadcrumb.innerHTML = `<a href="#/">${t("home")}</a> / ${entry.title}`;
+    breadcrumb.innerHTML = `<a href="#/">${t("nav_home")}</a> / <a href="#/docs">${t("nav_docs")}</a> / ${entry.title}`;
     const footer = document.createElement("footer");
     footer.className = "footer";
     footer.innerHTML = footerHtml();
     main.append(breadcrumb, container, footer);
 
-    document.title = `${entry.heading} — Helix Docs`;
+    document.title = `${entry.heading} — Helix`;
     if (scrollAnchor && scrollToAnchor(scrollAnchor)) {
       history.replaceState(null, "", `#${scrollAnchor}`);
     } else if (!scrollAnchor) {
@@ -414,12 +549,10 @@ async function renderDoc(slug, scrollAnchor = null) {
 
 async function handleAnchor(anchor) {
   if (scrollToAnchor(anchor)) return;
-
   if (state.activeSlug) {
     requestAnimationFrame(() => scrollToAnchor(anchor));
     return;
   }
-
   await renderDoc("user-guide", anchor);
 }
 
@@ -427,19 +560,22 @@ function route() {
   closeMobileSidebar();
   closeSearch();
   const parsed = parseHash();
-  if (parsed.type === "home") {
-    renderHome();
-    document.title = "Helix — Agent Documentation";
+
+  if (parsed.type === "marketing") {
+    renderMarketing();
+    return;
+  }
+  if (parsed.type === "docs-hub") {
+    renderDocsHub();
     return;
   }
   if (parsed.type === "anchor") {
+    setViewMode(state.viewMode === "marketing" ? "marketing" : "docs");
     handleAnchor(parsed.anchor);
     return;
   }
   renderDoc(parsed.slug, parsed.anchor);
 }
-
-/* ─── Search ─── */
 
 function tokenize(text) {
   return text.toLowerCase().split(/[^a-zа-яё0-9]+/i).filter((w) => w.length > 1);
@@ -451,23 +587,21 @@ function search(query) {
   const words = tokenize(q);
   const langEntries = state.searchIndex.filter((e) => e.lang === state.lang);
 
-  const scored = langEntries.map((entry) => {
-    const title = entry.title.toLowerCase();
-    const heading = (entry.heading || "").toLowerCase();
-    const body = (entry.body || "").toLowerCase();
-    let score = 0;
-
-    if (title.includes(q)) score += 50;
-    if (heading.includes(q)) score += 30;
-    for (const w of words) {
-      if (title.includes(w)) score += 15;
-      if (heading.includes(w)) score += 8;
-      if (body.includes(w)) score += 3;
-    }
-    return { entry, score };
-  });
-
-  return scored
+  return langEntries
+    .map((entry) => {
+      const title = entry.title.toLowerCase();
+      const heading = (entry.heading || "").toLowerCase();
+      const body = (entry.body || "").toLowerCase();
+      let score = 0;
+      if (title.includes(q)) score += 50;
+      if (heading.includes(q)) score += 30;
+      for (const w of words) {
+        if (title.includes(w)) score += 15;
+        if (heading.includes(w)) score += 8;
+        if (body.includes(w)) score += 3;
+      }
+      return { entry, score };
+    })
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score)
     .slice(0, 12)
@@ -476,9 +610,9 @@ function search(query) {
 
 function highlightSnippet(body, query) {
   const idx = body.toLowerCase().indexOf(query.toLowerCase().split(" ")[0]);
-  if (idx < 0) return body.slice(0, 120) + "…";
+  if (idx < 0) return `${body.slice(0, 120)}…`;
   const start = Math.max(0, idx - 40);
-  return (start > 0 ? "…" : "") + body.slice(start, start + 140) + "…";
+  return `${start > 0 ? "…" : ""}${body.slice(start, start + 140)}…`;
 }
 
 let closeSearch = () => {};
@@ -518,8 +652,7 @@ function setupSearch() {
         <div class="search-result${i === activeIdx ? " active" : ""}" role="option" data-slug="${e.slug}" data-idx="${i}">
           <div class="search-result-title">${e.title}</div>
           <div class="search-result-snippet">${highlightSnippet(e.body, input.value)}</div>
-        </div>
-      `,
+        </div>`,
       )
       .join("");
     setSearchOpen(true);
@@ -538,7 +671,6 @@ function setupSearch() {
   input.addEventListener("keydown", (ev) => {
     const items = $$(".search-result", results);
     if (!items.length) return;
-
     if (ev.key === "ArrowDown") {
       ev.preventDefault();
       activeIdx = Math.min(activeIdx + 1, items.length - 1);
@@ -549,8 +681,7 @@ function setupSearch() {
       items.forEach((el, i) => el.classList.toggle("active", i === activeIdx));
     } else if (ev.key === "Enter" && activeIdx >= 0) {
       ev.preventDefault();
-      const slug = items[activeIdx].dataset.slug;
-      location.hash = `#/${slug}`;
+      location.hash = docHref(items[activeIdx].dataset.slug).slice(1);
       setSearchOpen(false);
       input.blur();
     } else if (ev.key === "Escape") {
@@ -561,7 +692,7 @@ function setupSearch() {
   results.addEventListener("click", (ev) => {
     const el = ev.target.closest(".search-result");
     if (!el) return;
-    location.hash = `#/${el.dataset.slug}`;
+    location.hash = docHref(el.dataset.slug).slice(1);
     setSearchOpen(false);
     input.value = "";
   });
@@ -571,7 +702,7 @@ function setupSearch() {
   });
 
   document.addEventListener("keydown", (ev) => {
-    if ((ev.ctrlKey || ev.metaKey) && ev.key === "k") {
+    if ((ev.ctrlKey || ev.metaKey) && ev.key === "k" && state.viewMode === "docs") {
       ev.preventDefault();
       input.focus();
       input.select();
@@ -609,19 +740,13 @@ function setupMobileMenu() {
   backdrop?.addEventListener("click", () => setMobileSidebarOpen(false));
 
   document.addEventListener("click", (ev) => {
-    if (
-      isMobileLayout()
-      && !ev.target.closest(".sidebar")
-      && !ev.target.closest(".menu-toggle")
-    ) {
+    if (isMobileLayout() && !ev.target.closest(".sidebar") && !ev.target.closest(".menu-toggle")) {
       setMobileSidebarOpen(false);
     }
   });
 
   $("#sidebar-nav")?.addEventListener("click", (ev) => {
-    if (ev.target.closest(".nav-link") && isMobileLayout()) {
-      setMobileSidebarOpen(false);
-    }
+    if (ev.target.closest(".nav-link") && isMobileLayout()) setMobileSidebarOpen(false);
   });
 
   document.addEventListener("keydown", (ev) => {

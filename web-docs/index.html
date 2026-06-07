@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#080c10">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="description" content="Helix — self-improving AI agent. Documentation: CLI, TUI, Gateway, Telegram, MCP, skills, memory, security.">
-  <title>Helix — Agent Documentation</title>
+  <meta name="description" content="Helix — российский самообучающийся AI-агент. Память, навыки, MCP, CLI, TUI, API gateway, Telegram. Отечественное ПО.">
+  <title>Helix — AI-агент · Российская разработка</title>
   <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-  <div class="app">
+  <div class="app marketing-layout">
     <header class="header">
       <a href="#/" class="brand" id="brand-link">
         <img src="assets/logo.svg" alt="Helix logo" width="36" height="36">
@@ -25,7 +25,12 @@
         </div>
       </a>
 
-      <div class="search-wrap">
+      <nav class="site-nav" id="site-nav" aria-label="Site sections">
+        <a href="#/" class="site-nav-link" data-view="marketing" data-i18n="nav_home">Главная</a>
+        <a href="#/docs" class="site-nav-link" data-view="docs" data-i18n="nav_docs">Документация</a>
+      </nav>
+
+      <div class="search-wrap" id="search-wrap">
         <span class="search-icon" aria-hidden="true">⌕</span>
         <input
           type="search"
