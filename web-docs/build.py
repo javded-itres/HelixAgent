@@ -22,6 +22,7 @@ NAV = [
     ("START_HERE", {"en": "Start Here", "ru": "Первый запуск"}),
     ("QUICKSTART", {"en": "Quickstart", "ru": "Быстрый старт"}),
     ("CONFIGURATION", {"en": "Configuration", "ru": "Конфигурация"}),
+    ("PROFILES", {"en": "Profiles & Isolation", "ru": "Профили и изоляция"}),
     ("CLI", {"en": "CLI Reference", "ru": "Справочник CLI"}),
     ("SLASH_COMMANDS", {"en": "Slash Commands", "ru": "Слэш-команды"}),
     ("TUI", {"en": "TUI", "ru": "TUI"}),

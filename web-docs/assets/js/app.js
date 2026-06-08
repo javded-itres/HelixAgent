@@ -82,6 +82,12 @@ const I18N = {
     mkt_adv_3_d: "API keys, rate limits, command whitelist, gateway auth, Docker and systemd deployment.",
     mkt_adv_4_t: "Your models",
     mkt_adv_4_d: "Ollama, LiteLLM, OpenAI-compatible APIs — no vendor lock-in for inference.",
+    mkt_adv_5_t: "Isolated profiles",
+    mkt_adv_5_d: "Separate .env, memory, Telegram bot, and gateway per profile — several users on one host without overlap.",
+    mkt_profiles_title: "Profiles & workspace jail",
+    mkt_profiles_text:
+      "Each profile is a sandbox: own API keys, bot, gateway port, and conversation memory. Optional workspace jail locks file and terminal tools to one directory — the agent cannot leave the folder but works freely inside.",
+    mkt_profiles_cta: "Profiles guide",
     mkt_feat_title: "Capabilities",
     mkt_use_title: "How teams use Helix",
     mkt_use_1_t: "Developer copilot",
@@ -92,6 +98,8 @@ const I18N = {
     mkt_use_3_d: "Mobile access with voice notes, file handling, and the same agent brain.",
     mkt_use_4_t: "API gateway",
     mkt_use_4_d: "OpenAI-compatible HTTP API for apps, bots, and internal services.",
+    mkt_use_5_t: "Multi-user host",
+    mkt_use_5_d: "One server — many profiles: separate bots, gateways, and optional folder jail per person.",
     mkt_how_title: "Interfaces",
     mkt_how_tui: "Full-screen TUI — daily work, tools, hub, MCP",
     mkt_how_chat: "Terminal REPL — lightweight chat",
@@ -121,6 +129,8 @@ const I18N = {
     feat_security_desc: "Auth, rate limits, whitelist, confirmations.",
     feat_interfaces: "Interfaces",
     feat_interfaces_desc: "TUI, chat, run, gateway, Telegram.",
+    feat_profiles: "Profile isolation",
+    feat_profiles_desc: "Per-profile secrets, gateway, Telegram; optional directory jail for tools.",
   },
   ru: {
     tagline: "Самообучающийся агент",
@@ -151,6 +161,12 @@ const I18N = {
     mkt_adv_3_d: "API-ключи, rate limit, whitelist команд, auth gateway, Docker и systemd.",
     mkt_adv_4_t: "Ваши модели",
     mkt_adv_4_d: "Ollama, LiteLLM, OpenAI-совместимые API — без привязки к одному вендору.",
+    mkt_adv_5_t: "Изолированные профили",
+    mkt_adv_5_d: "Свой .env, память, Telegram и gateway на профиль — несколько пользователей на одном хосте без пересечений.",
+    mkt_profiles_title: "Профили и workspace jail",
+    mkt_profiles_text:
+      "Каждый профиль — отдельная песочница: свои ключи API, бот, порт gateway и память диалогов. Опциональный workspace jail ограничивает файловые и терминальные инструменты одной директорией — агент не выходит из папки, но внутри работает свободно.",
+    mkt_profiles_cta: "Руководство по профилям",
     mkt_feat_title: "Возможности",
     mkt_use_title: "Сценарии использования",
     mkt_use_1_t: "Помощник разработчика",
@@ -161,6 +177,8 @@ const I18N = {
     mkt_use_3_d: "Мобильный доступ, голосовые сообщения, файлы — тот же агент.",
     mkt_use_4_t: "API gateway",
     mkt_use_4_d: "HTTP API в формате OpenAI для приложений и внутренних сервисов.",
+    mkt_use_5_t: "Несколько пользователей",
+    mkt_use_5_d: "Один сервер — много профилей: отдельные боты, gateway и опциональный jail по папке на человека.",
     mkt_how_title: "Как работать с Helix",
     mkt_how_tui: "Полноэкранный TUI — основной интерфейс",
     mkt_how_chat: "Чат в терминале — лёгкий REPL",
@@ -190,11 +208,13 @@ const I18N = {
     feat_security_desc: "Auth, лимиты, whitelist, подтверждения.",
     feat_interfaces: "Интерфейсы",
     feat_interfaces_desc: "TUI, chat, run, gateway, Telegram.",
+    feat_profiles: "Изоляция профилей",
+    feat_profiles_desc: "Секреты, gateway и Telegram на профиль; опциональный jail по директории.",
   },
 };
 
 const NAV_SECTIONS = {
-  getting_started: ["installation", "start-here", "quickstart", "configuration"],
+  getting_started: ["installation", "start-here", "quickstart", "configuration", "profiles"],
   interfaces: ["cli", "slash-commands", "tui", "hub", "gateway", "telegram", "browser-tools"],
   operations: ["security", "deployment", "doctor", "logs", "pypi", "troubleshooting", "user-guide"],
   architecture: ["architecture", "readme"],
@@ -405,6 +425,7 @@ function featureCardsHtml() {
     ["feat_models", "feat_models_desc", "🌐"],
     ["feat_security", "feat_security_desc", "🛡️"],
     ["feat_interfaces", "feat_interfaces_desc", "🖥️"],
+    ["feat_profiles", "feat_profiles_desc", "🗂️"],
   ];
   return feats
     .map(
@@ -456,7 +477,17 @@ function renderMarketing() {
       <article class="advantage-card"><h3>${t("mkt_adv_2_t")}</h3><p>${t("mkt_adv_2_d")}</p></article>
       <article class="advantage-card"><h3>${t("mkt_adv_3_t")}</h3><p>${t("mkt_adv_3_d")}</p></article>
       <article class="advantage-card"><h3>${t("mkt_adv_4_t")}</h3><p>${t("mkt_adv_4_d")}</p></article>
+      <article class="advantage-card"><h3>${t("mkt_adv_5_t")}</h3><p>${t("mkt_adv_5_d")}</p></article>
     </div>
+
+    <section class="profiles-callout">
+      <div class="profiles-callout-icon" aria-hidden="true">🗂️</div>
+      <div>
+        <h2>${t("mkt_profiles_title")}</h2>
+        <p>${t("mkt_profiles_text")}</p>
+        <a href="${docHref("profiles")}" class="btn btn-ghost profiles-callout-link">${t("mkt_profiles_cta")} →</a>
+      </div>
+    </section>
 
     <h2 class="section-title">${t("mkt_feat_title")}</h2>
     <section class="features-grid">${featureCardsHtml()}</section>
@@ -467,6 +498,7 @@ function renderMarketing() {
       <article class="use-case-card"><span class="use-case-num">02</span><h3>${t("mkt_use_2_t")}</h3><p>${t("mkt_use_2_d")}</p></article>
       <article class="use-case-card"><span class="use-case-num">03</span><h3>${t("mkt_use_3_t")}</h3><p>${t("mkt_use_3_d")}</p></article>
       <article class="use-case-card"><span class="use-case-num">04</span><h3>${t("mkt_use_4_t")}</h3><p>${t("mkt_use_4_d")}</p></article>
+      <article class="use-case-card"><span class="use-case-num">05</span><h3>${t("mkt_use_5_t")}</h3><p>${t("mkt_use_5_d")}</p></article>
     </div>
 
     <h2 class="section-title">${t("mkt_how_title")}</h2>
