@@ -295,6 +295,9 @@ class MaxInteractive:
         self._session.ui_providers = list(state.providers)
 
     async def show_models(self, *, provider_page: int = 0) -> None:
+        from core.session_models import ensure_session_model
+
+        ensure_session_model(self._host)
         self._load_models_menu()
         self._session.ui_models_provider_idx = None
         self._session.ui_providers_page = provider_page
@@ -381,6 +384,9 @@ class MaxInteractive:
         await self._host._mcp_list()
 
     async def show_status(self) -> None:
+        from core.session_models import ensure_session_model
+
+        ensure_session_model(self._host)
         mode = self._session.execution_mode
         stream = "on" if self._host.streaming_enabled else "off"
         mode_title = MODE_LABELS.get(mode, (mode, ""))[0]
@@ -390,7 +396,7 @@ class MaxInteractive:
         subagents = "—"
         if self._host.agent:
             cfg = getattr(self._host.agent, "config", None)
-            if cfg and getattr(cfg, "enable_subagents", False):
+            if cfg and getattr(cfg, "enable_subagents", True):
                 subagents = "вкл"
             else:
                 subagents = "выкл"

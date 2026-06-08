@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-import asyncio
 import json
+import logging
 from typing import TYPE_CHECKING
+
+logger = logging.getLogger(__name__)
 
 from core.agent_events import (
     AgentEvent,
@@ -27,6 +29,24 @@ from core.subagents.interaction_events import SubAgentQuestionEvent
 if TYPE_CHECKING:
     from integrations.max.approvals import MaxApprovals
     from integrations.max.live_presenter import MaxLivePresenter
+
+_PROGRESS_TOOLS = frozenset(
+    {
+        "delegate_to_subagent",
+        "wait_subagent_result",
+        "list_subagents",
+        "terminate_subagent",
+        "run_terminal_command",
+    }
+)
+
+
+def _tool_result_notice_text(tool_name: str, body: str) -> str:
+    from integrations.max.subagent_format import format_list_subagents_result
+
+    if tool_name == "list_subagents":
+        return format_list_subagents_result(body)
+    return body
 
 
 class MaxEventHandler:
@@ -51,6 +71,12 @@ class MaxEventHandler:
                     args = event.arguments_raw
                 buf.add_tool_start(event.tool_name, args)
                 self._presenter.schedule_edit()
+                name = (event.tool_name or "").strip()
+                detail = self._tool_detail(name, args)
+                logger.info("MAX tool started (%s)", name)
+                self._presenter.enqueue_outbound(
+                    self._presenter.send_tool_progress(name, detail)
+                )
 
             elif isinstance(event, ToolCallResultEvent):
                 duration = getattr(event, "duration_ms", None)
@@ -59,6 +85,12 @@ class MaxEventHandler:
                 buf.add_tool_result(event.tool_name, body, duration_s=duration_s)
                 self._store_tool(self._presenter.session, event.tool_name, body, duration_s)
                 self._presenter.schedule_edit()
+                name = (event.tool_name or "").strip()
+                if (body or "").strip():
+                    notice = _tool_result_notice_text(name, body)
+                    self._presenter.enqueue_outbound(
+                        self._presenter.send_tool_result_notice(name, notice)
+                    )
 
             elif isinstance(event, ToolCallErrorEvent):
                 duration = getattr(event, "duration_ms", None)
@@ -71,6 +103,14 @@ class MaxEventHandler:
                     duration_s=duration_s,
                 )
                 self._presenter.schedule_edit()
+                name = (event.tool_name or "tool").strip()
+                if (body or "").strip():
+                    self._presenter.enqueue_outbound(
+                        self._presenter.send_tool_result_notice(
+                            name,
+                            f"✗ {body}",
+                        )
+                    )
 
             elif isinstance(event, AssistantDeltaEvent):
                 buf.append_answer_delta(event.content)
@@ -85,18 +125,29 @@ class MaxEventHandler:
                         content,
                         markdown=content,
                     )
-                if len(content) > 2200:
-                    buf.set_answer("📄 Long response follows in chat.")
-                    asyncio.create_task(self._presenter.send_final_answer_split(content))
+                preview = content if len(content) <= 500 else content[:480] + "…"
+                if len(content) > 500:
+                    buf.set_answer("✓ Done — full answer below.")
                 else:
-                    buf.set_answer(content)
+                    buf.set_answer(preview)
+                self._presenter.note_final_content(content)
                 buf.mark_done()
                 self._presenter.schedule_edit(force=True)
+                if content.strip():
+                    self._presenter.enqueue_outbound(
+                        self._presenter.deliver_final_answer(content)
+                    )
+                logger.info(
+                    "MAX FinalResponseEvent handled (%d chars, queued_final=True)",
+                    len(content),
+                )
 
             elif isinstance(event, ConfirmationRequestEvent):
                 buf.set_thinking(None)
                 self._presenter.schedule_edit(force=True)
-                asyncio.create_task(self._approvals.on_confirmation_request(event))
+                self._presenter.enqueue_outbound(
+                    self._approvals.on_confirmation_request(event)
+                )
 
             elif isinstance(event, SubAgentQuestionEvent):
                 buf.set_thinking(None)
@@ -104,12 +155,14 @@ class MaxEventHandler:
                 q = (event.question or "").strip()
                 buf.add_note(f"❓ {name}: {q[:500]}")
                 self._presenter.schedule_edit(force=True)
-                asyncio.create_task(self._send_subagent_question(event))
+                self._presenter.enqueue_outbound(self._send_subagent_question(event))
 
             elif isinstance(event, PlanReviewRequestEvent):
                 buf.set_thinking(None)
                 self._presenter.schedule_edit(force=True)
-                asyncio.create_task(self._approvals.on_plan_review_request(event))
+                self._presenter.enqueue_outbound(
+                    self._approvals.on_plan_review_request(event)
+                )
 
             elif isinstance(event, (PlanStepCompletedEvent, PlanCompletedEvent)):
                 msg = getattr(event, "message", "") or type(event).__name__
@@ -137,12 +190,34 @@ class MaxEventHandler:
         except Exception as exc:
             buf.add_note(f"UI error: {exc}")
             self._presenter.schedule_edit()
+            logger.exception("MAX event handler failed for %s", type(event).__name__)
 
     async def _send_subagent_question(self, event: SubAgentQuestionEvent) -> None:
         name = event.subagent_name or "sub-agent"
         question = (event.question or "").strip()
-        text = f"**❓ Sub-agent `{name}` asks:**\n{question}\n\n_Reply in chat or `/subagent-reply {name} …`_"
+        text = (
+            f"❓ Sub-agent {name} asks:\n{question}\n\n"
+            f"Reply in chat or /subagent-reply {name} …"
+        )
         await self._presenter.send_notice(text)
+
+    @staticmethod
+    def _tool_detail(name: str, args: object) -> str:
+        if not isinstance(args, dict):
+            return ""
+        if name in _PROGRESS_TOOLS:
+            return str(
+                args.get("task")
+                or args.get("command")
+                or args.get("job_id")
+                or args.get("agent_type")
+                or ""
+            )[:200]
+        for key in ("path", "query", "url", "command", "task", "job_id"):
+            val = args.get(key)
+            if val:
+                return str(val)[:200]
+        return ""
 
     @staticmethod
     def _store_tool(session, name: str, body: str, duration_s: float | None) -> None:

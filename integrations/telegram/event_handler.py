@@ -92,8 +92,15 @@ class TelegramEventHandler:
                 # For very long final answers, send the full content split across
                 # multiple Telegram messages (point 3), and keep the live status
                 # message short so it doesn't hit the size limit or duplicate.
-                if len(content) > 2200:
-                    buf.set_answer("📄 Long response follows in chat.")
+                from integrations.telegram.markdown import markdown_to_telegram_html
+
+                html_len = (
+                    len(markdown_to_telegram_html(content))
+                    if content.strip()
+                    else 0
+                )
+                if len(content) > 2200 or html_len > 3600:
+                    buf.set_answer("📄 Полный ответ — в следующих сообщениях.")
                     try:
                         asyncio.create_task(
                             self._presenter.send_final_answer_split(content)

@@ -194,6 +194,7 @@ def show_max_status() -> None:
         f"[cyan]Allowlist:[/cyan] {settings.allowed_user_ids or '(пусто — не рекомендуется)'}",
         f"[cyan]Профиль:[/cyan] {settings.profile}",
         f"[cyan]Режим:[/cyan] {settings.mode}",
+        f"[cyan]Poll timeout:[/cyan] {settings.poll_timeout_s}s",
         f"[cyan]Webhook URL:[/cyan] {settings.webhook_url or '(не задан)'}",
         f"[cyan]Конфиг:[/cyan] {path or 'только env'}",
     ]

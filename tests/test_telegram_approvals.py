@@ -6,7 +6,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from integrations.telegram.approvals import TelegramApprovals
+from core.security.confirmation_events import ConfirmationRequestEvent
+from integrations.telegram.approvals import TelegramApprovals, _format_confirmation_args
 from integrations.telegram.session import ChatSession
 
 
@@ -56,3 +57,45 @@ async def test_dismiss_confirmation_ignores_delete_errors(
     approvals._bot.delete_message.side_effect = Exception("already gone")
     await approvals.dismiss_confirmation_ui()
     assert session.pending_confirmation_message_id is None
+
+
+def test_format_confirmation_args_terminal_shows_command() -> None:
+    html = _format_confirmation_args(
+        "run_terminal_command",
+        {"command": "rm -rf /tmp/test"},
+    )
+    assert "Команда:" in html
+    assert "rm -rf" in html
+
+
+def test_format_confirmation_args_write_file_shows_path() -> None:
+    html = _format_confirmation_args(
+        "write_file",
+        {"path": "/etc/hosts", "content": "hello"},
+    )
+    assert "/etc/hosts" in html
+
+
+@pytest.mark.asyncio
+async def test_on_confirmation_request_includes_command_and_keyboard(
+    approvals: TelegramApprovals,
+) -> None:
+    event = ConfirmationRequestEvent(
+        confirmation_id="abc",
+        tool_name="run_terminal_command",
+        arguments={"command": "ls -la"},
+        risk_level="high",
+        reason="Dangerous command",
+    )
+    sent = MagicMock()
+    sent.message_id = 7
+    approvals._bot.send_message = AsyncMock(return_value=sent)
+
+    await approvals.on_confirmation_request(event)
+
+    call = approvals._bot.send_message.await_args
+    assert call is not None
+    text = call.args[1] if len(call.args) > 1 else call.kwargs.get("text", "")
+    assert "ls -la" in text
+    assert call.kwargs.get("reply_markup") is not None
+    assert approvals._session.pending_confirmation_message_id == 7

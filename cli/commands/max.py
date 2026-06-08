@@ -7,7 +7,7 @@ import asyncio
 import typer
 
 from cli.commands.max_setup import run_max_setup, show_max_status
-from cli.utils.rich_console import print_error, print_info
+from cli.utils.rich_console import print_error, print_info, print_success
 
 max_app = typer.Typer(
     help="MAX messenger bot: interactive setup and run",
@@ -41,6 +41,7 @@ def max_run(
         raise typer.Exit(1) from e
 
     print_info(f"Starting Helix MAX bot (profile={profile})…")
+    print_info("Initializing Helix agent (memory, tools, MCP)…")
     try:
         asyncio.run(run_bot(profile))
     except RuntimeError as e:
@@ -74,6 +75,33 @@ def max_setup(
 def max_status() -> None:
     """Show saved MAX configuration (token masked)."""
     show_max_status()
+
+
+@max_app.command("sync-menu")
+def max_sync_menu(
+    profile: str = typer.Option("default", "--profile", "-p", help="Helix profile"),
+) -> None:
+    """Push slash-command menu to MAX (incl. /models) without restarting the bot."""
+    try:
+        from integrations.max.env_store import load_max_env_files
+        from integrations.max.commands import sync_bot_menu
+
+        load_max_env_files()
+        names = asyncio.run(sync_bot_menu(profile))
+    except ImportError as e:
+        print_error(str(e))
+        print_info("Install: uv sync --extra max")
+        raise typer.Exit(1) from e
+    except RuntimeError as e:
+        print_error(str(e))
+        raise typer.Exit(1) from e
+
+    print_success(f"MAX menu updated ({len(names)} commands)")
+    if "models" in names:
+        print_info("  /models — смена LLM")
+    else:
+        print_error("  /models missing from registration — report a bug")
+    print_info("If the client still shows the old list, re-open the chat with the bot")
 
 
 def register_max_command(app: typer.Typer) -> None:

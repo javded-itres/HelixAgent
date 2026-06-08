@@ -25,6 +25,23 @@ from core.prompt_builder import build_system_prompt, format_tools_description
 logger = logging.getLogger(__name__)
 
 
+def _emit_final_response(
+    agent: Any,
+    *,
+    content: str,
+    steps_taken: int,
+    conversation_id: str,
+) -> None:
+    if agent and hasattr(agent, "emit"):
+        agent.emit(
+            FinalResponseEvent(
+                content=content,
+                steps_taken=steps_taken,
+                conversation_id=conversation_id,
+            )
+        )
+
+
 async def react_node(state: HelixGraphState, config: RunnableConfig) -> dict:
     """ReAct reasoning node: call LLM, decide next action.
 
@@ -69,10 +86,17 @@ async def react_node(state: HelixGraphState, config: RunnableConfig) -> dict:
     client: AsyncOpenAI = agent.client if agent else None
     model = getattr(agent, "model", None) if agent else None
     if not model:
+        err = "Error: No LLM model configured"
+        _emit_final_response(
+            agent,
+            content=err,
+            steps_taken=step_count,
+            conversation_id=conversation_id,
+        )
         return {
             "step_count": step_count,
             "is_final": True,
-            "final_response": "Error: No LLM model configured",
+            "final_response": err,
         }
     tools = agent.tools.get_schemas() if agent and hasattr(agent, "tools") else []
     temperature = 0.7
@@ -80,10 +104,17 @@ async def react_node(state: HelixGraphState, config: RunnableConfig) -> dict:
         temperature = getattr(agent.config, "temperature", 0.7)
 
     if not client:
+        err = "Error: No LLM client available"
+        _emit_final_response(
+            agent,
+            content=err,
+            steps_taken=step_count,
+            conversation_id=conversation_id,
+        )
         return {
             "step_count": step_count,
             "is_final": True,
-            "final_response": "Error: No LLM client available",
+            "final_response": err,
         }
 
     try:
@@ -94,10 +125,17 @@ async def react_node(state: HelixGraphState, config: RunnableConfig) -> dict:
 
     except Exception as e:
         logger.error(f"Error in react_node: {e}")
+        err = f"Error during agent step: {str(e)}"
+        _emit_final_response(
+            agent,
+            content=err,
+            steps_taken=step_count,
+            conversation_id=conversation_id,
+        )
         return {
             "step_count": step_count,
             "is_final": True,
-            "final_response": f"Error during agent step: {str(e)}",
+            "final_response": err,
         }
 
 
@@ -177,13 +215,12 @@ async def _react_non_streaming(
                 "is_step_complete": True,
             }
 
-        # Emit final response event
-        if agent and hasattr(agent, "emit"):
-            agent.emit(FinalResponseEvent(
-                content=final_response,
-                steps_taken=step_count,
-                conversation_id=conversation_id,
-            ))
+        _emit_final_response(
+            agent,
+            content=final_response,
+            steps_taken=step_count,
+            conversation_id=conversation_id,
+        )
 
         return {
             "messages": messages,
@@ -270,12 +307,12 @@ async def _react_streaming(
                     "is_step_complete": True,
                 }
 
-            if agent and hasattr(agent, "emit"):
-                agent.emit(FinalResponseEvent(
-                    content=final_response,
-                    steps_taken=step_count,
-                    conversation_id=conversation_id,
-                ))
+            _emit_final_response(
+                agent,
+                content=final_response,
+                steps_taken=step_count,
+                conversation_id=conversation_id,
+            )
 
             return {
                 "messages": messages,
@@ -315,6 +352,13 @@ async def _react_streaming(
     final_response = current_content or "No response generated"
     messages = list(state.get("messages", []))
     messages.append({"role": "assistant", "content": final_response})
+
+    _emit_final_response(
+        agent,
+        content=final_response,
+        steps_taken=step_count,
+        conversation_id=conversation_id,
+    )
 
     return {
         "messages": messages,

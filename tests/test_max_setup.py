@@ -13,7 +13,12 @@ from integrations.max.env_store import (
     save_max_env,
     token_looks_valid,
 )
+from integrations.max.config import load_max_settings
 from integrations.max.models import user_id_from_update
+
+
+def _block_max_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("integrations.max.env_store.load_max_env_files", lambda: None)
 
 
 def test_token_looks_valid() -> None:
@@ -65,6 +70,26 @@ def test_merge_project_env(tmp_path: Path) -> None:
 def test_user_id_from_bot_started() -> None:
     uid = user_id_from_update({"update_type": "bot_started", "user": {"user_id": 555}})
     assert uid == 555
+
+
+def test_poll_timeout_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    _block_max_env(monkeypatch)
+    monkeypatch.delenv("HELIX_MAX_POLL_TIMEOUT", raising=False)
+    assert load_max_settings().poll_timeout_s == 5
+
+
+def test_poll_timeout_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    _block_max_env(monkeypatch)
+    monkeypatch.setenv("HELIX_MAX_POLL_TIMEOUT", "15")
+    assert load_max_settings().poll_timeout_s == 15
+
+
+def test_poll_timeout_clamped(monkeypatch: pytest.MonkeyPatch) -> None:
+    _block_max_env(monkeypatch)
+    monkeypatch.setenv("HELIX_MAX_POLL_TIMEOUT", "120")
+    assert load_max_settings().poll_timeout_s == 90
+    monkeypatch.setenv("HELIX_MAX_POLL_TIMEOUT", "not-a-number")
+    assert load_max_settings().poll_timeout_s == 5
 
 
 def test_format_env_lines() -> None:

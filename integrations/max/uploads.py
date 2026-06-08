@@ -91,11 +91,14 @@ async def send_file_message(
             await asyncio.sleep(delay)
             delay = min(delay * 1.8, 3.0)
         try:
+            from integrations.max.markdown import plain_to_max_html
+
+            body = plain_to_max_html(text) if caption else text
             return await client.send_message(
-                text,
+                body,
                 user_id=user_id,
                 chat_id=chat_id,
-                fmt="markdown" if caption else None,
+                fmt="html" if caption else None,
                 attachments=[attachment],
             )
         except MaxApiError as exc:

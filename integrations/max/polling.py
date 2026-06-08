@@ -26,15 +26,33 @@ async def run_polling(settings: MaxSettings | None = None, *, profile: str = "de
 
     bot = HelixMaxBot(settings, profile=profile)
     marker: int | None = None
-    logger.info("MAX Long Polling started (profile=%s)", settings.profile)
 
-    async with MaxClient(token) as client:
+    # Separate clients: long-poll must not block send/edit during agent runs.
+    async with MaxClient(token) as poll_client, MaxClient(token) as api_client:
+        try:
+            await bot.warmup()
+        except Exception:
+            logger.exception("Failed to initialize Helix agent")
+            raise
+
+        try:
+            from core.i18n import LocaleStore
+            from integrations.max.commands import register_bot_commands
+
+            locale = LocaleStore(settings.profile).get()
+            registered = await register_bot_commands(api_client, locale=locale)
+            if registered:
+                logger.info("MAX menu: %d commands", len(registered))
+        except Exception:
+            logger.exception("Failed to sync MAX command menu")
+
+        logger.info("MAX Long Polling started (profile=%s)", settings.profile)
         while True:
             try:
-                payload = await client.get_updates(
+                payload = await poll_client.get_updates(
                     marker=marker,
                     limit=100,
-                    timeout=30,
+                    timeout=settings.poll_timeout_s,
                     types=POLL_TYPES,
                 )
             except MaxApiError as exc:
@@ -49,9 +67,11 @@ async def run_polling(settings: MaxSettings | None = None, *, profile: str = "de
             updates = payload.get("updates")
             if not isinstance(updates, list):
                 continue
+            if updates:
+                logger.info("MAX received %d update(s)", len(updates))
             for update in updates:
                 if isinstance(update, dict):
                     try:
-                        await bot.handle_update(client, update)
+                        await bot.handle_update(api_client, update)
                     except Exception:
                         logger.exception("Failed to handle MAX update")

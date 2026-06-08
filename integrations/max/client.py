@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from pathlib import Path
 from typing import Any
 
 import aiohttp
+
+logger = logging.getLogger(__name__)
 
 MAX_API_BASE = "https://platform-api.max.ru"
 DEFAULT_TIMEOUT_S = 35.0
@@ -61,10 +64,43 @@ class MaxClient:
         *,
         params: dict[str, Any] | None = None,
         json_body: dict[str, Any] | None = None,
+        http_timeout_s: float | None = None,
+    ) -> Any:
+        last_error: MaxApiError | None = None
+        for attempt in range(4):
+            try:
+                return await self._request_once(
+                    method,
+                    path,
+                    params=params,
+                    json_body=json_body,
+                    http_timeout_s=http_timeout_s,
+                )
+            except MaxApiError as exc:
+                last_error = exc
+                if exc.status == 429 and attempt < 3:
+                    await asyncio.sleep(min(2**attempt, 8))
+                    continue
+                raise
+        if last_error is not None:
+            raise last_error
+        raise MaxApiError("MAX API request failed")
+
+    async def _request_once(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+        json_body: dict[str, Any] | None = None,
+        http_timeout_s: float | None = None,
     ) -> Any:
         await self._ensure_session()
         assert self._session is not None
         url = f"{self.base_url}{path}"
+        req_timeout = aiohttp.ClientTimeout(
+            total=http_timeout_s if http_timeout_s is not None else DEFAULT_TIMEOUT_S
+        )
         async with self._lock:
             async with self._session.request(
                 method,
@@ -72,6 +108,7 @@ class MaxClient:
                 headers=self._headers(),
                 params=params,
                 json=json_body,
+                timeout=req_timeout,
             ) as resp:
                 if resp.status == 204:
                     return None
@@ -94,12 +131,17 @@ class MaxClient:
         result = await self._request("GET", "/me")
         return result if isinstance(result, dict) else {}
 
+    async def set_my_commands(self, commands: list[dict[str, str]]) -> dict[str, Any]:
+        """Publish slash commands to MAX (PATCH /me, up to 32 items)."""
+        result = await self._request("PATCH", "/me", json_body={"commands": commands})
+        return result if isinstance(result, dict) else {}
+
     async def get_updates(
         self,
         *,
         marker: int | None = None,
         limit: int = 100,
-        timeout: int = 30,
+        timeout: int = 5,
         types: list[str] | None = None,
     ) -> dict[str, Any]:
         params: dict[str, Any] = {"limit": limit, "timeout": timeout}
@@ -107,7 +149,13 @@ class MaxClient:
             params["marker"] = marker
         if types:
             params["types"] = ",".join(types)
-        result = await self._request("GET", "/updates", params=params)
+        http_timeout_s = max(DEFAULT_TIMEOUT_S, float(timeout) + 5.0)
+        result = await self._request(
+            "GET",
+            "/updates",
+            params=params,
+            http_timeout_s=http_timeout_s,
+        )
         return result if isinstance(result, dict) else {"updates": [], "marker": marker}
 
     async def send_message(
@@ -118,20 +166,45 @@ class MaxClient:
         chat_id: int | None = None,
         fmt: str | None = None,
         attachments: list[dict[str, Any]] | None = None,
+        link: dict[str, Any] | None = None,
+        notify: bool = True,
     ) -> dict[str, Any]:
         if user_id is None and chat_id is None:
             raise ValueError("user_id or chat_id is required")
+        if chat_id is not None and user_id is not None:
+            user_id = None
         params: dict[str, Any] = {}
         if user_id is not None:
             params["user_id"] = user_id
         if chat_id is not None:
             params["chat_id"] = chat_id
-        body: dict[str, Any] = {"text": text}
+        body: dict[str, Any] = {"text": text, "notify": notify}
         if fmt:
             body["format"] = fmt
         if attachments:
             body["attachments"] = attachments
+        if link:
+            body["link"] = link
         result = await self._request("POST", "/messages", params=params, json_body=body)
+        out_mid = None
+        if isinstance(result, dict):
+            from integrations.max.models import message_id_from_response
+
+            out_mid = message_id_from_response(result)
+        recipient = None
+        if isinstance(result, dict):
+            msg = result.get("message")
+            if isinstance(msg, dict):
+                recipient = msg.get("recipient")
+        logger.info(
+            "MAX send_message ok (user_id=%s, chat_id=%s, chars=%d, fmt=%s, out_mid=%s, api_recipient=%s)",
+            user_id,
+            chat_id,
+            len(text),
+            fmt,
+            out_mid,
+            recipient,
+        )
         return result if isinstance(result, dict) else {}
 
     async def answer_callback(
@@ -172,6 +245,12 @@ class MaxClient:
             "/messages",
             params={"message_id": message_id},
             json_body=body,
+        )
+        logger.info(
+            "MAX edit_message ok (message_id=%s, chars=%d, fmt=%s)",
+            message_id,
+            len(text),
+            fmt,
         )
         return result if isinstance(result, dict) else {}
 

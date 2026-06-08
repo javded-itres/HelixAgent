@@ -18,6 +18,8 @@ class MaxChatSession:
     conversation_id: str
     reply_user_id: int | None = None
     reply_chat_id: int | None = None
+    chat_type: str = ""
+    incoming_message_id: str | None = None
     execution_modes: list[str] = field(
         default_factory=lambda: ["react", "plan_and_execute", "hybrid", "auto"]
     )

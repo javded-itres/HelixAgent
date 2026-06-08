@@ -11,7 +11,8 @@ from core.security.confirmation import ConfirmationChoice, get_action_guard
 from core.security.confirmation_events import ConfirmationRequestEvent
 from integrations.max.client import MaxClient
 from integrations.max.keyboards import confirmation_keyboard, plan_review_keyboard
-from integrations.max.models import message_id_from_response
+from integrations.max.markdown import plain_to_max_html
+from integrations.max.models import message_id_from_response, reply_kwargs_for_session
 
 
 class MaxApprovals:
@@ -42,11 +43,15 @@ class MaxApprovals:
             text = text[:3500] + "…"
 
         payload = await self._client.send_message(
-            text,
-            user_id=self._session.reply_user_id,
-            chat_id=self._session.reply_chat_id,
-            fmt="markdown",
+            plain_to_max_html(text),
+            fmt="html",
             attachments=[confirmation_keyboard(event.confirmation_id)],
+            **reply_kwargs_for_session(
+                user_id=self._session.user_id,
+                reply_user_id=self._session.reply_user_id,
+                reply_chat_id=self._session.reply_chat_id,
+                chat_type=self._session.chat_type,
+            ),
         )
         self._session.pending_confirmation_message_id = message_id_from_response(payload)
 
@@ -58,18 +63,22 @@ class MaxApprovals:
         if len(body) > 3500:
             body = body[:3500] + "…"
 
+        reply = reply_kwargs_for_session(
+            user_id=self._session.user_id,
+            reply_user_id=self._session.reply_user_id,
+            reply_chat_id=self._session.reply_chat_id,
+            chat_type=self._session.chat_type,
+        )
         plan_payload = await self._client.send_message(
-            body,
-            user_id=self._session.reply_user_id,
-            chat_id=self._session.reply_chat_id,
-            fmt="markdown",
+            plain_to_max_html(body),
+            fmt="html",
             attachments=[plan_review_keyboard(event.review_id)],
+            **reply,
         )
         hint_payload = await self._client.send_message(
-            "_Or reply with text to refine the plan._",
-            user_id=self._session.reply_user_id,
-            chat_id=self._session.reply_chat_id,
-            fmt="markdown",
+            plain_to_max_html("_Or reply with text to refine the plan._"),
+            fmt="html",
+            **reply,
         )
         ids: list[str] = []
         for p in (plan_payload, hint_payload):

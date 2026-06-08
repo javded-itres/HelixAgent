@@ -13,6 +13,17 @@ def _env_bool(name: str, default: bool = False) -> bool:
     return raw in {"1", "true", "yes", "on"}
 
 
+def _env_int_clamped(name: str, default: int, *, min_value: int, max_value: int) -> int:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        value = int(raw)
+    except ValueError:
+        return default
+    return max(min_value, min(max_value, value))
+
+
 @dataclass
 class MaxSettings:
     access_token: str
@@ -22,6 +33,9 @@ class MaxSettings:
     webhook_url: str = ""
     webhook_secret: str = ""
     allow_all: bool = False
+    poll_timeout_s: int = 5
+    edit_interval_ms: int = 1500
+    heartbeat_interval_s: int = 45
 
     def allowed_ids(self) -> set[int]:
         out: set[int] = set()
@@ -66,4 +80,22 @@ def load_max_settings(profile: str = "default") -> MaxSettings:
         webhook_url=os.getenv("HELIX_MAX_WEBHOOK_URL", ""),
         webhook_secret=os.getenv("HELIX_MAX_WEBHOOK_SECRET", ""),
         allow_all=_env_bool("HELIX_MAX_ALLOW_ALL"),
+        poll_timeout_s=_env_int_clamped(
+            "HELIX_MAX_POLL_TIMEOUT",
+            5,
+            min_value=0,
+            max_value=90,
+        ),
+        edit_interval_ms=_env_int_clamped(
+            "HELIX_MAX_EDIT_INTERVAL_MS",
+            1500,
+            min_value=300,
+            max_value=10000,
+        ),
+        heartbeat_interval_s=_env_int_clamped(
+            "HELIX_MAX_HEARTBEAT_INTERVAL",
+            45,
+            min_value=15,
+            max_value=300,
+        ),
     )

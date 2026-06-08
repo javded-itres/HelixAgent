@@ -63,14 +63,10 @@ def buffer_to_telegram_html(buf: LiveTranscriptBuffer) -> str:
 
 
 def _format_tool_line(line: str) -> str:
-    """Plain tool line from LiveTranscriptBuffer → compact HTML."""
+    """Tool call line — header only (no result/args body in live message)."""
     raw = line.strip()
     if not raw:
         return ""
-    lines = raw.split("\n", 1)
-    header = escape_html(lines[0])
+    header = escape_html(raw.split("\n", 1)[0])
     header = header.replace("⎿", "▸", 1)
-    if len(lines) > 1:
-        detail = escape_html(lines[1].strip())
-        return f"<b>{header}</b>\n<code>{detail}</code>"
     return f"<b>{header}</b>"

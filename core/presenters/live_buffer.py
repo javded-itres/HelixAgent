@@ -24,6 +24,7 @@ class LiveTranscriptBuffer:
     notes: list[str] = field(default_factory=list)
     max_tool_lines: int = 8
     max_answer_chars: int = 2800
+    compact_tools: bool = False
 
     def set_header(self, *, profile: str | None = None, mode: str | None = None, session: str | None = None) -> None:
         if profile is not None:
@@ -38,9 +39,10 @@ class LiveTranscriptBuffer:
 
     def add_tool_start(self, name: str, args: object) -> None:
         line = format_tool_header(name, running=True)
-        args_text = format_tool_args(args)
-        if args_text:
-            line += f"\n  {args_text}"
+        if not self.compact_tools:
+            args_text = format_tool_args(args)
+            if args_text:
+                line += f"\n  {args_text}"
         self.tool_lines.append(line)
         self._trim_tools()
 

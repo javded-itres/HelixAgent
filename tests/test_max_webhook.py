@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
@@ -139,8 +139,13 @@ async def test_init_max_webhook_registers_subscription(monkeypatch: pytest.Monke
             ) as client_cls:
                 client = AsyncMock()
                 client_cls.return_value = client
-                state = await init_max_webhook("default")
-                await shutdown_max_webhook()
+                with patch(
+                    "integrations.max.bot.create_agent",
+                    new_callable=AsyncMock,
+                    return_value=MagicMock(model="m"),
+                ):
+                    state = await init_max_webhook("default")
+                    await shutdown_max_webhook()
 
     assert state is not None
     assert state.subscribed is True

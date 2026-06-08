@@ -3,18 +3,27 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 from cli.shared.commands.agent_commands import AgentCommands
 from cli.shared.rich_text import content_to_plain_text
 from cli.shared.slash_input import is_slash_command, normalize_slash_input
 from core.i18n import host_locale, t
 from integrations.max.client import MaxClient
+from integrations.max.models import reply_kwargs_for_session
 from integrations.max.commands import help_message_markdown
 from integrations.max.event_handler import MaxEventHandler
 from integrations.max.interactive import MaxInteractive
 from integrations.max.live_presenter import MaxLivePresenter
-from integrations.max.markdown import split_max_text
+from integrations.max.markdown import (
+    plain_to_max_html,
+    prepare_max_markdown,
+    split_max_html,
+    truncate_max_text,
+)
 
 
 class MaxHost:
@@ -95,29 +104,79 @@ class MaxHost:
         if text:
             asyncio.create_task(self._send_text(text))
 
-    async def _send_text(self, text: str) -> None:
-        for chunk in split_max_text(text):
+    def _reply_kwargs(self) -> dict:
+        return reply_kwargs_for_session(
+            user_id=self._session.user_id,
+            reply_user_id=self._session.reply_user_id,
+            reply_chat_id=self._session.reply_chat_id,
+            chat_type=self._session.chat_type,
+        )
+
+    async def _send_text(self, text: str, *, formatted: bool | None = None) -> None:
+        use_html = formatted if formatted is not None else True
+        if not use_html:
+            await self._send_plain_chunks([text])
+            return
+
+        html = plain_to_max_html(text)
+        chunks = split_max_html(html) or [html]
+        for chunk in chunks:
+            sent = await self._send_formatted_chunk(chunk, raw_fallback=text)
+            if not sent:
+                logger.error("MAX _send_text failed for chunk (%d chars)", len(chunk))
+            await asyncio.sleep(0.06)
+
+    async def _send_plain_chunks(self, chunks: list[str]) -> None:
+        for chunk in chunks:
+            body = truncate_max_text(chunk)
+            if not body.strip():
+                continue
             try:
-                await self._client.send_message(
-                    chunk,
-                    user_id=self._session.reply_user_id,
-                    chat_id=self._session.reply_chat_id,
-                    fmt="markdown",
-                )
+                await self._client.send_message(body, **self._reply_kwargs())
                 await asyncio.sleep(0.06)
             except Exception:
-                pass
+                logger.exception("MAX send_message plain chunk failed")
+
+    async def _send_formatted_chunk(self, chunk: str, *, raw_fallback: str) -> bool:
+        variants: list[tuple[str, str | None]] = [
+            (chunk, "html"),
+            (prepare_max_markdown(raw_fallback), "markdown"),
+            (truncate_max_text(raw_fallback), None),
+        ]
+        seen: set[str] = set()
+        for body, fmt in variants:
+            payload = (body or "").strip()
+            if not payload or payload in seen:
+                continue
+            seen.add(payload)
+            try:
+                await self._client.send_message(
+                    payload,
+                    fmt=fmt,
+                    **self._reply_kwargs(),
+                )
+                return True
+            except Exception:
+                continue
+        try:
+            await self._client.send_message(
+                truncate_max_text(raw_fallback),
+                **self._reply_kwargs(),
+            )
+            return True
+        except Exception:
+            logger.exception("MAX send_message all fallbacks failed")
+            return False
 
     async def _send_text_with_keyboard(self, text: str, keyboard: dict) -> None:
         try:
             await self._client.send_message(
                 text,
-                user_id=self._session.reply_user_id,
-                chat_id=self._session.reply_chat_id,
-                fmt="markdown",
                 attachments=[keyboard],
+                **self._reply_kwargs(),
             )
         except Exception:
+            logger.exception("MAX keyboard message send failed")
             await self._send_text(text)
 
     def run_worker(self, work: Any, **kwargs: Any) -> None:
@@ -178,12 +237,15 @@ class MaxHost:
     async def _create_new_session(self) -> None:
         import time
 
-        suffix = (
-            f"chat_{self._session.reply_chat_id}"
-            if self._session.reply_chat_id
-            else str(self._session.user_id)
+        from integrations.max.models import conversation_id_for_max
+
+        base = conversation_id_for_max(
+            self._session.profile,
+            self._session.user_id,
+            chat_id=self._session.reply_chat_id,
+            chat_type=self._session.chat_type,
         )
-        self._session.conversation_id = f"max_{self._session.profile}_{suffix}_{int(time.time())}"
+        self._session.conversation_id = f"{base}_{int(time.time())}"
         self._session.session_display_name = "new"
         self._session._transcript_store.clear()
         from core.session_models import restore_session_model
@@ -348,11 +410,17 @@ class MaxHost:
 
         from integrations.max.uploads import send_file_message
 
+        target = reply_kwargs_for_session(
+            user_id=self._session.user_id,
+            reply_user_id=self._session.reply_user_id,
+            reply_chat_id=self._session.reply_chat_id,
+            chat_type=self._session.chat_type,
+        )
         await send_file_message(
             self._client,
             Path(path),
-            user_id=self._session.reply_user_id,
-            chat_id=self._session.reply_chat_id,
+            user_id=target.get("user_id"),
+            chat_id=target.get("chat_id"),
             caption=caption,
         )
 
@@ -388,6 +456,16 @@ class MaxHost:
                     await self._send_text(feedback)
                 return
 
+        self._session._transcript_store.append("user", message)
+
+        from integrations.max.tool_dispatch import try_direct_tool_dispatch
+
+        handled, tool_text = await try_direct_tool_dispatch(self, message)
+        if handled:
+            if tool_text:
+                await self._send_text(tool_text)
+            return
+
         normalized = normalize_slash_input(message)
         if is_slash_command(normalized) or normalized.startswith("/"):
             if await self._interactive.handle_slash(normalized):
@@ -401,6 +479,7 @@ class MaxHost:
         self._start_agent_run(message)
 
     def _start_agent_run(self, message: str) -> None:
+        """Start agent run in background so sub-agents and user replies can overlap."""
         task = asyncio.create_task(self._run_agent(message))
         self._run_tasks.add(task)
         task.add_done_callback(self._run_tasks.discard)
@@ -409,16 +488,25 @@ class MaxHost:
         if not self.agent:
             await self._send_text("agent not ready")
             return
+        logger.info(
+            "MAX agent run start (conversation=%s, preview=%r)",
+            self.conversation_id,
+            user_input[:80],
+        )
         from core.session_models import ensure_session_model
 
         ensure_session_model(self)
 
         from integrations.max.approvals import MaxApprovals
 
+        from integrations.max.config import load_max_settings
+
+        max_settings = load_max_settings(self.profile)
         presenter = MaxLivePresenter(
             self._client,
             self._session,
-            edit_interval_ms=self._edit_interval_ms,
+            edit_interval_ms=max_settings.edit_interval_ms,
+            heartbeat_interval_s=max_settings.heartbeat_interval_s,
         )
         approvals = MaxApprovals(self._client, self._session)
         handler = MaxEventHandler(presenter, approvals)
@@ -451,12 +539,23 @@ class MaxHost:
             buf = self._session.live_buffer
             if buf:
                 buf.add_note("stopped")
-                await presenter._do_edit()
         except Exception as exc:
             buf = self._session.live_buffer
             if buf:
                 buf.mark_error(str(exc))
-                await presenter._do_edit()
+            logger.exception("MAX agent run failed")
         finally:
             self.agent.events.unsubscribe(on_event)
-            await presenter._do_edit()
+            try:
+                await presenter.finish()
+            except Exception:
+                logger.exception("MAX presenter finish failed; retrying final delivery")
+                try:
+                    await presenter.ensure_final_delivered()
+                except Exception:
+                    logger.exception("MAX final delivery retry failed")
+            logger.info(
+                "MAX agent run finished (conversation=%s, final_delivered=%s)",
+                self.conversation_id,
+                presenter.final_delivered,
+            )

@@ -74,6 +74,23 @@ async def init_max_webhook(profile: str | None = None) -> MaxGatewayState | None
     client = MaxClient(settings.access_token)
     await client._ensure_session()
     handler = MaxWebhookHandler(settings, client=client)
+    try:
+        await handler._bot.warmup()
+    except Exception:
+        logger.exception("Failed to initialize Helix agent for MAX webhook")
+        await client.close()
+        raise
+
+    try:
+        from core.i18n import LocaleStore
+        from integrations.max.commands import register_bot_commands
+
+        locale = LocaleStore(profile).get()
+        registered = await register_bot_commands(client, locale=locale)
+        if registered:
+            logger.info("MAX menu: %d commands", len(registered))
+    except Exception:
+        logger.exception("Failed to sync MAX command menu")
     subscribed = await register_webhook(settings, client=client)
 
     _state = MaxGatewayState(
