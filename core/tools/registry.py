@@ -46,6 +46,7 @@ class ToolRegistry:
         from core.tools.database import SQLQueryTool, SQLSchemaTool
         from core.tools.code_executor import PythonExecutorTool, MathCalculatorTool
         from core.tools.ask_user import AskUserTool
+        from core.tools.send_chat_files import SendChatFilesTool
 
         # File operations
         self.register(ReadFileTool())
@@ -70,6 +71,9 @@ class ToolRegistry:
 
         # Sub-agent ↔ user bridge
         self.register(AskUserTool())
+
+        # Chat file delivery (Telegram; no-op without delivery bridge)
+        self.register(SendChatFilesTool())
 
         from config import settings
 

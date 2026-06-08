@@ -612,6 +612,15 @@ class TelegramHost:
 
         self.agent.events.subscribe(on_event)
 
+        from core.tools.execution_context import (
+            chat_delivery_scope,
+            reset_chat_delivery_scope,
+        )
+        from integrations.telegram.delivery_bridge import TelegramDeliveryBridge
+
+        delivery_bridge = TelegramDeliveryBridge(self._bot, self._session.chat_id)
+        delivery_token = chat_delivery_scope(delivery_bridge)
+
         async with TypingIndicator(self._bot, self._session.chat_id):
             await presenter.start()
 
@@ -647,3 +656,4 @@ class TelegramHost:
             finally:
                 self.agent.events.unsubscribe(on_event)
                 await presenter._do_edit()
+                reset_chat_delivery_scope(delivery_token)

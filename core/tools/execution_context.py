@@ -8,6 +8,7 @@ from typing import Any, Optional
 _conversation_id: ContextVar[str] = ContextVar("helix_conversation_id", default="default")
 _subagent_name: ContextVar[str] = ContextVar("helix_subagent_name", default="")
 _interaction_bridge: ContextVar[Any] = ContextVar("helix_interaction_bridge", default=None)
+_chat_delivery_bridge: ContextVar[Any] = ContextVar("helix_chat_delivery_bridge", default=None)
 
 
 def get_conversation_id() -> str:
@@ -22,6 +23,10 @@ def get_interaction_bridge() -> Optional[Any]:
     return _interaction_bridge.get()
 
 
+def get_chat_delivery_bridge() -> Optional[Any]:
+    return _chat_delivery_bridge.get()
+
+
 def conversation_scope(conversation_id: str):
     """Return token from ContextVar.set for use with reset_conversation_scope."""
     return _conversation_id.set(conversation_id)
@@ -29,6 +34,15 @@ def conversation_scope(conversation_id: str):
 
 def reset_conversation_scope(token) -> None:
     _conversation_id.reset(token)
+
+
+def chat_delivery_scope(bridge: Any):
+    """Return token from ContextVar.set for use with reset_chat_delivery_scope."""
+    return _chat_delivery_bridge.set(bridge)
+
+
+def reset_chat_delivery_scope(token) -> None:
+    _chat_delivery_bridge.reset(token)
 
 
 def subagent_scope(
