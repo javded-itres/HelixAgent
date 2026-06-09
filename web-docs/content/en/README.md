@@ -4,6 +4,8 @@ Helix is a self-improving AI agent with memory, skills, tool calling, MCP, CLI, 
 
 **Install from PyPI:** `pipx install HelixAgentAi` — [pypi.org/project/HelixAgentAi](https://pypi.org/project/HelixAgentAi/)
 
+> **Follow development:** subscribe to the [Telegram channel @helix_agent](https://t.me/helix_agent) for releases, roadmap, and project news.
+
 ## Getting started
 
 1. [INSTALLATION.md](INSTALLATION.md) — PyPI install, extras, updates, Docker
