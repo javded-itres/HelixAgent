@@ -2,17 +2,32 @@
 
 ## Unreleased
 
-### Added
-- **Per-profile `.env`** — API keys and feature flags live in `~/.helix/profiles/<name>/.env` (not global `~/.helix/.env`)
-- **Per-profile Telegram** — `profiles/<name>/telegram.env`; each profile can use a different bot
-- **Per-profile gateway** — separate state/log under `profiles/<name>/gateway/`; multiple gateways on different ports
-- **`helix profile`** — `profile env`, `profile jail enable|disable|status` for workspace isolation
-- **Workspace jail** — optional restriction of file/terminal tools to a single directory tree
+## 0.1.6 — 2026-06-09
 
-### Changed
-- `helix gateway stop|status|reload` — scoped to active `-p` profile
-- `helix telegram setup` — saves secrets to the selected profile directory
-- Documentation and web-docs updated for profile isolation
+### Documentation
+- **Profiles & Isolation** (EN/RU) — per-profile `.env`, gateway, Telegram, workspace jail
+- **Profile access keys** — optional protection for profile switching (`profile key`, `--protect`, `HELIX_PROFILE_KEY`)
+- **Telegram channel** [@helix_agent](https://t.me/helix_agent) linked in README and TELEGRAM guides
+- **DEPLOYMENT** — per-profile gateway, systemd `helix-gateway@`, docs-server env vars
+- **CONFIGURATION**, **CLI**, **GATEWAY**, **USER_GUIDE** updated for profiles and multi-gateway setup
+- Donation link updated to Boosty
+
+### Added
+- **Per-profile isolation** — `.env`, gateway state/logs, Telegram bot, workspace jail per profile
+- **Optional profile access keys** — off by default; opt-in via `profile create --protect` or `profile key init`
+- **`helix profile`** — `env`, `jail`, `key status|init|rotate|disable`
+- **`--no-verify-ssl`** on `helix models setup` and `helix models add` for self-signed/internal LLM endpoints
+- Cross-session memory search tools (`search_session_memory`, `read_session_memory`)
+- Telegram: send generated files to chat; paginated `/skills` picker
+- Per-profile gateway deployment (`helix-gateway@.service`)
+
+### Fixed
+- Custom provider setup: `probe_provider is not defined`
+- Gateway legacy state and orphan companion workers
+- Context compression at 95% after tools and on session load
+- Graph `max_steps` check before tool dispatch in plan mode
+- Runtime data stored under profile dir instead of project CWD
+- CLI hints omit `-p default` for active profile
 
 ## 0.1.5 — 2026-06-07
 
