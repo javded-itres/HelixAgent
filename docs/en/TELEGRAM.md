@@ -1,5 +1,7 @@
 # Telegram
 
+**Community channel:** [t.me/helix_agent](https://t.me/helix_agent) — project news and updates (not the bot you configure below).
+
 Each profile can use its **own bot** and allowlist. Secrets are stored in:
 
 `~/.helix/profiles/<name>/telegram.env`

@@ -45,6 +45,7 @@ const GITHUB_URL = "https://github.com/javded-itres/HelixAgent";
 const PYPI_URL = "https://pypi.org/project/HelixAgentAi/";
 const DONATE_URL = "https://boosty.to/javded/single-payment/donation/805721/target?share=target_link";
 const SITE_URL = "https://helix-agent.ru";
+const TELEGRAM_CHANNEL_URL = "https://t.me/helix_agent";
 const YANDEX_METRIKA_ID = 109712139;
 
 function trackMetrikaPageView() {
@@ -111,6 +112,11 @@ const I18N = {
     cta_docs: "Read documentation",
     cta_install: "Installation guide",
     donate: "Support the project",
+    telegram_channel: "Telegram",
+    tg_callout_title: "Stay in the loop",
+    tg_callout_lead:
+      "Subscribe to our Telegram channel for release notes, roadmap updates, tips, and early news about Helix.",
+    tg_callout_cta: "Subscribe to @helix_agent",
     github: "GitHub",
     docs_hub_lead: "Guides, CLI reference, deployment, and troubleshooting.",
     docs_hub_title: "Documentation",
@@ -190,6 +196,11 @@ const I18N = {
     cta_docs: "Открыть документацию",
     cta_install: "Руководство по установке",
     donate: "Поддержать проект",
+    telegram_channel: "Telegram",
+    tg_callout_title: "Следите за развитием",
+    tg_callout_lead:
+      "Telegram-канал Helix: анонсы релизов, планы развития, советы по использованию и свежие новости проекта.",
+    tg_callout_cta: "Подписаться на @helix_agent",
     github: "GitHub",
     docs_hub_lead: "Установка, справочник CLI, развёртывание и решение проблем.",
     docs_hub_title: "Документация",
@@ -261,9 +272,11 @@ function isMobileLayout() {
 }
 
 function syncHeaderHeight() {
+  const chrome = $("#site-chrome");
   const header = $(".header");
-  if (!header) return;
-  document.documentElement.style.setProperty("--header-h", `${Math.ceil(header.getBoundingClientRect().height)}px`);
+  const target = chrome || header;
+  if (!target) return;
+  document.documentElement.style.setProperty("--header-h", `${Math.ceil(target.getBoundingClientRect().height)}px`);
 }
 
 function setupHeaderHeightSync() {
@@ -348,7 +361,21 @@ function t(key) {
 }
 
 function footerHtml() {
-  return `${t("footer")} · <a href="${SITE_URL}">helix-agent.ru</a> · <a href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer">${t("github")}</a>`;
+  return `${t("footer")} · <a href="${SITE_URL}">helix-agent.ru</a> · <a href="${TELEGRAM_CHANNEL_URL}" target="_blank" rel="noopener noreferrer">${t("telegram_channel")}</a> · <a href="${GITHUB_URL}" target="_blank" rel="noopener noreferrer">${t("github")}</a>`;
+}
+
+function telegramCalloutHtml() {
+  return `
+    <section class="telegram-callout">
+      <div class="telegram-callout-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="32" height="32"><path fill="currentColor" d="M9.78 15.28 9.5 19.8c.55 0 .79-.24 1.08-.52l2.59-2.48 5.37 3.94c.99.55 1.7.26 1.97-.9l3.53-16.57h.01c.32-1.48-.53-2.06-1.5-1.7L2.2 9.74c-1.45.57-1.43 1.39-.25 1.76l5.26 1.64L19.5 6.3c.66-.44 1.26-.2.77.26"/></svg>
+      </div>
+      <div class="telegram-callout-body">
+        <h2>${t("tg_callout_title")}</h2>
+        <p>${t("tg_callout_lead")}</p>
+        <a href="${TELEGRAM_CHANNEL_URL}" class="btn btn-telegram" target="_blank" rel="noopener noreferrer">${t("tg_callout_cta")} ↗</a>
+      </div>
+    </section>`;
 }
 
 function setViewMode(mode) {
@@ -469,9 +496,12 @@ function renderMarketing() {
       <div class="hero-actions">
         <a href="#/docs" class="btn btn-primary">${t("cta_docs")}</a>
         <a href="${docHref("installation")}" class="btn btn-ghost">${t("cta_install")}</a>
+        <a href="${TELEGRAM_CHANNEL_URL}" class="btn btn-telegram" target="_blank" rel="noopener noreferrer">${t("tg_callout_cta")} ↗</a>
         <a href="${DONATE_URL}" class="btn btn-donate" target="_blank" rel="noopener noreferrer">♥ ${t("donate")}</a>
       </div>
     </section>
+
+    ${telegramCalloutHtml()}
 
     <section class="ru-callout">
       <div class="ru-callout-flag" aria-hidden="true">🇷🇺</div>
@@ -550,6 +580,7 @@ function renderDocsHub() {
         <a href="${PYPI_URL}" class="hero-install-link" target="_blank" rel="noopener noreferrer">${t("install_pypi_link")} ↗</a>
       </div>
     </section>
+    ${telegramCalloutHtml()}
     <div class="aspects-grid">
       ${aspects.map((a) => `
         <a href="${docHref(a.slug)}" class="aspect-link">

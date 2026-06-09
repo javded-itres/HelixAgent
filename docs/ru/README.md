@@ -4,6 +4,8 @@
 
 **Установка с PyPI:** `pipx install HelixAgentAi` — [pypi.org/project/HelixAgentAi](https://pypi.org/project/HelixAgentAi/)
 
+> **Следите за развитием:** подпишитесь на [Telegram-канал @helix_agent](https://t.me/helix_agent) — релизы, планы и новости проекта.
+
 ## С чего начать
 
 1. [INSTALLATION.md](INSTALLATION.md) — установка с PyPI, extras, обновления

@@ -1,5 +1,7 @@
 # Telegram
 
+**Telegram-канал:** [t.me/helix_agent](https://t.me/helix_agent) — новости и обновления проекта (это не бот, который вы настраиваете ниже).
+
 У каждого профиля свой бот и allowlist. Секреты хранятся в:
 
 `~/.helix/profiles/<имя>/telegram.env`

@@ -24,7 +24,7 @@
     "section": "helix-documentation-english",
     "title": "Overview",
     "heading": "Helix Documentation (English)",
-    "body": "Helix is a self-improving AI agent with memory, skills, tool calling, MCP, CLI, TUI, API gateway, and Telegram. Install from PyPI: — pypi.org/project/HelixAgentAi",
+    "body": "Helix is a self-improving AI agent with memory, skills, tool calling, MCP, CLI, TUI, API gateway, and Telegram. Install from PyPI: — pypi.org/project/HelixAgentAi Follow development: subscribe to the Telegram channel @helix agent for releases, roadmap, and project news.",
     "keywords": [
       "overview",
       "обзор",
@@ -1805,7 +1805,7 @@
     "section": "telegram",
     "title": "Telegram",
     "heading": "Telegram",
-    "body": "Each profile can use its own bot and allowlist. Secrets are stored in: ```bash uv sync --extra telegram helix telegram setup wizard: token, allowlist, save to profile helix telegram run",
+    "body": "Community channel: t.me/helix agent — project news and updates (not the bot you configure below). Each profile can use its own bot and allowlist. Secrets are stored in: ```bash uv sync --extra telegram helix telegram setup wizard: token, allowlist, save to profile helix telegram run",
     "keywords": [
       "telegram",
       "телеграм",
@@ -3585,7 +3585,7 @@
     "section": "документация-helix-русский",
     "title": "Обзор",
     "heading": "Документация Helix (русский)",
-    "body": "Английская версия — основная: ../en/README.md. Установка с PyPI: — pypi.org/project/HelixAgentAi",
+    "body": "Английская версия — основная: ../en/README.md. Установка с PyPI: — pypi.org/project/HelixAgentAi Следите за развитием: подпишитесь на Telegram-канал @helix agent — релизы, планы и новости проекта.",
     "keywords": [
       "overview",
       "обзор",
@@ -4888,7 +4888,7 @@
     "section": "telegram",
     "title": "Telegram",
     "heading": "Telegram",
-    "body": "У каждого профиля свой бот и allowlist. Секреты хранятся в: ```bash uv sync --extra telegram helix telegram setup мастер: токен, allowlist, сохранение в профиль helix telegram run",
+    "body": "Telegram-канал: t.me/helix agent — новости и обновления проекта (это не бот, который вы настраиваете ниже). У каждого профиля свой бот и allowlist. Секреты хранятся в: ```bash uv sync --extra telegram helix telegram setup мастер: токен, allowlist, сохранение в профиль helix telegram run",
     "keywords": [
       "telegram",
       "телеграм",
