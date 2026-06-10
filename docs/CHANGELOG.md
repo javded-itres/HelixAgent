@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Added
+- **`helix telegram map`** — bind Telegram user id → Helix profile (`set`, `list`, `remove`, `bind`, `import`) for a shared bot
+- Auto profile routing per Telegram chat from `telegram-users.json` / `HELIX_TELEGRAM_USER_PROFILES`
+- **TELEGRAM_MULTI_PROFILE** (EN/RU) — one bot vs multiple bots, isolation, mapping guide
+
+### Documentation
+- **CLI**, **CONFIGURATION**, **USER_GUIDE**, **TELEGRAM**, **PROFILES** (EN/RU) — `telegram map` and user→profile bindings
+- **instruction.md** — quick reference at repo root
+
 ## 0.1.7 — 2026-06-10
 
 ### Added

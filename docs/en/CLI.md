@@ -484,19 +484,25 @@ Requires `uv sync --extra telegram`. Bot token is stored per profile in `profile
 
 | Subcommand | Description |
 |------------|-------------|
-| `setup` | Token, allowlist, save to profile |
-| `run` | Start polling (`-p` selects profile) |
-| `status` | Show saved config (token masked) |
+| `setup` | Wizard: token, allowlist, user→profile bindings, save |
+| `run` | Start polling (`-p` selects bot host profile) |
+| `status` | Saved config (token masked) and user id bindings |
 | `sync-menu` | Push slash menu to Telegram |
+| `map set USER_ID PROFILE` | Bind Telegram user id to Helix profile |
+| `map list` | List bindings |
+| `map remove USER_ID` | Remove a binding |
+| `map bind PROFILE` | Quick bind (`--user-id` or id from allowlist) |
+| `map import "ID:prof,..."` | Import multiple bindings |
 
 ```bash
-helix -p alice telegram setup
-helix -p alice telegram run
-helix -p alice telegram sync-menu
+helix -p shared telegram setup
+helix -p shared telegram map set 123456789 alice
+helix -p shared telegram map list
+helix -p shared gateway start
 ```
 
-Or start with gateway: `helix -p alice gateway start`.  
-See [TELEGRAM.md](TELEGRAM.md).
+Shared bot with isolated profiles: [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).  
+See also [TELEGRAM.md](TELEGRAM.md).
 
 ---
 
@@ -505,7 +511,8 @@ See [TELEGRAM.md](TELEGRAM.md).
 | Path | Content |
 |------|---------|
 | `~/.helix/profiles/<name>/.env` | API keys, gateway port, feature flags |
-| `~/.helix/profiles/<name>/telegram.env` | Telegram bot token and allowlist |
+| `~/.helix/profiles/<name>/telegram.env` | Bot token, allowlist, `HELIX_TELEGRAM_USER_PROFILES` |
+| `~/.helix/profiles/<name>/telegram-users.json` | Telegram user id → profile bindings (shared bot) |
 | `~/.helix/profiles/<name>/gateway/` | Gateway PID state and log |
 | `~/.helix/profiles/<name>/config.yaml` | Models, MCP, hub, workspace jail |
 | `.../data/memory/` | SQLite + ChromaDB |

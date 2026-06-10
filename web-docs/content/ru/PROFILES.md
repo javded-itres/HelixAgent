@@ -48,6 +48,19 @@ helix -p alice telegram setup
 helix -p bob telegram setup
 ```
 
+### Один бот на нескольких пользователей
+
+Альтернатива — **один** бот и привязка Telegram user id → профиль:
+
+```bash
+helix -p shared telegram setup
+helix -p shared telegram map set 123456789 alice
+helix -p shared telegram map set 987654321 bob
+helix -p shared gateway start
+```
+
+См. [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
+
 ## Workspace jail (изоляция в директории)
 
 Опциональный **workspace jail** ограничивает файловые и терминальные инструменты одной директорией. Агент не может читать, писать или выполнять команды за её пределами, но внутри работает без ограничений.
@@ -153,6 +166,8 @@ HELIX_PROFILE_KEY=hp_xxxxxxxx
 ```
 
 Ключ защищает **переключение в** профиль через интерфейсы Helix. Он не заменяет права файловой системы на `~/.helix` и API-ключи gateway — см. [SECURITY.md](SECURITY.md).
+
+Подробная инструкция по Telegram (один бот vs несколько ботов): [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
 
 ## Типичная настройка для нескольких пользователей
 

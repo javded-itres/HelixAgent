@@ -48,6 +48,19 @@ helix -p alice telegram setup
 helix -p bob telegram setup
 ```
 
+### One bot for multiple users
+
+Alternatively — **one** bot with Telegram user id → profile bindings:
+
+```bash
+helix -p shared telegram setup
+helix -p shared telegram map set 123456789 alice
+helix -p shared telegram map set 987654321 bob
+helix -p shared gateway start
+```
+
+See [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
+
 ## Workspace jail (directory isolation)
 
 Optional **workspace jail** restricts file and terminal tools to a single directory tree. The agent cannot read, write, or run commands outside that folder — but works freely inside it.

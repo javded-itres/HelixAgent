@@ -23,6 +23,21 @@ helix -p alice telegram setup
 helix -p bob telegram setup
 ```
 
+Full guide: [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
+
+### One bot — multiple profiles (user id mapping)
+
+```bash
+helix -p shared telegram setup              # wizard offers bindings
+helix -p shared telegram map set 123456789 alice
+helix -p shared telegram map bind bob --user-id 987654321
+helix -p shared telegram map list
+helix -p shared gateway start
+```
+
+Files: `profiles/shared/telegram-users.json`, `HELIX_TELEGRAM_USER_PROFILES` in `telegram.env`.  
+Users are routed to their profile automatically; manual `/profile` disables auto-routing for that chat.
+
 One live message per task; slash commands shared with TUI; inline approvals.
 
 ## Voice messages

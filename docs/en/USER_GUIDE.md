@@ -377,6 +377,17 @@ The wizard:
 1. Validates the token via the Telegram API (`getMe`).
 2. Asks for the user **allowlist** (`HELIX_TELEGRAM_ALLOWED_USERS`).
 3. Saves settings to **`~/.helix/profiles/<name>/telegram.env`**.
+4. When multiple Helix profiles exist, offers **user id → profile** bindings (one bot, many users).
+
+### 9.4.1. User id → profile mapping (shared bot)
+
+```bash
+helix -p shared telegram map set 123456789 alice
+helix -p shared telegram map bind bob --user-id 987654321
+helix -p shared telegram map list
+```
+
+Details: [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
 
 ### 9.5. Start the bot
 
@@ -679,7 +690,7 @@ Requires a running gateway.
 
 ### `helix telegram`
 
-`setup`, `run`, `status`, `sync-menu`
+`setup`, `run`, `status`, `sync-menu`, `map set|list|remove|bind|import` — see [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md)
 
 ---
 

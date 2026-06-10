@@ -32,7 +32,8 @@ Shared under `HELIX_HOME`: logs, MCP server clones. **Per profile** under `profi
 | Path | Content |
 |------|---------|
 | `profiles/<name>/.env` | API keys, `HELIX_GATEWAY_PORT`, tool flags |
-| `profiles/<name>/telegram.env` | Bot token and allowlist |
+| `profiles/<name>/telegram.env` | Bot token, allowlist, `HELIX_TELEGRAM_USER_PROFILES` |
+| `profiles/<name>/telegram-users.json` | Telegram user id → Helix profile bindings |
 | `profiles/<name>/gateway/state.json` | Running gateway PID and bind |
 | `profiles/<name>/config.yaml` | Models, MCP, hub, workspace jail |
 | `profiles/<name>/data/` | Memory, skills, security, cron |
@@ -74,6 +75,23 @@ Equivalent `.env` variables:
 | `HELIX_TERMINAL_WHITELIST_EXTRA` | empty | Comma-separated extra commands or prefixes |
 
 Platform defaults are always included. See [SECURITY.md](SECURITY.md).
+
+## Telegram (shared bot, multiple profiles)
+
+When one bot serves several users with different Helix profiles:
+
+```bash
+helix -p shared telegram map set 123456789 alice
+helix -p shared telegram map import "111:alice,222:bob"
+```
+
+| Variable / file | Description |
+|-----------------|-------------|
+| `HELIX_TELEGRAM_ALLOWED_USERS` | Who may message the bot (required in production) |
+| `HELIX_TELEGRAM_USER_PROFILES` | `USER_ID:profile` comma-separated in `telegram.env` |
+| `telegram-users.json` | Same in JSON; updated by `helix telegram map` |
+
+Details: [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
 
 ## Key environment variables
 

@@ -32,7 +32,8 @@ cp .env.example ~/.helix/profiles/default/.env
 | Путь | Содержимое |
 |------|------------|
 | `profiles/<имя>/.env` | Ключи API, `HELIX_GATEWAY_PORT`, флаги инструментов |
-| `profiles/<имя>/telegram.env` | Токен бота и allowlist |
+| `profiles/<имя>/telegram.env` | Токен бота, allowlist, `HELIX_TELEGRAM_USER_PROFILES` |
+| `profiles/<имя>/telegram-users.json` | Привязки Telegram user id → профиль Helix |
 | `profiles/<имя>/gateway/state.json` | PID и bind запущенного gateway |
 | `profiles/<имя>/config.yaml` | Модели, MCP, hub, workspace jail |
 | `profiles/<имя>/data/` | Память, навыки, security, cron |
@@ -74,6 +75,23 @@ helix -p dev profile whitelist list
 | `HELIX_TERMINAL_WHITELIST_EXTRA` | пусто | Доп. команды или префиксы через запятую |
 
 Встроенные команды платформы всегда разрешены. См. [SECURITY.md](SECURITY.md).
+
+## Telegram (общий бот, несколько профилей)
+
+Если один бот обслуживает нескольких пользователей с разными профилями Helix:
+
+```bash
+helix -p shared telegram map set 123456789 alice
+helix -p shared telegram map import "111:alice,222:bob"
+```
+
+| Переменная / файл | Описание |
+|-------------------|----------|
+| `HELIX_TELEGRAM_ALLOWED_USERS` | Кто может писать боту (обязательно в production) |
+| `HELIX_TELEGRAM_USER_PROFILES` | `USER_ID:profile` через запятую в `telegram.env` |
+| `telegram-users.json` | То же в JSON; обновляется командами `helix telegram map` |
+
+Подробно: [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
 
 ## Переменные окружения
 

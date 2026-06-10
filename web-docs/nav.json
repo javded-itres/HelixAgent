@@ -78,6 +78,12 @@
     "file_key": "TELEGRAM"
   },
   {
+    "slug": "telegram-multi-profile",
+    "en": "Telegram Multi-Profile",
+    "ru": "Telegram: несколько профилей",
+    "file_key": "TELEGRAM_MULTI_PROFILE"
+  },
+  {
     "slug": "browser-tools",
     "en": "Browser Tools",
     "ru": "Браузер",

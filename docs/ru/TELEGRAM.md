@@ -23,12 +23,20 @@ helix -p alice telegram setup
 helix -p bob telegram setup
 ```
 
-Подробно: изоляция, один бот на всех, привязка user id — [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
+Подробно: [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
+
+### Один бот — несколько профилей (привязка user id)
 
 ```bash
-helix telegram map set USER_ID PROFILE   # привязка для общего бота
-helix telegram map list
+helix -p shared telegram setup              # мастер предложит привязки
+helix -p shared telegram map set 123456789 alice
+helix -p shared telegram map bind bob --user-id 987654321
+helix -p shared telegram map list
+helix -p shared gateway start
 ```
+
+Файлы: `profiles/shared/telegram-users.json`, `HELIX_TELEGRAM_USER_PROFILES` в `telegram.env`.  
+Пользователь автоматически попадает в свой профиль; `/profile` вручную отключает автопривязку для чата.
 
 Одно live-сообщение на задачу; slash-команды как в TUI; inline-подтверждения.
 

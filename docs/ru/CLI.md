@@ -281,13 +281,28 @@ Tools: `mcp_<сервер>_<имя>`. В TUI: `/mcp`.
 
 Токен бота хранится в `profiles/<имя>/telegram.env`.
 
+| Подкоманда | Описание |
+|------------|----------|
+| `setup` | Мастер: токен, allowlist, привязки user→профиль, сохранение |
+| `run` | Запуск polling (`-p` выбирает профиль бота) |
+| `status` | Сохранённая конфигурация (токен скрыт), привязки user id |
+| `sync-menu` | Обновить slash-меню в Telegram |
+| `map set USER_ID PROFILE` | Привязать Telegram user id к профилю Helix |
+| `map list` | Список привязок |
+| `map remove USER_ID` | Удалить привязку |
+| `map bind PROFILE` | Быстрая привязка (`--user-id` или id из allowlist) |
+| `map import "ID:prof,..."` | Импорт нескольких привязок |
+
 ```bash
-helix -p alice telegram setup
-helix -p alice telegram run
-helix -p alice telegram sync-menu
+helix -p shared telegram setup
+helix -p shared telegram map set 123456789 alice
+helix -p shared telegram map list
+helix -p shared telegram run
+helix -p shared gateway start
 ```
 
-[TELEGRAM.md](TELEGRAM.md)
+Один бот на несколько изолированных профилей: [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).  
+Общее: [TELEGRAM.md](TELEGRAM.md).
 
 ---
 
@@ -296,7 +311,8 @@ helix -p alice telegram sync-menu
 | Путь | Содержимое |
 |------|------------|
 | `~/.helix/profiles/<имя>/.env` | Ключи API, порт gateway, флаги |
-| `~/.helix/profiles/<имя>/telegram.env` | Токен бота и allowlist |
+| `~/.helix/profiles/<имя>/telegram.env` | Токен бота, allowlist, `HELIX_TELEGRAM_USER_PROFILES` |
+| `~/.helix/profiles/<имя>/telegram-users.json` | Привязки Telegram user id → профиль (общий бот) |
 | `~/.helix/profiles/<имя>/gateway/` | Состояние и лог gateway |
 | `~/.helix/profiles/<имя>/config.yaml` | Модели, MCP, workspace jail |
 | `.../data/memory/` | SQLite + ChromaDB |

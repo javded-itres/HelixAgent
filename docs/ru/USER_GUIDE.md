@@ -373,6 +373,17 @@ helix telegram setup
 1. Проверит токен через Telegram API (`getMe`).
 2. Спросит **allowlist** пользователей (`HELIX_TELEGRAM_ALLOWED_USERS`).
 3. Сохранит настройки в **`~/.helix/profiles/<имя>/telegram.env`**.
+4. При нескольких профилях Helix предложит **привязку user id → профиль** (один бот — разные пользователи).
+
+### 9.4.1. Привязка user id к профилю (общий бот)
+
+```bash
+helix -p shared telegram map set 123456789 alice
+helix -p shared telegram map bind bob --user-id 987654321
+helix -p shared telegram map list
+```
+
+Подробно: [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
 
 ### 9.5. Запуск бота
 
@@ -675,7 +686,7 @@ helix gateway reload
 
 ### `helix telegram`
 
-`setup`, `run`, `status`, `sync-menu`
+`setup`, `run`, `status`, `sync-menu`, `map set|list|remove|bind|import` — см. [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md)
 
 ---
 

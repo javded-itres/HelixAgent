@@ -297,6 +297,24 @@ SEO_PAGES: dict[str, dict[str, dict[str, str]]] = {
             "keywords": "Helix Telegram, helix telegram setup, Telegram AI bot, voice Whisper",
         },
     },
+    "telegram-multi-profile": {
+        "ru": {
+            "title": "Telegram Helix — один бот, несколько изолированных профилей",
+            "description": (
+                "Как настроить Helix в Telegram для нескольких пользователей: отдельный бот на профиль "
+                "или один бот с helix telegram map — привязка user id к профилю, jail и безопасность."
+            ),
+            "keywords": "Helix Telegram профили, helix telegram map, изоляция профилей, общий бот",
+        },
+        "en": {
+            "title": "Helix Telegram — One Bot, Multiple Isolated Profiles",
+            "description": (
+                "Run Helix in Telegram for multiple users: one bot per profile or a shared bot with "
+                "helix telegram map user id bindings, workspace jail, and security checklist."
+            ),
+            "keywords": "Helix Telegram profiles, helix telegram map, profile isolation, shared bot",
+        },
+    },
     "browser-tools": {
         "ru": {
             "title": "Браузерные инструменты Helix — Playwright автоматизация",
