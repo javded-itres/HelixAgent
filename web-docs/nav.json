@@ -48,6 +48,12 @@
     "file_key": "SLASH_COMMANDS"
   },
   {
+    "slug": "execution-modes",
+    "en": "Execution Modes",
+    "ru": "Режимы работы",
+    "file_key": "EXECUTION_MODES"
+  },
+  {
     "slug": "tui",
     "en": "TUI",
     "ru": "TUI",

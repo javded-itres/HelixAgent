@@ -9,6 +9,7 @@
 - **Yandex Webmaster** verification file at site root
 
 ### Documentation
+- **EXECUTION_MODES** (EN/RU) — ReAct, Plan, Hybrid, Auto with prompt examples and plan approval flow
 - **PROFILES**, **CLI**, **CONFIGURATION**, **SECURITY**, **DEPLOYMENT** (EN/RU) — whitelist CLI and site build/SEO
 
 ## 0.1.6 — 2026-06-09

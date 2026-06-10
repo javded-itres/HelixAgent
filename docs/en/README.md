@@ -18,6 +18,7 @@ Helix is a self-improving AI agent with memory, skills, tool calling, MCP, CLI, 
 
 - [CLI.md](CLI.md) — **complete `helix` command reference**
 - [SLASH_COMMANDS.md](SLASH_COMMANDS.md) — **all `/` commands** (TUI, Telegram, chat)
+- [EXECUTION_MODES.md](EXECUTION_MODES.md) — **ReAct, Plan, Hybrid, Auto** — how modes work and prompt examples
 - [TUI.md](TUI.md) — `helix tui`, web mode, copy, hub UI
 - [HUB.md](HUB.md) — `helix hub`, catalogs, `skill_assignments`
 - [GATEWAY.md](GATEWAY.md) — `helix gateway start|stop|status|reload`

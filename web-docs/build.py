@@ -32,6 +32,7 @@ NAV = [
     ("PROFILES", {"en": "Profiles & Isolation", "ru": "Профили и изоляция"}),
     ("CLI", {"en": "CLI Reference", "ru": "Справочник CLI"}),
     ("SLASH_COMMANDS", {"en": "Slash Commands", "ru": "Слэш-команды"}),
+    ("EXECUTION_MODES", {"en": "Execution Modes", "ru": "Режимы работы"}),
     ("TUI", {"en": "TUI", "ru": "TUI"}),
     ("HUB", {"en": "Hub & Skills", "ru": "Hub и навыки"}),
     ("GATEWAY", {"en": "API Gateway", "ru": "API Gateway"}),
