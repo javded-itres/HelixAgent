@@ -154,6 +154,8 @@ HELIX_PROFILE_KEY=hp_xxxxxxxx
 
 Ключ защищает **переключение в** профиль через интерфейсы Helix. Он не заменяет права файловой системы на `~/.helix` и API-ключи gateway — см. [SECURITY.md](SECURITY.md).
 
+Подробная инструкция по Telegram (один бот vs несколько ботов): [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
+
 ## Типичная настройка для нескольких пользователей
 
 ```bash

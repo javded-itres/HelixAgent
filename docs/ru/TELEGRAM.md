@@ -23,6 +23,8 @@ helix -p alice telegram setup
 helix -p bob telegram setup
 ```
 
+Подробно: изоляция, один бот на всех, systemd — [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
+
 Одно live-сообщение на задачу; slash-команды как в TUI; inline-подтверждения.
 
 ---

@@ -23,6 +23,8 @@ helix -p alice telegram setup
 helix -p bob telegram setup
 ```
 
+Full guide: isolation, shared bot, systemd — [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
+
 One live message per task; slash commands shared with TUI; inline approvals.
 
 ## Voice messages

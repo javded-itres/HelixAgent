@@ -154,6 +154,8 @@ HELIX_PROFILE_KEY=hp_xxxxxxxx
 
 The access key protects **switching into** a profile from Helix interfaces. It does not replace filesystem permissions on `~/.helix` or gateway API keys — see [SECURITY.md](SECURITY.md).
 
+Telegram guide (one bot vs multiple bots): [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
+
 ## Typical multi-user setup
 
 ```bash
