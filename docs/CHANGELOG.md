@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.7 — 2026-06-10
+
 ### Added
 - **`helix profile whitelist`** — `add`, `list`, `enable` for per-profile terminal command whitelist
 - **web-docs SEO** — per-page meta, `sitemap.xml`, `robots.txt`, clean `/docs/<slug>` URLs
@@ -12,6 +14,10 @@
 - **TERMINAL_SECURITY** (EN/RU) — whitelist, dangerous patterns, confirmations, allowed/forbidden commands
 - **EXECUTION_MODES** (EN/RU) — ReAct, Plan, Hybrid, Auto with prompt examples and plan approval flow
 - **PROFILES**, **CLI**, **CONFIGURATION**, **SECURITY**, **DEPLOYMENT** (EN/RU) — whitelist CLI and site build/SEO
+
+### Fixed
+- **Docs sidebar** — `execution-modes` and `terminal-security` pages visible in navigation
+- **Locale in LLM replies** — `/lang ru|en` forces all user-facing responses in the selected language (agent, plan steps, docs chat)
 
 ## 0.1.6 — 2026-06-09
 
