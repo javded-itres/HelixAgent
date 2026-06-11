@@ -101,8 +101,9 @@ def load_effective_gateway_config(profile: str) -> GatewayProfileConfig:
 
 
 def _global_gateway_port_default() -> int:
-    from config import settings
     from core.global_config import global_env_path
+
+    from config import settings
 
     default = settings.gateway_port
     path = global_env_path()
