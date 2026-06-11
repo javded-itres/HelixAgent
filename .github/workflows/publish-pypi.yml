@@ -80,7 +80,7 @@ jobs:
       - name: Smoke install wheel
         run: |
           uv venv /tmp/helix-publish-smoke --python 3.12
-          uv pip install --python /tmp/helix-publish-smoke/bin/python dist/holixagentai-*.whl
+          uv pip install --python /tmp/helix-publish-smoke/bin/python dist/helixagentai-*.whl
           /tmp/helix-publish-smoke/bin/holix version
           /tmp/helix-publish-smoke/bin/holix --help
           /tmp/helix-publish-smoke/bin/python -c "from config import settings; print('config ok')"
