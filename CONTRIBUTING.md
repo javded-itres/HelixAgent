@@ -6,7 +6,7 @@ Thank you for contributing. This document covers local setup, conventions, and h
 
 ```bash
 git clone https://github.com/javded-itres/Holix.git
-cd HolixAgent
+cd Holix
 uv sync --all-extras
 uv pip install -e ".[all]"
 cp .env.example .env

@@ -78,7 +78,7 @@ jobs:
       - name: Smoke install wheel
         run: |
           uv venv /tmp/helix-smoke --python 3.12
-          uv pip install --python /tmp/helix-smoke/bin/python dist/helixagentai-*.whl
+          uv pip install --python /tmp/helix-smoke/bin/python dist/holixagentai-*.whl
           /tmp/helix-smoke/bin/holix version
           /tmp/helix-smoke/bin/holix --help
 

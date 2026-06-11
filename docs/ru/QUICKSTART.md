@@ -3,11 +3,11 @@
 ## Установка (PyPI)
 
 ```bash
-pipx install HelixAgentAi
-# или: pip install HelixAgentAi  (в активированном venv)
+pipx install HolixAgentAi
+# или: pip install HolixAgentAi  (в активированном venv)
 ```
 
-Пакет: [HolixAgentAi на PyPI](https://pypi.org/project/HelixAgentAi/). Команда: `holix`.
+Пакет: [HolixAgentAi на PyPI](https://pypi.org/project/HolixAgentAi/). Команда: `holix`.
 
 ## Запуск
 
@@ -25,7 +25,7 @@ holix doctor --fix
 Опции:
 
 ```bash
-pipx install "HelixAgentAi[all]"
+pipx install "HolixAgentAi[all]"
 holix -p shared telegram setup
 holix -p shared gateway start
 # пользователи: /start → holix -p shared telegram requests approve USER_ID --create-profile NAME

@@ -41,7 +41,7 @@ def _install_telegram_extra() -> bool:
     cmd = (
         [uv, "sync", "--extra", "telegram"]
         if uv
-        else [sys.executable, "-m", "pip", "install", "HelixAgentAi[telegram]"]
+        else [sys.executable, "-m", "pip", "install", "HolixAgentAi[telegram]"]
     )
     print_info("Installing Telegram dependencies…")
     try:

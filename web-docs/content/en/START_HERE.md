@@ -10,12 +10,12 @@ Follow this checklist for a working Holix install on a new machine.
 
 ## 1. Install from PyPI
 
-Package **[HolixAgentAi](https://pypi.org/project/HelixAgentAi/)** on PyPI; terminal command **`holix`**.
+Package **[HolixAgentAi](https://pypi.org/project/HolixAgentAi/)** on PyPI; terminal command **`holix`**.
 
 ```bash
-pipx install HelixAgentAi
+pipx install HolixAgentAi
 # optional extras (Telegram, browser, web TUI, voice):
-pipx install "HelixAgentAi[all]"
+pipx install "HolixAgentAi[all]"
 
 holix version
 holix doctor
@@ -25,7 +25,7 @@ Inside a virtualenv instead of pipx:
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install HelixAgentAi
+pip install HolixAgentAi
 ```
 
 Do not run `pip install helix` — that installs an unrelated package.
@@ -66,12 +66,12 @@ In TUI or Telegram, type **`/help`** for slash commands: [SLASH_COMMANDS.md](SLA
 ## 5. Optional features
 
 ```bash
-pipx install "HelixAgentAi[telegram]"   # or reinstall with [all]
+pipx install "HolixAgentAi[telegram]"   # or reinstall with [all]
 holix -p shared telegram setup
 # multi-user: users send /start, then holix -p shared telegram requests approve …
-pipx install "HelixAgentAi[browser]"
+pipx install "HolixAgentAi[browser]"
 playwright install chromium            # after browser extra
-pipx install "HelixAgentAi[tui-web]"   # holix tui --web
+pipx install "HolixAgentAi[tui-web]"   # holix tui --web
 holix hub browse
 holix mcp setup
 ```
