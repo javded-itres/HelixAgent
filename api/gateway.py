@@ -33,6 +33,7 @@ from api.routers import (
     helix_models,
     helix_profiles,
     helix_skills,
+    helix_telegram,
     hermes_jobs,
     hermes_sessions,
     hermes_v1,
@@ -119,6 +120,7 @@ app.include_router(helix_skills.router)
 app.include_router(helix_mcp.router)
 app.include_router(helix_config.router)
 app.include_router(helix_global.router)
+app.include_router(helix_telegram.router)
 app.include_router(docs_chat_router)
 
 

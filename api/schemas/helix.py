@@ -83,3 +83,19 @@ class ReloadResponse(BaseModel):
     agent: str
     companions: dict[str, Any]
     reload_required: bool = False
+
+
+class TelegramSetupRequest(BaseModel):
+    bot_token: str
+    also_project_env: bool = False
+
+
+class TelegramApproveRequest(BaseModel):
+    profile: str | None = None
+    create_profile: str | None = None
+    set_admin: bool = False
+
+
+class TelegramMapSetRequest(BaseModel):
+    user_id: int
+    profile: str
