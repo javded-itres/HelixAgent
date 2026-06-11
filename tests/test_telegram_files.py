@@ -103,7 +103,7 @@ def test_build_agent_prompt_includes_path_and_description() -> None:
     assert "Сделай краткое резюме" in prompt
     assert "report.pdf" in prompt
     assert "Summary text" in prompt
-    assert "/tmp/profile/data/files/telegram/1/report.pdf" in prompt
+    assert saved.path.as_posix() in prompt.replace("\\", "/")
 
 
 def test_extract_pdf_text(tmp_path: Path) -> None:
