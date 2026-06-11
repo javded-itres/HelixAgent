@@ -6,7 +6,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from core.env_loader import helix_home, helix_env_path
+from core.env_loader import helix_env_path, helix_home
 from core.platform_compat import resolve_helix_home
 
 # Keys stored per profile only (never inherited from global config.yaml).
@@ -218,7 +218,6 @@ def _extract_dict_diff(profile: dict[str, Any], global_map: dict[str, Any]) -> d
 
 def format_global_paths_block() -> str:
     home = helix_home()
-    gdir = global_dir()
     cfg = global_config_path()
     env = global_env_path()
     return (

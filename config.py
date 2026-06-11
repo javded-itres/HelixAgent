@@ -1,7 +1,6 @@
+from core.env_loader import bootstrap_env
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from core.env_loader import bootstrap_env
 
 bootstrap_env()
 

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 from cli.core import ProfileManager
-from core.profile.init import complete_init, init_pending, init_path
+from core.profile.init import complete_init, init_path, init_pending
 from core.profile.soul import (
     is_soul_empty_or_placeholder,
     soul_path,

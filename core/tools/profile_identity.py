@@ -5,10 +5,9 @@ from __future__ import annotations
 from core.profile.init import complete_init, init_pending
 from core.profile.soul import is_soul_empty_or_placeholder, update_soul_content
 from core.profile.user_profile import (
+    record_onboarding_episode,
     sync_user_to_strategic_memory,
     update_user_profile,
-    user_profile_exists,
-    record_onboarding_episode,
 )
 from core.tools.base import BaseTool
 from core.tools.execution_context import get_memory_facade

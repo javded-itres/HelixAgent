@@ -96,6 +96,7 @@ async def notify_access_approved(
     try:
         from aiogram import Bot
         from core.i18n import LocaleStore
+
         from integrations.telegram.commands import enable_chat_menu
 
         locale = LocaleStore(bot_profile).get()

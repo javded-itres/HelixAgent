@@ -160,7 +160,7 @@ class ContextManager:
 
         tokens_before = self.token_counter.count_message_tokens(messages)
 
-        from core.profile.soul import inject_soul_into_messages, strip_soul_messages
+        from core.profile.soul import strip_soul_messages
 
         to_compress = strip_soul_messages(messages)
         compressed, summary = await self.compressor.compress(

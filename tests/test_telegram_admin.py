@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock
 
 import pytest
-
 from integrations.telegram.access_requests import register_access_request
 from integrations.telegram.admin import (
     clear_admin_user,

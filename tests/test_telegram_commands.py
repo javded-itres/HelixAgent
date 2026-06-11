@@ -1,9 +1,8 @@
 """Telegram bot command menu."""
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
-
 from integrations.telegram.commands import (
     authorized_telegram_user_ids,
     clear_default_bot_menu,

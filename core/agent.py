@@ -111,6 +111,7 @@ class HelixAgent:
         """Lazy ModelManager for provider routing and fallbacks."""
         if self._model_manager is None:
             from cli.core import ProfileManager
+
             from core.models.manager import ModelManager
 
             profile_name = getattr(self.config, "profile_name", "default") or "default"

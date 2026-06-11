@@ -6,6 +6,7 @@ import asyncio
 
 import typer
 
+from cli.commands.telegram_admin import telegram_admin_clear, telegram_admin_show
 from cli.commands.telegram_map import (
     run_telegram_map_import,
     telegram_map_bind,
@@ -13,7 +14,6 @@ from cli.commands.telegram_map import (
     telegram_map_remove,
     telegram_map_set,
 )
-from cli.commands.telegram_admin import telegram_admin_clear, telegram_admin_show
 from cli.commands.telegram_requests import (
     telegram_requests_approve,
     telegram_requests_list,

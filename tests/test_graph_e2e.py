@@ -23,7 +23,7 @@ def _mock_llm_response(content: str = "Graph mock answer.", tool_calls=None):
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_react_graph_completes_with_mock_llm(temp_dir):
+async def test_react_graph_completes_with_mock_llm(temp_dir, monkeypatch):
     """ReAct graph: memory_retrieval → react → finalize yields final response."""
     cfg = HelixRuntimeConfig.from_settings().with_overrides(
         memory_db_path=f"{temp_dir}/mem.db",
@@ -42,8 +42,15 @@ async def test_react_graph_completes_with_mock_llm(temp_dir):
     agent.skills.get_relevant_skills = MagicMock(return_value=[])
     agent.skills.format_skills_for_prompt = MagicMock(return_value="")
     agent.tools.get_schemas = MagicMock(return_value=[])
-    agent.client.chat.completions.create = AsyncMock(
-        return_value=_mock_llm_response("E2E graph completed successfully.")
+    mock_response = _mock_llm_response("E2E graph completed successfully.")
+    agent.client.chat.completions.create = AsyncMock(return_value=mock_response)
+
+    async def _mock_chat_completions_with_fallback(*_args, **_kwargs):
+        return mock_response
+
+    monkeypatch.setattr(
+        "core.models.fallback.chat_completions_with_fallback",
+        _mock_chat_completions_with_fallback,
     )
 
     graph = build_helix_graph(

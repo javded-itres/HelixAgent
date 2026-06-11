@@ -15,7 +15,6 @@ from core.global_config import (
     extract_profile_overrides,
     global_config_path,
     global_env_path,
-    load_global_config_resolved,
     merge_global_with_profile,
 )
 
@@ -87,7 +86,10 @@ def test_save_profile_stores_only_overrides(helix_home: Path) -> None:
     assert "temperature" not in stored
 
 
-def test_clean_profile_does_not_inherit_env_copy(helix_home: Path) -> None:
+def test_clean_profile_does_not_inherit_env_copy(
+    helix_home: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("HELIX_TEST_VAR", raising=False)
     ensure_global_env_template()
     global_env_path().write_text("HELIX_TEST_VAR=global\n", encoding="utf-8")
 

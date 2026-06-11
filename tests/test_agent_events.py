@@ -217,6 +217,14 @@ class TestRunAgentLoopWithMocks:
 
         agent.client.chat.completions.create = AsyncMock(return_value=mock_response)
 
+        async def _mock_chat_completions_with_fallback(*_args, **_kwargs):
+            return mock_response
+
+        monkeypatch.setattr(
+            "core.models.fallback.chat_completions_with_fallback",
+            _mock_chat_completions_with_fallback,
+        )
+
         events = []
         async for event in run_agent_loop(agent, "Hello", "test_conv", stream=False):
             events.append(event)

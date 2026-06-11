@@ -101,7 +101,10 @@ def global_edit(
     env: bool = typer.Option(False, "--env", help="Edit global .env instead of config.yaml"),
 ) -> None:
     """Open global settings in $EDITOR."""
-    from core.global_config import ensure_global_config, ensure_global_env_template, global_config_path
+    from core.global_config import (
+        ensure_global_config,
+        ensure_global_env_template,
+    )
 
     editor = os.environ.get("EDITOR", "nano")
     if env:
@@ -127,6 +130,7 @@ def global_init(
     ),
 ) -> None:
     """Create or reset ``~/.helix/global/`` from defaults or an existing profile."""
+    import yaml
     from core.global_config import (
         default_global_config_data,
         ensure_global_env_template,
@@ -134,13 +138,12 @@ def global_init(
         global_dir,
     )
 
-    import yaml
-
     ensure_global_env_template()
     path = global_config_path()
     if from_profile:
-        from cli.core import ProfileManager
         from core.global_config import strip_profile_only_keys
+
+        from cli.core import ProfileManager
 
         manager = ProfileManager()
         if manager.profile_exists(from_profile):

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Awaitable, Callable
-from typing import Any, TypeVar
+from typing import Any
 
 from openai import APIConnectionError, APIStatusError, APITimeoutError, AsyncOpenAI, RateLimitError
 
@@ -13,9 +13,6 @@ from core.models.manager import ModelConfig, ModelManager
 logger = logging.getLogger(__name__)
 
 _RETRIABLE_HTTP = frozenset({408, 429, 500, 502, 503, 504, 529})
-
-T = TypeVar("T")
-
 
 def is_llm_unavailable_error(exc: BaseException) -> bool:
     """Return True when switching to a fallback provider may help."""
@@ -92,7 +89,7 @@ async def chat_completions_with_fallback(
     raise ValueError("No model configuration available")
 
 
-async def run_with_provider_fallback(
+async def run_with_provider_fallback[T](
     model_manager: ModelManager,
     *,
     agent_name: str | None = "main",
