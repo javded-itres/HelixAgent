@@ -197,7 +197,7 @@ def main() -> None:
     )
     write_seo_artifacts(entries)
     print(
-        f"Built {len(entries)} pages, {len(chunks)} chunks → "
+        f"Built {len(entries)} pages, {len(chunks)} chunks -> "
         f"{SEARCH_INDEX.name}, search-chunks.json, search-vectors.npz, sitemap.xml"
     )
 

@@ -49,6 +49,9 @@ def is_process_alive(pid: int) -> bool:
         return False
     except PermissionError:
         return True
+    except OSError:
+        # Windows: signal 0 is unsupported; WinError 87 means the PID is invalid.
+        return False
     return True
 
 
