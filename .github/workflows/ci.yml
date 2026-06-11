@@ -50,6 +50,8 @@ jobs:
           HELIX_HOME: ${{ runner.temp }}/helix-doctor
           TELEGRAM_BOT_TOKEN: ""
           HELIX_TELEGRAM_BOT_TOKEN: ""
+          PYTHONUTF8: "1"
+          PYTHONIOENCODING: utf-8
         run: uv run helix doctor --no-llm
 
   build:
