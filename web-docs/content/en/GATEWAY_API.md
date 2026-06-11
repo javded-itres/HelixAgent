@@ -13,6 +13,19 @@ Helix runs a **single multi-profile HTTP gateway** with three public surfaces:
 
 Operational guide (start/stop, ports, logs): [GATEWAY.md](GATEWAY.md).
 
+### Hermes compatibility matrix
+
+| Area | Status | Notes |
+|------|--------|-------|
+| `/v1/chat/completions`, `/v1/responses`, `/v1/runs` | Full | Bearer + `X-Hermes-*` header aliases |
+| `/v1/models`, `/v1/capabilities`, `/v1/skills`, `/v1/toolsets` | Full | Capabilities advertises Hermes feature flags |
+| `/api/sessions` CRUD + chat/stream | Full | `source`, `include_children`; persisted under `~/.helix/data/gateway/sessions.json` |
+| `/api/jobs` CRUD + pause/resume/run | Full | Hermes body aliases: `prompt`, `schedule`, `delivery_target`, `skills`, `provider_override` |
+| Multimodal inline images | Full | `image_url` / `input_image`; file uploads return `400 unsupported_content_type` |
+| SSE tool progress | Full | `hermes.tool.progress`, `assistant.delta`, `tool.started`, `tool.completed`, `run.completed` |
+| Job DELETE cancels in-flight run | Full | Shared cron active-run registry |
+| Helix-only | Extra | `/api/helix/*`, permissions, plans — not in Hermes |
+
 ---
 
 ## Table of contents
@@ -535,14 +548,16 @@ Create job.
 
 **Body (`JobCreateRequest`):**
 
-| Field | Description |
-|-------|-------------|
-| `task` | Natural-language or instruction for agent |
-| `cron_expression` | Standard cron |
-| `name` | Display name |
-| `enabled` | Active flag |
-| `notify_chat_id` | Optional Telegram chat for notifications |
-| `session_id` | Tie to session |
+| Field | Hermes alias | Description |
+|-------|--------------|-------------|
+| `task` | `prompt` | Natural-language instruction for agent |
+| `cron_expression` | `schedule` | 5-field cron or phrases (`every day at 9`, `hourly`) |
+| `name` | — | Display name |
+| `enabled` | — | Active flag |
+| `notify_chat_id` | `delivery_target` | Telegram chat for notifications |
+| `session_id` | — | Session that receives run summaries |
+| `skills` | — | Preferred skills list for the run |
+| `model_override` | `provider_override` | Optional model override for this job |
 
 ```bash
 curl -sS -X POST http://127.0.0.1:8000/api/jobs \
@@ -561,7 +576,7 @@ Update any of: `task`, `cron_expression`, `name`, `enabled`, `notify_chat_id`, `
 
 ### `DELETE /api/jobs/{job_id}`
 
-Remove job.
+Remove job and cancel any in-flight run.
 
 ### `POST /api/jobs/{job_id}/pause`
 

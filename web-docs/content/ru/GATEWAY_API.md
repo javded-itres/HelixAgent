@@ -13,6 +13,19 @@ Helix запускает **единый multi-profile HTTP gateway** с трем
 
 Эксплуатационное руководство (start/stop, порты, логи): [GATEWAY.md](GATEWAY.md).
 
+### Матрица совместимости с Hermes
+
+| Область | Статус | Примечания |
+|---------|--------|------------|
+| `/v1/chat/completions`, `/v1/responses`, `/v1/runs` | Полная | Bearer + алиасы заголовков `X-Hermes-*` |
+| `/v1/models`, `/v1/capabilities`, `/v1/skills`, `/v1/toolsets` | Полная | Capabilities объявляет флаги Hermes |
+| `/api/sessions` CRUD + chat/stream | Полная | `source`, `include_children`; персистентность в `~/.helix/data/gateway/sessions.json` |
+| `/api/jobs` CRUD + pause/resume/run | Полная | Алиасы тела: `prompt`, `schedule`, `delivery_target`, `skills`, `provider_override` |
+| Multimodal (inline images) | Полная | `image_url` / `input_image`; загрузка файлов → `400 unsupported_content_type` |
+| SSE tool progress | Полная | `hermes.tool.progress`, `assistant.delta`, `tool.started`, `tool.completed`, `run.completed` |
+| DELETE job отменяет in-flight run | Полная | Общий реестр активных cron-запусков |
+| Только Helix | Дополнительно | `/api/helix/*`, permissions, plans — нет в Hermes |
+
 ---
 
 ## Содержание
@@ -535,14 +548,16 @@ Hermes session store для каждого профиля.
 
 **Тело (`JobCreateRequest`):**
 
-| Поле | Описание |
-|------|----------|
-| `task` | Естественный язык или инструкция для агента |
-| `cron_expression` | Стандартный cron |
-| `name` | Отображаемое имя |
-| `enabled` | Флаг активности |
-| `notify_chat_id` | Опциональный Telegram chat для уведомлений |
-| `session_id` | Привязка к сессии |
+| Поле | Алиас Hermes | Описание |
+|------|--------------|----------|
+| `task` | `prompt` | Инструкция для агента |
+| `cron_expression` | `schedule` | 5-field cron или фразы (`every day at 9`, `hourly`) |
+| `name` | — | Отображаемое имя |
+| `enabled` | — | Флаг активности |
+| `notify_chat_id` | `delivery_target` | Telegram chat для уведомлений |
+| `session_id` | — | Сессия для сводок запусков |
+| `skills` | — | Предпочитаемые навыки для run |
+| `model_override` | `provider_override` | Опциональная модель для job |
 
 ```bash
 curl -sS -X POST http://127.0.0.1:8000/api/jobs \
@@ -561,7 +576,7 @@ curl -sS -X POST http://127.0.0.1:8000/api/jobs \
 
 ### `DELETE /api/jobs/{job_id}`
 
-Удалить job.
+Удалить job и отменить in-flight run, если он выполняется.
 
 ### `POST /api/jobs/{job_id}/pause`
 
