@@ -24,7 +24,20 @@ from starlette.responses import Response
 from api import state
 from api.deps import verify_admin_key
 from api.docs_chat import router as docs_chat_router
-from api.routers import admin, health, hermes_jobs, hermes_sessions, hermes_v1, legacy_v1
+from api.routers import (
+    admin,
+    health,
+    helix_config,
+    helix_global,
+    helix_mcp,
+    helix_models,
+    helix_profiles,
+    helix_skills,
+    hermes_jobs,
+    hermes_sessions,
+    hermes_v1,
+    legacy_v1,
+)
 from config import settings
 
 _dishka_container = create_async_container(resolve_gateway_runtime_config())
@@ -100,6 +113,12 @@ app.include_router(legacy_v1.router)
 app.include_router(hermes_jobs.router)
 app.include_router(hermes_sessions.router)
 app.include_router(admin.router)
+app.include_router(helix_profiles.router)
+app.include_router(helix_models.router)
+app.include_router(helix_skills.router)
+app.include_router(helix_mcp.router)
+app.include_router(helix_config.router)
+app.include_router(helix_global.router)
 app.include_router(docs_chat_router)
 
 
