@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install Helix CLI for the current user (macOS / Linux).
+# Install Holix CLI for the current user (macOS / Linux).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"

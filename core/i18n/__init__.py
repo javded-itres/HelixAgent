@@ -1,4 +1,4 @@
-"""Helix UI internationalization (EN default, RU via /lang)."""
+"""Holix UI internationalization (EN default, RU via /lang)."""
 
 from core.i18n.locale import (
     DEFAULT_LOCALE,

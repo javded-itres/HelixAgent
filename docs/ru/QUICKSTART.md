@@ -3,41 +3,41 @@
 ## Установка (PyPI)
 
 ```bash
-pipx install HelixAgentAi
-# или: pip install HelixAgentAi  (в активированном venv)
+pipx install HolixAgentAi
+# или: pip install HolixAgentAi  (в активированном venv)
 ```
 
-Пакет: [HelixAgentAi на PyPI](https://pypi.org/project/HelixAgentAi/). Команда: `helix`.
+Пакет: [HolixAgentAi на PyPI](https://pypi.org/project/HolixAgentAi/). Команда: `holix`.
 
 ## Запуск
 
 ```bash
-helix doctor
-helix models setup
-helix run "Привет"
-helix tui
-helix gateway start
-helix gateway status
-helix logs -l error
-helix doctor --fix
+holix doctor
+holix models setup
+holix run "Привет"
+holix tui
+holix gateway start
+holix gateway status
+holix logs -l error
+holix doctor --fix
 ```
 
 Опции:
 
 ```bash
-pipx install "HelixAgentAi[all]"
-helix -p shared telegram setup
-helix -p shared gateway start
-# пользователи: /start → helix -p shared telegram requests approve USER_ID --create-profile NAME
+pipx install "HolixAgentAi[all]"
+holix -p shared telegram setup
+holix -p shared gateway start
+# пользователи: /start → holix -p shared telegram requests approve USER_ID --create-profile NAME
 playwright install chromium
-helix hub browse
-helix mcp setup
+holix hub browse
+holix mcp setup
 ```
 
 Обновление с PyPI:
 
 ```bash
-helix update --channel pypi
+holix update --channel pypi
 ```
 
 См. [CLI.md](CLI.md) и [SLASH_COMMANDS.md](SLASH_COMMANDS.md).

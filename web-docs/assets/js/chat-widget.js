@@ -1,5 +1,5 @@
 /**
- * Helix documentation chat widget — docs-only assistant via same-origin proxy.
+ * Holix documentation chat widget — docs-only assistant via same-origin proxy.
  */
 
 const CHAT_DISMISSED_KEY = "helix-chat-user-closed";
@@ -11,12 +11,12 @@ const CHAT_SIZE_MIN = { width: 320, height: 400 };
 const CHAT_SIZE_MAX = { width: 560, height: 780 };
 const CHAT_I18N = {
   en: {
-    title: "Helix Docs Assistant",
+    title: "Holix Docs Assistant",
     subtitle: "Docs, navigation, and friendly chat",
-    placeholder: "Ask about Helix, say hi, or ask what I can do…",
+    placeholder: "Ask about Holix, say hi, or ask what I can do…",
     send: "Send",
     welcome:
-      "Hi! I'm the Helix docs assistant. I can explain documentation, open relevant pages, and chat about what I can help with. I don't run commands or access files — ask me anything about Helix or just say hello.",
+      "Hi! I'm the Holix docs assistant. I can explain documentation, open relevant pages, and chat about what I can help with. I don't run commands or access files — ask me anything about Holix or just say hello.",
     thinking: "Thinking…",
     error: "Could not get a reply. Try again later.",
     offline: "Chat is not available on this server.",
@@ -28,10 +28,10 @@ const CHAT_I18N = {
   ru: {
     title: "Ассистент документации",
     subtitle: "Документация, навигация и диалог",
-    placeholder: "Спросите про Helix, поздоровайтесь или узнайте, чем могу помочь…",
+    placeholder: "Спросите про Holix, поздоровайтесь или узнайте, чем могу помочь…",
     send: "Отправить",
     welcome:
-      "Привет! Я ассистент документации Helix. Могу объяснить разделы, открыть нужные страницы и рассказать, чем помогаю. Команды не выполняю и к файлам не обращаюсь — спрашивайте про Helix или просто поздоровайтесь.",
+      "Привет! Я ассистент документации Holix. Могу объяснить разделы, открыть нужные страницы и рассказать, чем помогаю. Команды не выполняю и к файлам не обращаюсь — спрашивайте про Holix или просто поздоровайтесь.",
     thinking: "Думаю…",
     error: "Не удалось получить ответ. Попробуйте позже.",
     offline: "Чат недоступен на этом сервере.",
@@ -419,17 +419,17 @@ export async function initChatWidget({ getLang }) {
   `;
   document.body.appendChild(root);
 
-  const panel = root.querySelector("#helix-chat-panel");
-  const resizeHandle = root.querySelector("#helix-chat-resize");
-  const toggle = root.querySelector("#helix-chat-toggle");
-  const closeBtn = root.querySelector("#helix-chat-close");
-  const newBtn = root.querySelector("#helix-chat-new");
-  const messages = root.querySelector("#helix-chat-messages");
-  const form = root.querySelector("#helix-chat-form");
-  const input = root.querySelector("#helix-chat-input");
-  const sendBtn = root.querySelector("#helix-chat-send");
-  const titleEl = root.querySelector("#helix-chat-title");
-  const subtitleEl = root.querySelector("#helix-chat-subtitle");
+  const panel = root.querySelector("#holix-chat-panel");
+  const resizeHandle = root.querySelector("#holix-chat-resize");
+  const toggle = root.querySelector("#holix-chat-toggle");
+  const closeBtn = root.querySelector("#holix-chat-close");
+  const newBtn = root.querySelector("#holix-chat-new");
+  const messages = root.querySelector("#holix-chat-messages");
+  const form = root.querySelector("#holix-chat-form");
+  const input = root.querySelector("#holix-chat-input");
+  const sendBtn = root.querySelector("#holix-chat-send");
+  const titleEl = root.querySelector("#holix-chat-title");
+  const subtitleEl = root.querySelector("#holix-chat-subtitle");
 
   let busy = false;
   let sessionMessages = [];

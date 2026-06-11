@@ -1,6 +1,6 @@
 # Установка
 
-Helix требует **Python 3.12+** и устанавливается как CLI-команда `helix`.
+Holix требует **Python 3.12+** и устанавливается как CLI-команда `holix`.
 
 ## Требования
 
@@ -14,55 +14,55 @@ Helix требует **Python 3.12+** и устанавливается как C
 
 | Extra | PyPI (`pip` / `pipx`) | Из исходников (`uv sync`) | Назначение |
 |-------|----------------------|---------------------------|------------|
-| `telegram` | `pip install "HelixAgentAi[telegram]"` | `uv sync --extra telegram` | Telegram-бот |
-| `browser` | `pip install "HelixAgentAi[browser]"` | `uv sync --extra browser` | Playwright — [BROWSER_TOOLS.md](BROWSER_TOOLS.md) |
-| `voice` | `pip install "HelixAgentAi[voice]"` | `uv sync --extra voice` | Голосовые сообщения (Whisper) |
-| `tui-web` | `pip install "HelixAgentAi[tui-web]"` | `uv sync --extra tui-web` | `helix tui --web` |
-| `windows` | `pip install "HelixAgentAi[windows]"` | `uv sync --extra windows` | `psutil` для процессов |
-| `all` | `pip install "HelixAgentAi[all]"` | `uv sync --extra all` | всё выше |
+| `telegram` | `pip install "HolixAgentAi[telegram]"` | `uv sync --extra telegram` | Telegram-бот |
+| `browser` | `pip install "HolixAgentAi[browser]"` | `uv sync --extra browser` | Playwright — [BROWSER_TOOLS.md](BROWSER_TOOLS.md) |
+| `voice` | `pip install "HolixAgentAi[voice]"` | `uv sync --extra voice` | Голосовые сообщения (Whisper) |
+| `tui-web` | `pip install "HolixAgentAi[tui-web]"` | `uv sync --extra tui-web` | `holix tui --web` |
+| `windows` | `pip install "HolixAgentAi[windows]"` | `uv sync --extra windows` | `psutil` для процессов |
+| `all` | `pip install "HolixAgentAi[all]"` | `uv sync --extra all` | всё выше |
 
 После `browser`: `playwright install chromium`
 
 ## Быстрая установка (пользователям)
 
-### PyPI — `helix` из любой папки (рекомендуется)
+### PyPI — `holix` из любой папки (рекомендуется)
 
-Опубликовано: [pypi.org/project/HelixAgentAi](https://pypi.org/project/HelixAgentAi/) (версия **0.1.8**).
+Опубликовано: [pypi.org/project/HolixAgentAi](https://pypi.org/project/HolixAgentAi/) (версия **0.1.8**).
 
-Пакет **`HelixAgentAi`** (не `pip install helix` — это другой проект). Команда: **`helix`**.
+Пакет **`HolixAgentAi`** (не `pip install helix` — это другой проект). Команда: **`holix`**.
 
 **Глобально (рекомендуется):**
 
 ```bash
-pipx install HelixAgentAi
-# или: uv tool install HelixAgentAi
-helix version
+pipx install HolixAgentAi
+# или: uv tool install HolixAgentAi
+holix version
 ```
 
 **В venv** (после `source .venv/bin/activate`):
 
 ```bash
-pip install HelixAgentAi
-helix version
+pip install HolixAgentAi
+holix version
 ```
 
 **В пользовательский каталог** (`~/.local/bin` в PATH):
 
 ```bash
-pip install --user HelixAgentAi
+pip install --user HolixAgentAi
 export PATH="$HOME/.local/bin:$PATH"
-helix version
+holix version
 ```
 
 ### Из git
 
 ```bash
-git clone https://github.com/javded-itres/HelixAgent.git
-cd HelixAgent
+git clone https://github.com/javded-itres/Holix.git
+cd HolixAgent
 ./scripts/install.sh          # macOS / Linux
 # Windows: .\scripts\install.ps1
-helix install
-helix doctor
+holix install
+holix doctor
 ```
 
 ## Windows
@@ -70,55 +70,55 @@ helix doctor
 **Требования:** Python 3.12+ с [python.org](https://www.python.org/downloads/) (при установке отметьте «Add python.exe to PATH»).  
 **Рекомендуется:** [uv](https://github.com/astral-sh/uv).
 
-### Глобальная команда `helix` из любой папки
+### Глобальная команда `holix` из любой папки
 
 **PyPI (проще всего):**
 
 ```powershell
-pipx install HelixAgentAi
+pipx install HolixAgentAi
 # или:
-uv tool install HelixAgentAi
+uv tool install HolixAgentAi
 
-helix version
-helix doctor
+holix version
+holix doctor
 ```
 
 **Из git:**
 
 ```powershell
-git clone https://github.com/javded-itres/HelixAgent.git
-cd HelixAgent
+git clone https://github.com/javded-itres/Holix.git
+cd HolixAgent
 .\scripts\install.ps1
-# или, если helix уже в PATH:
-helix install --extra telegram
+# или, если holix уже в PATH:
+holix install --extra telegram
 ```
 
-Установщик добавляет Helix в PATH пользователя. **Откройте новое окно PowerShell**, затем `helix version`.
+Установщик добавляет Holix в PATH пользователя. **Откройте новое окно PowerShell**, затем `holix version`.
 
 ### Данные и профили
 
 | Что | Путь |
 |-----|------|
-| Домашний каталог Helix | `%LOCALAPPDATA%\Helix\` (или `HELIX_HOME`) |
-| Профили | `%LOCALAPPDATA%\Helix\profiles\<имя>\` |
-| Лог gateway | `%LOCALAPPDATA%\Helix\profiles\<имя>\gateway\` |
+| Домашний каталог Holix | `%LOCALAPPDATA%\Holix\` (или `HOLIX_HOME`) |
+| Профили | `%LOCALAPPDATA%\Holix\profiles\<имя>\` |
+| Лог gateway | `%LOCALAPPDATA%\Holix\profiles\<имя>\gateway\` |
 
 ### Типичный запуск
 
 ```powershell
-helix models setup
-helix tui
-helix gateway start
-helix -p shared telegram setup
+holix models setup
+holix tui
+holix gateway start
+holix -p shared telegram setup
 ```
 
-Опционально extra `windows` для корректного завершения дочерних процессов: `pip install "HelixAgentAi[windows]"`.
+Опционально extra `windows` для корректного завершения дочерних процессов: `pip install "HolixAgentAi[windows]"`.
 
 ### Проблемы на Windows
 
 | Симптом | Решение |
 |---------|---------|
-| `helix` не найден | Новый терминал; проверьте `%USERPROFILE%\.local\bin` или повторите `.\scripts\install.ps1` |
+| `holix` не найден | Новый терминал; проверьте `%USERPROFILE%\.local\bin` или повторите `.\scripts\install.ps1` |
 | Скрипт заблокирован | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 | Кракозябры в TUI | Windows Terminal, кодировка UTF-8 |
 
@@ -130,26 +130,26 @@ helix -p shared telegram setup
 uv sync
 uv pip install -e .
 cp .env.example .env
-helix models setup
+holix models setup
 ```
 
 ## Первый запуск
 
 1. `cp .env.example .env`
-2. `helix doctor`
-3. `helix models setup`
-4. `helix tui` или `helix chat-command`
+2. `holix doctor`
+3. `holix models setup`
+4. `holix tui` или `holix chat-command`
 
-Данные: `~/.helix/` (Linux/macOS), `%LOCALAPPDATA%\Helix\` (Windows) или `HELIX_HOME` — см. [CONFIGURATION.md](CONFIGURATION.md). Логи: [LOGS.md](LOGS.md).
+Данные: `~/.holix/` (Linux/macOS), `%LOCALAPPDATA%\Holix\` (Windows) или `HOLIX_HOME` — см. [CONFIGURATION.md](CONFIGURATION.md). Логи: [LOGS.md](LOGS.md).
 
 ## Обновление
 
 ```bash
-helix update --channel pypi
-helix update --check
+holix update --channel pypi
+holix update --check
 ```
 
-Или: `pipx upgrade HelixAgentAi` / `pip install -U HelixAgentAi`
+Или: `pipx upgrade HolixAgentAi` / `pip install -U HolixAgentAi`
 
 ## Docker
 
@@ -161,8 +161,8 @@ docker compose up -d
 
 ## Удаление
 
-1. Удалите `helix` из PATH.
-2. При необходимости удалите `~/.helix/`.
+1. Удалите `holix` из PATH.
+2. При необходимости удалите `~/.holix/`.
 3. Удалите каталог клона.
 
 См. также [TROUBLESHOOTING.md](TROUBLESHOOTING.md), [DOCTOR.md](DOCTOR.md).
