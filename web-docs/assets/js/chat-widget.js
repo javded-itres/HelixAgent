@@ -393,25 +393,25 @@ export async function initChatWidget({ getLang }) {
   const root = document.createElement("div");
   root.className = "helix-chat-root";
   root.innerHTML = `
-    <div class="helix-chat-panel" id="helix-chat-panel" role="dialog" aria-label="Documentation chat">
-      <button type="button" class="helix-chat-resize" id="helix-chat-resize" aria-label="Resize chat"></button>
+    <div class="helix-chat-panel" id="holix-chat-panel" role="dialog" aria-label="Documentation chat">
+      <button type="button" class="helix-chat-resize" id="holix-chat-resize" aria-label="Resize chat"></button>
       <div class="helix-chat-header">
         <div>
-          <p class="helix-chat-title" id="helix-chat-title"></p>
-          <p class="helix-chat-subtitle" id="helix-chat-subtitle"></p>
+          <p class="helix-chat-title" id="holix-chat-title"></p>
+          <p class="helix-chat-subtitle" id="holix-chat-subtitle"></p>
         </div>
         <div class="helix-chat-header-actions">
-          <button type="button" class="helix-chat-new" id="helix-chat-new"></button>
-          <button type="button" class="helix-chat-close" id="helix-chat-close" aria-label="Close">×</button>
+          <button type="button" class="helix-chat-new" id="holix-chat-new"></button>
+          <button type="button" class="helix-chat-close" id="holix-chat-close" aria-label="Close">×</button>
         </div>
       </div>
-      <div class="helix-chat-messages" id="helix-chat-messages"></div>
-      <form class="helix-chat-form" id="helix-chat-form">
-        <textarea class="helix-chat-input" id="helix-chat-input" rows="1" required></textarea>
-        <button type="submit" class="helix-chat-send" id="helix-chat-send"></button>
+      <div class="helix-chat-messages" id="holix-chat-messages"></div>
+      <form class="helix-chat-form" id="holix-chat-form">
+        <textarea class="helix-chat-input" id="holix-chat-input" rows="1" required></textarea>
+        <button type="submit" class="helix-chat-send" id="holix-chat-send"></button>
       </form>
     </div>
-    <button type="button" class="helix-chat-toggle" id="helix-chat-toggle" aria-expanded="false" aria-controls="helix-chat-panel">
+    <button type="button" class="helix-chat-toggle" id="holix-chat-toggle" aria-expanded="false" aria-controls="holix-chat-panel">
       <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8">
         <path d="M4 5.5h16a1.5 1.5 0 0 1 1.5 1.5v8a1.5 1.5 0 0 1-1.5 1.5H9l-4.5 3v-3H4a1.5 1.5 0 0 1-1.5-1.5V7a1.5 1.5 0 0 1 1.5-1.5z"/>
       </svg>

@@ -1063,8 +1063,9 @@ async function init() {
   try {
     const { initChatWidget } = await import("./chat-widget.js");
     await initChatWidget({ getLang: () => state.lang });
-  } catch {
-    /* chat widget optional when static hosting without API */
+  } catch (err) {
+    /* optional when static hosting without API */
+    console.warn("Docs chat widget failed to load:", err);
   }
 }
 
