@@ -3,7 +3,7 @@
 Пошаговая инструкция: установка из `.whl`, первичная настройка, подключение к LiteLLM, MCP, навыки, Telegram и режимы работы.
 
 > Все команды и пути взяты из репозитория Holix (`cli/`, `docs/`, `config.py`, `pyproject.toml`).  
-> Пакет называется **`HolixAgentAi`**, команда в терминале — **`holix`**.
+> Пакет называется **`Holix`**, команда в терминале — **`holix`**.
 
 ---
 
@@ -97,39 +97,39 @@ uv --version
 
 ## 5. Шаг 3 — Установка с PyPI
 
-Пакет **[HolixAgentAi](https://pypi.org/project/HolixAgentAi/)** на PyPI; команда в терминале — **`holix`**.
+Пакет **[Holix](https://pypi.org/project/Holix/)** на PyPI; команда в терминале — **`holix`**.
 
 > Не используйте `pip install helix` — на PyPI это **другой** проект.
 
 ### 5.1. Глобально (рекомендуется)
 
 ```bash
-pipx install HolixAgentAi
+pipx install Holix
 holix version
 ```
 
 С extras (Telegram, браузер, веб-TUI, голос):
 
 ```bash
-pipx install "HolixAgentAi[all]"
+pipx install "Holix[all]"
 ```
 
-Альтернатива: `uv tool install HolixAgentAi`
+Альтернатива: `uv tool install Holix`
 
 ### 5.2. Виртуальное окружение
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install HolixAgentAi
-pip install "HolixAgentAi[telegram]"
+pip install Holix
+pip install "Holix[telegram]"
 holix version
 ```
 
 ### 5.3. Пользовательский каталог (`~/.local/bin`)
 
 ```bash
-pip install --user HolixAgentAi
+pip install --user Holix
 export PATH="$HOME/.local/bin:$PATH"
 holix version
 ```
@@ -139,7 +139,7 @@ holix version
 Установка через PowerShell, пути `%LOCALAPPDATA%\Holix\` и troubleshooting: [INSTALLATION.md — Windows](INSTALLATION.md#windows).
 
 ```powershell
-pipx install HolixAgentAi
+pipx install Holix
 holix version
 # или из клона репозитория:
 .\scripts\install.ps1
@@ -150,8 +150,8 @@ holix version
 Для офлайн-машин или артефактов CI:
 
 ```bash
-uv build && ls dist/holixagentai-*.whl
-pipx install /путь/к/holixagentai-0.1.3-py3-none-any.whl
+uv build && ls dist/holix-*.whl
+pipx install /путь/к/holix-0.1.3-py3-none-any.whl
 ```
 
 ### 5.6. Проверка после установки
@@ -360,7 +360,7 @@ holix search test "тестовый запрос"
 ```bash
 uv sync --extra telegram
 # или при установке wheel:
-pip install "HolixAgentAi[telegram]"
+pip install "Holix[telegram]"
 ```
 
 ### 9.2. Создать бота в Telegram
@@ -786,7 +786,7 @@ holix logs -l error -n 50
 
 1. Python 3.12+  
 2. `uv` или `pip`  
-3. `uv pip install holixagentai-….whl` (или `pipx install …`)  
+3. `uv pip install holix-….whl` (или `pipx install …`)  
 4. `~/.holix/.env` с `LITELLM_API_BASE` и `LITELLM_API_KEY`  
 5. `holix models add litellm --host http://localhost:4000`  
 6. `holix models setup` → назначить модель для `main`  

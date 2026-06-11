@@ -2,26 +2,26 @@
 
 This guide covers packaging, naming, and releasing **Holix** on [PyPI](https://pypi.org).
 
-> **Published:** [HelixAgentAi 0.1.8](https://pypi.org/project/HolixAgentAi/) — install with `pipx install HolixAgentAi`.
+> **Published:** [Holix 0.1.8](https://pypi.org/project/Holix/) — install with `pipx install Holix`.
 
 ## Package name
 
-The PyPI distribution name is **`HolixAgentAi`** (not `holix` — that name is used by another project).
+The PyPI distribution name is **`Holix`** (not `holix` — that name is used by another project).
 
 | Name on PyPI | Status |
 |--------------|--------|
 | `holix` | Taken (MIT LL mutation framework) |
 | `helix-ai` | Taken (ML toolkit) |
 | `holix-agent` | Available (not used) |
-| **`HolixAgentAi`** | **Published** — [pypi.org/project/HolixAgentAi](https://pypi.org/project/HolixAgentAi/) |
+| **`Holix`** | **Published** — [pypi.org/project/Holix](https://pypi.org/project/Holix/) |
 
 Install:
 
 ```bash
-pipx install HolixAgentAi
+pipx install Holix
 # or inside a venv:
-pip install HolixAgentAi
-pip install "HolixAgentAi[telegram,browser,tui-web]"
+pip install Holix
+pip install "Holix[telegram,browser,tui-web]"
 ```
 
 The console command is **`holix`** (registered via `[project.scripts]` → `cli.main:main`).  
@@ -35,8 +35,8 @@ Update `PYPI_PACKAGE` in `cli/installer/update.py` if the distribution name chan
 
 1. **PyPI account** — register at [pypi.org](https://pypi.org/account/register/)
 2. **Trusted publishing** (recommended) or **API token**
-   - Token: Account → API tokens → scope `HolixAgentAi` (after first upload) or entire account for first release
-3. **Unique name** — confirm `HolixAgentAi` is free: `curl -s https://pypi.org/pypi/HolixAgentAi/json | head`
+   - Token: Account → API tokens → scope `Holix` (after first upload) or entire account for first release
+3. **Unique name** — confirm `Holix` is free: `curl -s https://pypi.org/pypi/Holix/json | head`
 4. **Version** — bump in `pyproject.toml` and `cli/__init__.py` together
 5. **Python 3.12+** — reflected in `requires-python`
 
@@ -58,15 +58,15 @@ uv sync --group dev
 rm -rf dist
 HOLIX_NO_VERSION_BUMP=1 uv build --no-sources
 ls -la dist/
-# holixagentai-0.1.0-py3-none-any.whl
-# holixagentai-0.1.0.tar.gz
+# holix-0.1.0-py3-none-any.whl
+# holix-0.1.0.tar.gz
 ```
 
 Verify install in a clean venv:
 
 ```bash
 uv venv /tmp/holix-test --python 3.12
-uv pip install --python /tmp/holix-test/bin/python dist/holixagentai-*.whl
+uv pip install --python /tmp/holix-test/bin/python dist/holix-*.whl
 /tmp/holix-test/bin/holix version
 /tmp/holix-test/bin/python -c "from config import settings; print('ok')"
 ```
@@ -91,7 +91,7 @@ python -m twine upload --repository testpypi dist/*
 Test install:
 
 ```bash
-pip install -i https://test.pypi.org/simple/ HolixAgentAi
+pip install -i https://test.pypi.org/simple/ Holix
 ```
 
 ### 2. Production PyPI
@@ -105,7 +105,7 @@ python -m twine upload dist/*
 
 PyPI **no longer accepts account passwords**. Use an **API token** (or Trusted Publishing in CI).
 
-1. [pypi.org](https://pypi.org) → Account settings → **API tokens** → Add token (scope: project `HolixAgentAi` or entire account for first upload).
+1. [pypi.org](https://pypi.org) → Account settings → **API tokens** → Add token (scope: project `Holix` or entire account for first upload).
 2. Publish locally:
 
 ```bash
@@ -158,11 +158,11 @@ Add protection rules (required reviewers) if you want approval before publish.
 
 **2. PyPI Trusted Publishing**
 
-On [pypi.org](https://pypi.org) → account → **Publishing** (or project **HolixAgentAi** after first upload) → **Add a new publisher**:
+On [pypi.org](https://pypi.org) → account → **Publishing** (or project **Holix** after first upload) → **Add a new publisher**:
 
 | Field | Value |
 |-------|-------|
-| PyPI project name | `HolixAgentAi` |
+| PyPI project name | `Holix` |
 | Owner | `javded-itres` |
 | Repository name | `HolixAgent` |
 | Workflow filename | `publish-pypi.yml` |
@@ -196,7 +196,7 @@ The workflow checks that tag `v0.1.3` matches `version = "0.1.3"` in `pyproject.
 After publish:
 
 ```bash
-pipx install HolixAgentAi
+pipx install Holix
 holix version
 ```
 
@@ -216,14 +216,14 @@ holix version
 
 After publish, update:
 
-- [INSTALLATION.md](INSTALLATION.md) — `pip install HolixAgentAi`
+- [INSTALLATION.md](INSTALLATION.md) — `pip install Holix`
 - Root [README.md](../../README.md)
-- `holix update --channel pypi` (uses `HolixAgentAi` package name)
+- `holix update --channel pypi` (uses `Holix` package name)
 
 ## Known limitations
 
 - **Heavy core dependencies** — ChromaDB, LangGraph; first install may be slow
-- **Optional extras** — Telegram, browser, voice, and web TUI require `pip install "HolixAgentAi[all]"` (or specific extras)
+- **Optional extras** — Telegram, browser, voice, and web TUI require `pip install "Holix[all]"` (or specific extras)
 - **Playwright** — `browser` extra requires `playwright install chromium` after pip install
 - **No bundled `.env.example` in wheel** — document copying from GitHub or `holix doctor`
 

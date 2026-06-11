@@ -2,7 +2,7 @@
 
 Английская версия — основная: [../en/README.md](../en/README.md).
 
-**Установка с PyPI:** `pipx install HolixAgentAi` — [pypi.org/project/HolixAgentAi](https://pypi.org/project/HolixAgentAi/)
+**Установка с PyPI:** `pipx install Holix` — [pypi.org/project/Holix](https://pypi.org/project/Holix/)
 
 > **Следите за развитием:** подпишитесь на [Telegram-канал @holix_agent](https://t.me/holix_agent) — релизы, планы и новости проекта.
 

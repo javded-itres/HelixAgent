@@ -67,7 +67,7 @@ class HolixAgent:
             metadata=self.config.provider_metadata or None,
         )
 
-        self.events = event_bus or AgentEventBus(name="HolixAgentAi")
+        self.events = event_bus or AgentEventBus(name="Holix")
         if event_listeners:
             for listener in event_listeners:
                 self.events.subscribe(listener)

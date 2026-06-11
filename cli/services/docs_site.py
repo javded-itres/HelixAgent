@@ -46,7 +46,7 @@ def resolve_web_docs_dir() -> Path:
             return resolved
 
     raise FileNotFoundError(
-        "web-docs/ not found. Run from the Holix repository or reinstall HolixAgentAi."
+        "web-docs/ not found. Run from the Holix repository or reinstall Holix."
     )
 
 

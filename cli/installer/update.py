@@ -20,7 +20,7 @@ from cli.installer.system import (
     install_holix,
 )
 
-PYPI_PACKAGE = "HolixAgentAi"
+PYPI_PACKAGE = "Holix"
 _VERSION_RE = re.compile(r"^v?(\d+\.\d+\.\d+)")
 
 

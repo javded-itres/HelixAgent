@@ -379,7 +379,7 @@ class AgentEventBus:
     - Wildcard / filtered subscriptions.
     """
 
-    def __init__(self, name: str = "HolixAgentAi"):
+    def __init__(self, name: str = "Holix"):
         self.name = name
         self._handlers: list[EventHandler] = []
         self._async_handlers: list[EventHandler] = []  # tracked separately for clarity

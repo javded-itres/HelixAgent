@@ -14,12 +14,12 @@ Holix требует **Python 3.12+** и устанавливается как C
 
 | Extra | PyPI (`pip` / `pipx`) | Из исходников (`uv sync`) | Назначение |
 |-------|----------------------|---------------------------|------------|
-| `telegram` | `pip install "HolixAgentAi[telegram]"` | `uv sync --extra telegram` | Telegram-бот |
-| `browser` | `pip install "HolixAgentAi[browser]"` | `uv sync --extra browser` | Playwright — [BROWSER_TOOLS.md](BROWSER_TOOLS.md) |
-| `voice` | `pip install "HolixAgentAi[voice]"` | `uv sync --extra voice` | Голосовые сообщения (Whisper) |
-| `tui-web` | `pip install "HolixAgentAi[tui-web]"` | `uv sync --extra tui-web` | `holix tui --web` |
-| `windows` | `pip install "HolixAgentAi[windows]"` | `uv sync --extra windows` | `psutil` для процессов |
-| `all` | `pip install "HolixAgentAi[all]"` | `uv sync --extra all` | всё выше |
+| `telegram` | `pip install "Holix[telegram]"` | `uv sync --extra telegram` | Telegram-бот |
+| `browser` | `pip install "Holix[browser]"` | `uv sync --extra browser` | Playwright — [BROWSER_TOOLS.md](BROWSER_TOOLS.md) |
+| `voice` | `pip install "Holix[voice]"` | `uv sync --extra voice` | Голосовые сообщения (Whisper) |
+| `tui-web` | `pip install "Holix[tui-web]"` | `uv sync --extra tui-web` | `holix tui --web` |
+| `windows` | `pip install "Holix[windows]"` | `uv sync --extra windows` | `psutil` для процессов |
+| `all` | `pip install "Holix[all]"` | `uv sync --extra all` | всё выше |
 
 После `browser`: `playwright install chromium`
 
@@ -27,29 +27,29 @@ Holix требует **Python 3.12+** и устанавливается как C
 
 ### PyPI — `holix` из любой папки (рекомендуется)
 
-Опубликовано: [pypi.org/project/HolixAgentAi](https://pypi.org/project/HolixAgentAi/) (версия **0.1.8**).
+Опубликовано: [pypi.org/project/Holix](https://pypi.org/project/Holix/) (версия **0.1.8**).
 
-Пакет **`HolixAgentAi`** (не `pip install helix` — это другой проект). Команда: **`holix`**.
+Пакет **`Holix`** (не `pip install helix` — это другой проект). Команда: **`holix`**.
 
 **Глобально (рекомендуется):**
 
 ```bash
-pipx install HolixAgentAi
-# или: uv tool install HolixAgentAi
+pipx install Holix
+# или: uv tool install Holix
 holix version
 ```
 
 **В venv** (после `source .venv/bin/activate`):
 
 ```bash
-pip install HolixAgentAi
+pip install Holix
 holix version
 ```
 
 **В пользовательский каталог** (`~/.local/bin` в PATH):
 
 ```bash
-pip install --user HolixAgentAi
+pip install --user Holix
 export PATH="$HOME/.local/bin:$PATH"
 holix version
 ```
@@ -75,9 +75,9 @@ holix doctor
 **PyPI (проще всего):**
 
 ```powershell
-pipx install HolixAgentAi
+pipx install Holix
 # или:
-uv tool install HolixAgentAi
+uv tool install Holix
 
 holix version
 holix doctor
@@ -112,7 +112,7 @@ holix gateway start
 holix -p shared telegram setup
 ```
 
-Опционально extra `windows` для корректного завершения дочерних процессов: `pip install "HolixAgentAi[windows]"`.
+Опционально extra `windows` для корректного завершения дочерних процессов: `pip install "Holix[windows]"`.
 
 ### Проблемы на Windows
 
@@ -149,7 +149,7 @@ holix update --channel pypi
 holix update --check
 ```
 
-Или: `pipx upgrade HolixAgentAi` / `pip install -U HolixAgentAi`
+Или: `pipx upgrade Holix` / `pip install -U Holix`
 
 ## Docker
 

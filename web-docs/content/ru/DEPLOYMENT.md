@@ -40,8 +40,8 @@ Gateway Holix привязан к **профилю**. У каждого проф
 
 ```bash
 sudo useradd --system --create-home --home-dir /home/holix --shell /usr/sbin/nologin holix
-sudo -u holix pipx install HolixAgentAi
-sudo -u holix pipx inject HolixAgentAi telegram   # опционально, для Telegram
+sudo -u holix pipx install Holix
+sudo -u holix pipx inject Holix telegram   # опционально, для Telegram
 ```
 
 ### 2. Настройка профиля
@@ -81,8 +81,8 @@ sudo systemctl daemon-reload
 Пути pipx:
 
 ```bash
-sudo -u holix pipx environment HolixAgentAi
-# HOLIX_PYTHON → .../venvs/holixagentai/bin/python
+sudo -u holix pipx environment Holix
+# HOLIX_PYTHON → .../venvs/holix/bin/python
 # HOLIX_BIN     → ~/.local/bin/holix
 ```
 

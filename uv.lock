@@ -991,7 +991,7 @@ wheels = [
 ]
 
 [[package]]
-name = "holixagentai"
+name = "holix"
 version = "0.1.11"
 source = { editable = "." }
 dependencies = [

@@ -40,8 +40,8 @@ Unit files:
 
 ```bash
 sudo useradd --system --create-home --home-dir /home/holix --shell /usr/sbin/nologin holix
-sudo -u holix pipx install HolixAgentAi
-sudo -u holix pipx inject HolixAgentAi telegram   # optional, for Telegram bot
+sudo -u holix pipx install Holix
+sudo -u holix pipx inject Holix telegram   # optional, for Telegram bot
 ```
 
 ### 2. Configure the profile
@@ -81,8 +81,8 @@ sudo systemctl daemon-reload
 Find pipx paths:
 
 ```bash
-sudo -u holix pipx environment HolixAgentAi
-# HOLIX_PYTHON → .../venvs/holixagentai/bin/python
+sudo -u holix pipx environment Holix
+# HOLIX_PYTHON → .../venvs/holix/bin/python
 # HOLIX_BIN     → ~/.local/bin/holix
 ```
 

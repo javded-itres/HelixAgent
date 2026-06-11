@@ -64,7 +64,7 @@ SEO_PAGES: dict[str, dict[str, dict[str, str]]] = {
                 "Обзор Holix: самообучающийся AI-агент с памятью, навыками, MCP, CLI, TUI, gateway и Telegram. "
                 "Карта документации для быстрого старта и углублённой настройки."
             ),
-            "keywords": "Holix обзор, AI агент возможности, документация Holix, HolixAgentAi, PyPI",
+            "keywords": "Holix обзор, AI агент возможности, документация Holix, Holix, PyPI",
         },
         "en": {
             "title": "Holix Overview — AI Agent Features & Documentation Map",
@@ -72,25 +72,25 @@ SEO_PAGES: dict[str, dict[str, dict[str, str]]] = {
                 "Overview of Holix: self-improving AI agent with memory, skills, MCP, CLI, TUI, gateway, and Telegram. "
                 "Documentation map for quickstart and advanced setup."
             ),
-            "keywords": "Holix overview, AI agent features, Holix documentation, HolixAgentAi, PyPI",
+            "keywords": "Holix overview, AI agent features, Holix documentation, Holix, PyPI",
         },
     },
     "installation": {
         "ru": {
             "title": "Установка Holix — PyPI, pipx, Python 3.12, Docker",
             "description": (
-                "Как установить Holix с PyPI (HolixAgentAi): pipx, venv, Python 3.12+, опциональные extras "
+                "Как установить Holix с PyPI (Holix): pipx, venv, Python 3.12+, опциональные extras "
                 "(Telegram, браузер, голос). Обновление, удаление и решение проблем установки."
             ),
-            "keywords": "установка Holix, pipx install HolixAgentAi, PyPI, Python 3.12, Holix Docker",
+            "keywords": "установка Holix, pipx install Holix, PyPI, Python 3.12, Holix Docker",
         },
         "en": {
             "title": "Install Holix — PyPI, pipx, Python 3.12, Docker",
             "description": (
-                "How to install Holix from PyPI (HolixAgentAi): pipx, venv, Python 3.12+, optional extras "
+                "How to install Holix from PyPI (Holix): pipx, venv, Python 3.12+, optional extras "
                 "(Telegram, browser, voice). Updates, uninstall, and install troubleshooting."
             ),
-            "keywords": "install Holix, pipx install HolixAgentAi, PyPI, Python 3.12, Holix Docker",
+            "keywords": "install Holix, pipx install Holix, PyPI, Python 3.12, Holix Docker",
         },
     },
     "start-here": {
@@ -115,7 +115,7 @@ SEO_PAGES: dict[str, dict[str, dict[str, str]]] = {
         "ru": {
             "title": "Быстрый старт Holix — минимальные команды для запуска",
             "description": (
-                "Минимальный быстрый старт Holix: pipx install HolixAgentAi, holix doctor, holix models setup, "
+                "Минимальный быстрый старт Holix: pipx install Holix, holix doctor, holix models setup, "
                 "holix tui. Краткий список команд для немедленного начала работы с агентом."
             ),
             "keywords": "Holix быстрый старт, holix tui, holix models setup, минимальные команды",
@@ -123,7 +123,7 @@ SEO_PAGES: dict[str, dict[str, dict[str, str]]] = {
         "en": {
             "title": "Holix Quickstart — Minimal Commands to Run the Agent",
             "description": (
-                "Minimal Holix quickstart: pipx install HolixAgentAi, holix doctor, holix models setup, "
+                "Minimal Holix quickstart: pipx install Holix, holix doctor, holix models setup, "
                 "holix tui. Short command list to start using the agent immediately."
             ),
             "keywords": "Holix quickstart, holix tui, holix models setup, minimal commands",
@@ -473,20 +473,20 @@ SEO_PAGES: dict[str, dict[str, dict[str, str]]] = {
     },
     "pypi": {
         "ru": {
-            "title": "PyPI HelixAgentAi — публикация и версионирование пакета",
+            "title": "PyPI Holix — публикация и версионирование пакета",
             "description": (
-                "Пакет HolixAgentAi на PyPI: pipx install, Trusted Publishing через GitHub Actions, "
+                "Пакет Holix на PyPI: pipx install, Trusted Publishing через GitHub Actions, "
                 "версионирование, extras и чеклист релиза open-source дистрибутива Holix."
             ),
-            "keywords": "HolixAgentAi PyPI, pip install Holix, публикация PyPI, Holix версия, open source",
+            "keywords": "Holix PyPI, pip install Holix, публикация PyPI, Holix версия, open source",
         },
         "en": {
-            "title": "HolixAgentAi on PyPI — Package Publishing & Versioning",
+            "title": "Holix on PyPI — Package Publishing & Versioning",
             "description": (
-                "HolixAgentAi PyPI package: pipx install, Trusted Publishing via GitHub Actions, "
+                "Holix PyPI package: pipx install, Trusted Publishing via GitHub Actions, "
                 "versioning, extras, and open-source Holix release checklist."
             ),
-            "keywords": "HolixAgentAi PyPI, pip install Holix, PyPI publish, Holix version, open source",
+            "keywords": "Holix PyPI, pip install Holix, PyPI publish, Holix version, open source",
         },
     },
     "troubleshooting": {

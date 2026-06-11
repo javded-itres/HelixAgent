@@ -88,7 +88,7 @@ Run `git status` in the repo root and explain which files are modified.
 ```
 
 ```text
-Search the web for HolixAgentAi on PyPI and tell me the latest version.
+Search the web for Holix on PyPI and tell me the latest version.
 ```
 
 ```text

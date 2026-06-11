@@ -7,7 +7,7 @@
 #   1. Commit release: Holix X.Y.Z (bump version + CHANGELOG)
 #   2. git tag vX.Y.Z && git push origin vX.Y.Z
 #   3. This workflow creates https://github.com/.../releases/tag/vX.Y.Z
-#   4. publish-pypi.yml publishes HolixAgentAi to PyPI
+#   4. publish-pypi.yml publishes Holix to PyPI
 name: GitHub Release
 
 on:

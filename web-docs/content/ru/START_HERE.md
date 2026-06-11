@@ -10,12 +10,12 @@
 
 ## 1. Установка с PyPI
 
-Пакет **[HolixAgentAi](https://pypi.org/project/HolixAgentAi/)** на PyPI; команда в терминале — **`holix`**.
+Пакет **[Holix](https://pypi.org/project/Holix/)** на PyPI; команда в терминале — **`holix`**.
 
 ```bash
-pipx install HolixAgentAi
+pipx install Holix
 # опционально: Telegram, браузер, веб-TUI, голос:
-pipx install "HolixAgentAi[all]"
+pipx install "Holix[all]"
 
 holix version
 holix doctor
@@ -25,7 +25,7 @@ holix doctor
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install HolixAgentAi
+pip install Holix
 ```
 
 Не используйте `pip install helix` — это **другой** пакет на PyPI.
@@ -63,10 +63,10 @@ holix config show
 ## 5. Опции
 
 ```bash
-pipx install "HolixAgentAi[telegram]"
+pipx install "Holix[telegram]"
 holix -p shared telegram setup
 # мультипользовательский бот: /start → holix -p shared telegram requests approve …
-pipx install "HolixAgentAi[browser]"
+pipx install "Holix[browser]"
 playwright install chromium
 holix hub browse
 holix mcp setup

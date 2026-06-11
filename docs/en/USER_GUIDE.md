@@ -3,7 +3,7 @@
 Step-by-step instructions: install from `.whl`, initial setup, LiteLLM connection, MCP, skills, Telegram, and execution modes.
 
 > All commands and paths are taken from the Holix repository (`cli/`, `docs/`, `config.py`, `pyproject.toml`).  
-> The package is named **`HolixAgentAi`**; the terminal command is **`holix`**.
+> The package is named **`Holix`**; the terminal command is **`holix`**.
 
 ---
 
@@ -97,40 +97,40 @@ Alternative without UV: plain `pip` (see step 5).
 
 ## 5. Step 3 — Install from PyPI
 
-Package **[HolixAgentAi](https://pypi.org/project/HolixAgentAi/)** on PyPI; terminal command **`holix`**.
+Package **[Holix](https://pypi.org/project/Holix/)** on PyPI; terminal command **`holix`**.
 
 > Do not use `pip install helix` — on PyPI that is a **different** project.
 
 ### 5.1. Global install (recommended)
 
 ```bash
-pipx install HolixAgentAi
+pipx install Holix
 holix version
 ```
 
 With optional extras (Telegram, browser, web TUI, voice):
 
 ```bash
-pipx install "HolixAgentAi[all]"
-# or: pipx install "HolixAgentAi[telegram,browser,tui-web]"
+pipx install "Holix[all]"
+# or: pipx install "Holix[telegram,browser,tui-web]"
 ```
 
-Alternative: `uv tool install HolixAgentAi`
+Alternative: `uv tool install Holix`
 
 ### 5.2. Virtual environment
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install HolixAgentAi
-pip install "HolixAgentAi[telegram]"
+pip install Holix
+pip install "Holix[telegram]"
 holix version
 ```
 
 ### 5.3. User install (`~/.local/bin`)
 
 ```bash
-pip install --user HolixAgentAi
+pip install --user Holix
 export PATH="$HOME/.local/bin:$PATH"
 holix version
 ```
@@ -140,7 +140,7 @@ holix version
 PowerShell install, `%LOCALAPPDATA%\Holix\` paths, and troubleshooting: [INSTALLATION.md — Windows](INSTALLATION.md#windows).
 
 ```powershell
-pipx install HolixAgentAi
+pipx install Holix
 holix version
 # or from git clone:
 .\scripts\install.ps1
@@ -152,10 +152,10 @@ For offline machines or CI artifacts, build or download a wheel:
 
 ```bash
 # build from source:
-uv build && ls dist/holixagentai-*.whl
+uv build && ls dist/holix-*.whl
 
-pipx install /path/to/holixagentai-0.1.3-py3-none-any.whl
-# or: uv tool install /path/to/holixagentai-*.whl
+pipx install /path/to/holix-0.1.3-py3-none-any.whl
+# or: uv tool install /path/to/holix-*.whl
 ```
 
 ### 5.6. Post-install verification
@@ -364,7 +364,7 @@ Secrets in `.env`: `FIRECRAWL_API_KEY`, `SEARXNG_BASE_URL` (see `.env.example`).
 ```bash
 uv sync --extra telegram
 # or when installing the wheel:
-pip install "HolixAgentAi[telegram]"
+pip install "Holix[telegram]"
 ```
 
 ### 9.2. Create a bot in Telegram
@@ -790,7 +790,7 @@ More: [TROUBLESHOOTING.md](TROUBLESHOOTING.md), [DOCTOR.md](DOCTOR.md).
 
 1. Python 3.12+  
 2. `uv` or `pip`  
-3. `uv pip install holixagentai-….whl` (or `pipx install …`)  
+3. `uv pip install holix-….whl` (or `pipx install …`)  
 4. `~/.holix/.env` with `LITELLM_API_BASE` and `LITELLM_API_KEY`  
 5. `holix models add litellm --host http://localhost:4000`  
 6. `holix models setup` → assign a model for `main`  
