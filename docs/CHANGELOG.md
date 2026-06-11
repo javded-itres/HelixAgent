@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Added
+- **Profile identity** — `SOUL.md`, `USER.md`, `INIT.md` per profile; first-run onboarding with `save_agent_soul`, `save_user_profile`, `complete_agent_initialization`
+- **SOUL injection** — pinned agent soul in every session and after context compression
+- **Telegram admin** — single admin via `telegram requests approve --set-admin`; `telegram admin show|clear`
+- **Telegram access flow** — admin notifications on `/start`; slash menu hidden until approve; `telegram sync-menu`
+
+### Documentation
+- **PROFILES**, **CONFIGURATION**, **USER_GUIDE**, **START_HERE**, **DOCTOR** (EN/RU) — agent identity files and onboarding
+- **CHANGELOG** — unreleased features from `feature/telegram-profiles`
+
+### Fixed
+- **CI** — ruff, SOUL-related tests, Python 3.12 annotations, Linux port checks, Windows pytest/doctor encoding
+- **`helix doctor --no-llm`** — skips live LLM endpoint probe (deterministic checks only)
+
 ## 0.1.8 — 2026-06-10
 
 ### Added

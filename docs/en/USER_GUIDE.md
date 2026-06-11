@@ -190,10 +190,15 @@ Each profile is an isolated environment:
 ~/.helix/profiles/<name>/telegram.env  # Telegram bot (optional)
 ~/.helix/profiles/<name>/gateway/        # gateway state and log
 ~/.helix/profiles/<name>/config.yaml
+~/.helix/profiles/<name>/SOUL.md        # agent personality (every session)
+~/.helix/profiles/<name>/USER.md        # facts about you
+~/.helix/profiles/<name>/INIT.md        # first-run onboarding (temporary)
 ~/.helix/profiles/<name>/data/
 ```
 
 The **`default`** profile is used by default. On first run, Helix creates the required directories.
+
+**First chat:** if `INIT.md` is present, the agent introduces itself, learns your name and preferences, and saves them to `USER.md` / `SOUL.md` via built-in tools. Say “save your personality” or “remember my name is …” when ready. Details: [PROFILES.md](PROFILES.md#agent-identity-soul-init-user).
 
 **Workspace jail** (optional): restrict file/terminal tools to one folder — `helix profile jail enable /path/to/dir`. See [CONFIGURATION.md](CONFIGURATION.md).
 

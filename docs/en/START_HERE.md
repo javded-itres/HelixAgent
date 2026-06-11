@@ -42,6 +42,8 @@ helix doctor
 helix doctor --fix    # optional: repair config.yaml
 ```
 
+On the **first conversation** in a new profile, Helix runs a short onboarding (while `INIT.md` exists): introduce yourself, set agent personality (`SOUL.md`), and save your preferences (`USER.md`). See [PROFILES.md](PROFILES.md#agent-identity-soul-init-user).
+
 ## 3. Configure models
 
 ```bash

@@ -539,6 +539,9 @@ See also [TELEGRAM.md](TELEGRAM.md).
 | `~/.helix/profiles/<name>/telegram-users.json` | Telegram user id → profile bindings (shared bot) |
 | `~/.helix/profiles/<name>/gateway/` | Gateway PID state and log |
 | `~/.helix/profiles/<name>/config.yaml` | Models, MCP, hub, workspace jail |
+| `~/.helix/profiles/<name>/SOUL.md` | Agent personality (injected each session) |
+| `~/.helix/profiles/<name>/USER.md` | User facts and preferences |
+| `~/.helix/profiles/<name>/INIT.md` | First-run onboarding marker |
 | `.../data/memory/` | SQLite + ChromaDB |
 | `.../data/skills/` | Skill files and hub bundles |
 | `.../data/security/` | API keys DB (if used) |

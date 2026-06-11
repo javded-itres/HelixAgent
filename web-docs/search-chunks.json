@@ -6,7 +6,7 @@
     "section": "getting-started",
     "title": "Overview",
     "heading": "Getting started",
-    "body": "1. INSTALLATION.md — PyPI install, Windows , extras, updates, Docker 2. START HERE.md — first run checklist 3. QUICKSTART.md — minimal command list 4. CONFIGURATION.md — , profiles, secrets 5. PROFILES.md — isolated profiles, access keys, multi-user setup, workspace jail",
+    "body": "1. INSTALLATION.md — PyPI install, Windows , extras, updates, Docker 2. START HERE.md — first run checklist 3. QUICKSTART.md — minimal command list 4. CONFIGURATION.md — , profiles, secrets 5. PROFILES.md — isolated profiles, SOUL/USER identity, access keys, multi-user setup, workspace jail",
     "keywords": [
       "overview",
       "обзор",
@@ -359,6 +359,27 @@
     "nav_order": 2
   },
   {
+    "id": "en/start-here#cp-envexample-helixenv",
+    "lang": "en",
+    "slug": "start-here",
+    "section": "cp-envexample-helixenv",
+    "title": "Start Here",
+    "heading": "cp .env.example ~/.helix/.env",
+    "body": "helix doctor helix doctor --fix optional: repair config.yaml `` INIT.md SOUL.md USER.md`). See PROFILES.md.",
+    "keywords": [
+      "start",
+      "первый",
+      "запуск",
+      "checklist",
+      "envexample",
+      "helixenv",
+      "env",
+      "example",
+      "helix"
+    ],
+    "nav_order": 2
+  },
+  {
     "id": "en/start-here#multi-user-users-send-start-then-helix--p-shared-telegram-reques",
     "lang": "en",
     "slug": "start-here",
@@ -603,7 +624,7 @@
     "section": "profile-layout",
     "title": "Configuration",
     "heading": "Profile layout",
-    "body": "Path Content ------ --------- Overrides only (unset keys inherit from ) Bot token, allowlist, Telegram user id → Helix profile bindings Running gateway PID and bind Overrides only (inherits ) Memory, skills, security, cron",
+    "body": "Path Content ------ --------- Overrides only (unset keys inherit from ) Bot token, allowlist, Telegram user id → Helix profile bindings Running gateway PID and bind Overrides only (inherits ) Agent personality (injected every session) User facts and preferences First-run onboarding marker (removed after ) Memory, skills, security, cron",
     "keywords": [
       "config",
       "конфигурация",
@@ -713,6 +734,29 @@
     "nav_order": 4
   },
   {
+    "id": "en/profiles#agent-identity-soul-init-user",
+    "lang": "en",
+    "slug": "profiles",
+    "section": "agent-identity-soul-init-user",
+    "title": "Profiles & Isolation",
+    "heading": "Agent identity (SOUL, INIT, USER)",
+    "body": "Each profile can persist who the agent is and who the user is across sessions. File Purpose ------ --------- Agent personality, values, tone, and behavior Stable facts about the human (name, work style, language, notes) First-run marker — while present, Helix runs a short onboarding chat When you run , Helix creates and a placeholder .",
+    "keywords": [
+      "profile",
+      "профиль",
+      "профили",
+      "изоляция",
+      "jail",
+      "workspace",
+      "agent",
+      "identity",
+      "soul",
+      "init",
+      "user"
+    ],
+    "nav_order": 5
+  },
+  {
     "id": "en/profiles#alice-developer-full-filesystem",
     "lang": "en",
     "slug": "profiles",
@@ -780,6 +824,47 @@
     "nav_order": 5
   },
   {
+    "id": "en/profiles#every-session",
+    "lang": "en",
+    "slug": "profiles",
+    "section": "every-session",
+    "title": "Profiles & Isolation",
+    "heading": "Every session",
+    "body": "- SOUL is injected as a pinned system message at the start of each conversation and re-applied after context compression so personality is never lost. - USER is included in the system prompt when exists. Edit the files directly anytime: ```bash helix -p alice profile env --edit secrets only",
+    "keywords": [
+      "profile",
+      "профиль",
+      "профили",
+      "изоляция",
+      "jail",
+      "workspace",
+      "every",
+      "session"
+    ],
+    "nav_order": 5
+  },
+  {
+    "id": "en/profiles#first-conversation-onboarding",
+    "lang": "en",
+    "slug": "profiles",
+    "section": "first-conversation-onboarding",
+    "title": "Profiles & Isolation",
+    "heading": "First conversation (onboarding)",
+    "body": "While exists, the agent: 1. Introduces itself and learns how you prefer to work together. 2. Saves facts with → + long-term memory. 3. Saves personality with → (write or append). 4. Finishes with — removes . You can say things like “save this as your personality” or “remember my name is …” in chat or Telegram; the agent picks the right tool. Match your language — Russian and English work.",
+    "keywords": [
+      "profile",
+      "профиль",
+      "профили",
+      "изоляция",
+      "jail",
+      "workspace",
+      "first",
+      "conversation",
+      "onboarding"
+    ],
+    "nav_order": 5
+  },
+  {
     "id": "en/profiles#helixprofilesaliceenv",
     "lang": "en",
     "slug": "profiles",
@@ -799,6 +884,26 @@
       "profiles",
       "alice",
       "env"
+    ],
+    "nav_order": 5
+  },
+  {
+    "id": "en/profiles#identity-files",
+    "lang": "en",
+    "slug": "profiles",
+    "section": "identity-files",
+    "title": "Profiles & Isolation",
+    "heading": "identity files:",
+    "body": "nano ~/.helix/profiles/alice/SOUL.md nano ~/.helix/profiles/alice/USER.md `` INIT.md helix profile create` on a new profile.",
+    "keywords": [
+      "profile",
+      "профиль",
+      "профили",
+      "изоляция",
+      "jail",
+      "workspace",
+      "identity",
+      "files"
     ],
     "nav_order": 5
   },
@@ -1042,7 +1147,7 @@
     "section": "what-is-isolated-per-profile",
     "title": "Profiles & Isolation",
     "heading": "What is isolated per profile",
-    "body": "Resource Path ---------- ------ Profile access key (hash) Environment (API keys, ports) Telegram bot API gateway state & log Models, MCP, skills config Memory (SQLite + ChromaDB) Skills Cron jobs Global under : Path Purpose ------ --------- Shared models, MCP, search, behavior Shared API keys, voice, tool flags , MCP clones Operational shared data Profiles inherit global settings by default. Per-profile files store overrides only — change a model in one profile without touching global; change global and all inheriting profiles update automatically. Telegram tokens, memory, and gateway state remain per profile (not inherited).",
+    "body": "Resource Path ---------- ------ Profile access key (hash) Environment (API keys, ports) Telegram bot API gateway state & log Models, MCP, skills config Memory (SQLite + ChromaDB) Skills Cron jobs Agent soul User profile First-run marker (removed after onboarding) Global under : Path Purpose ------ --------- Shared models, MCP, search, behavior Shared API keys, voice, tool flags , MCP clones Operational shared data Profiles inherit global settings by default. Per-profile files store overrides only — change a model in one profile without touching global; change global and all inheriting profiles update automatically. Telegram tokens, memory, and gateway state remain per profile (not inherited).",
     "keywords": [
       "profile",
       "профиль",
@@ -1483,7 +1588,7 @@
     "section": "profiles",
     "title": "CLI Reference",
     "heading": "Profiles",
-    "body": "Path Content ------ --------- API keys, gateway port, feature flags Bot token, allowlist, Telegram user id → profile bindings (shared bot) Gateway PID state and log Models, MCP, hub, workspace jail SQLite + ChromaDB Skill files and hub bundles API keys DB (if used) Switch per invocation: In TUI: or . ---",
+    "body": "Path Content ------ --------- API keys, gateway port, feature flags Bot token, allowlist, Telegram user id → profile bindings (shared bot) Gateway PID state and log Models, MCP, hub, workspace jail Agent personality (injected each session) User facts and preferences First-run onboarding marker SQLite + ChromaDB Skill files and hub bundles API keys DB (if used) Switch per invocation: In TUI: or . ---",
     "keywords": [
       "command",
       "команды",
@@ -3018,6 +3123,24 @@
     "nav_order": 15
   },
   {
+    "id": "en/architecture#profile-identity",
+    "lang": "en",
+    "slug": "architecture",
+    "section": "profile-identity",
+    "title": "Architecture",
+    "heading": "Profile identity",
+    "body": "Per profile, markdown files at : - — agent personality; injected as a pinned system message on every session ( , ) - — user facts; merged into the system prompt when present - — onboarding gate; removed by tool Tools: , in .",
+    "keywords": [
+      "architecture",
+      "архитектура",
+      "runtime",
+      "events",
+      "profile",
+      "identity"
+    ],
+    "nav_order": 15
+  },
+  {
     "id": "en/security#api-keys",
     "lang": "en",
     "slug": "security",
@@ -3588,7 +3711,7 @@
     "section": "checks",
     "title": "Doctor",
     "heading": "Checks",
-    "body": "- (or ) writable - Platform: OS, data path, / / / in PATH; Windows: psutil hint, terminal whitelist note - Profile YAML and providers - LLM endpoint and model availability - Gateway stale state / health - Telegram token, access requests, and allowlist - Production: pepper, CORS, auth, code executor After fixes, inspect runtime logs: — see LOGS.md.",
+    "body": "- (or ) writable - Platform: OS, data path, / / / in PATH; Windows: psutil hint, terminal whitelist note - Profile YAML and providers - LLM endpoint and model availability (skipped with ) - Gateway stale state / health - Telegram token, access requests, and allowlist - Production: pepper, CORS, auth, code executor After fixes, inspect runtime logs: — see LOGS.md.",
     "keywords": [
       "doctor",
       "диагностика",
@@ -4388,7 +4511,7 @@
     "section": "62-profile",
     "title": "User Guide",
     "heading": "6.2. Profile",
-    "body": "Each profile is an isolated environment: The profile is used by default. On first run, Helix creates the required directories. Workspace jail (optional): restrict file/terminal tools to one folder — . See CONFIGURATION.md. Terminal whitelist (optional): , , — see PROFILES.md. View settings: Switch profile: In chat: or (list).",
+    "body": "Each profile is an isolated environment: The profile is used by default. On first run, Helix creates the required directories. First chat: if is present, the agent introduces itself, learns your name and preferences, and saves them to / via built-in tools. Say “save your personality” or “remember my name is …” when ready. Details: PROFILES.md. Workspace jail (optional): restrict file/terminal tools to one folder — . See CONFIGURATION.md. Terminal whitelist (optional): , , — see PROFILES.md. View settings: Switch profile: In chat: or (list).",
     "keywords": [
       "guide",
       "руководство",
@@ -4931,7 +5054,7 @@
     "section": "с-чего-начать",
     "title": "Обзор",
     "heading": "С чего начать",
-    "body": "1. INSTALLATION.md — установка с PyPI, Windows , extras, обновления 2. START HERE.md — первый запуск 3. QUICKSTART.md — минимум команд 4. CONFIGURATION.md — , профили 5. PROFILES.md — изолированные профили, ключи доступа, несколько пользователей, workspace jail",
+    "body": "1. INSTALLATION.md — установка с PyPI, Windows , extras, обновления 2. START HERE.md — первый запуск 3. QUICKSTART.md — минимум команд 4. CONFIGURATION.md — , профили 5. PROFILES.md — изолированные профили, SOUL/USER, ключи доступа, несколько пользователей, workspace jail",
     "keywords": [
       "overview",
       "обзор",
@@ -5152,6 +5275,24 @@
       "checklist",
       "установка",
       "pypi"
+    ],
+    "nav_order": 2
+  },
+  {
+    "id": "ru/start-here#2-первичная-настройка",
+    "lang": "ru",
+    "slug": "start-here",
+    "section": "2-первичная-настройка",
+    "title": "Первый запуск",
+    "heading": "2. Первичная настройка",
+    "body": "При первом диалоге в новом профиле Helix проводит короткий онбординг (пока есть ): знакомство, личность агента ( ) и ваши предпочтения ( ). См. PROFILES.md.",
+    "keywords": [
+      "start",
+      "первый",
+      "запуск",
+      "checklist",
+      "первичная",
+      "настройка"
     ],
     "nav_order": 2
   },
@@ -5419,7 +5560,7 @@
     "section": "структура-профиля",
     "title": "Конфигурация",
     "heading": "Структура профиля",
-    "body": "Путь Содержимое ------ ------------ Только переопределения (остальное из ) Токен бота, allowlist, Привязки Telegram user id → профиль Helix PID и bind запущенного gateway Только переопределения (наследует ) Память, навыки, security, cron",
+    "body": "Путь Содержимое ------ ------------ Только переопределения (остальное из ) Токен бота, allowlist, Привязки Telegram user id → профиль Helix PID и bind запущенного gateway Только переопределения (наследует ) Личность агента (вставляется в каждую сессию) Факты и предпочтения пользователя Маркер онбординга (удаляется после ) Память, навыки, security, cron",
     "keywords": [
       "config",
       "конфигурация",
@@ -5619,6 +5760,49 @@
     "nav_order": 5
   },
   {
+    "id": "ru/profiles#идентичность-агента-soul-init-user",
+    "lang": "ru",
+    "slug": "profiles",
+    "section": "идентичность-агента-soul-init-user",
+    "title": "Профили и изоляция",
+    "heading": "Идентичность агента (SOUL, INIT, USER)",
+    "body": "В каждом профиле можно хранить кто такой агент и кто такой пользователь между сессиями. Файл Назначение ------ ------------ Личность, ценности, тон и стиль агента Стабильные факты о человеке (имя, стиль работы, язык, заметки) Маркер первого запуска — пока файл есть, Helix проводит короткий онбординг При Helix создаёт и заготовку .",
+    "keywords": [
+      "profile",
+      "профиль",
+      "профили",
+      "изоляция",
+      "jail",
+      "workspace",
+      "идентичность",
+      "агента",
+      "soul",
+      "init",
+      "user"
+    ],
+    "nav_order": 5
+  },
+  {
+    "id": "ru/profiles#каждая-сессия",
+    "lang": "ru",
+    "slug": "profiles",
+    "section": "каждая-сессия",
+    "title": "Профили и изоляция",
+    "heading": "Каждая сессия",
+    "body": "- SOUL вставляется как закреплённое system-сообщение в начале диалога и восстанавливается после сжатия контекста . - USER попадает в system prompt, если есть . Файлы можно править вручную: ```bash helix -p alice profile env --edit только секреты",
+    "keywords": [
+      "profile",
+      "профиль",
+      "профили",
+      "изоляция",
+      "jail",
+      "workspace",
+      "каждая",
+      "сессия"
+    ],
+    "nav_order": 5
+  },
+  {
     "id": "ru/profiles#ключи-доступа-к-профилю-опционально",
     "lang": "ru",
     "slug": "profiles",
@@ -5659,6 +5843,27 @@
       "бот",
       "многих",
       "пользователей"
+    ],
+    "nav_order": 5
+  },
+  {
+    "id": "ru/profiles#первый-диалог-онбординг",
+    "lang": "ru",
+    "slug": "profiles",
+    "section": "первый-диалог-онбординг",
+    "title": "Профили и изоляция",
+    "heading": "Первый диалог (онбординг)",
+    "body": "Пока существует , агент: 1. Представляется и узнаёт, как вам удобнее работать. 2. Сохраняет факты через → и долгосрочную память. 3. Сохраняет личность через → (запись или дополнение). 4. Завершает — удаляет . Можно писать «сохрани это как свою личность», «запомни, меня зовут …» в чате или Telegram — агент выберет нужный инструмент. Поддерживаются русский и английский.",
+    "keywords": [
+      "profile",
+      "профиль",
+      "профили",
+      "изоляция",
+      "jail",
+      "workspace",
+      "первый",
+      "диалог",
+      "онбординг"
     ],
     "nav_order": 5
   },
@@ -5787,13 +5992,33 @@
     "nav_order": 5
   },
   {
+    "id": "ru/profiles#файлы-идентичности",
+    "lang": "ru",
+    "slug": "profiles",
+    "section": "файлы-идентичности",
+    "title": "Профили и изоляция",
+    "heading": "файлы идентичности:",
+    "body": "nano ~/.helix/profiles/alice/SOUL.md nano ~/.helix/profiles/alice/USER.md `` INIT.md` вручную или заведите новый профиль.",
+    "keywords": [
+      "profile",
+      "профиль",
+      "профили",
+      "изоляция",
+      "jail",
+      "workspace",
+      "файлы",
+      "идентичности"
+    ],
+    "nav_order": 5
+  },
+  {
     "id": "ru/profiles#что-изолировано-в-профиле",
     "lang": "ru",
     "slug": "profiles",
     "section": "что-изолировано-в-профиле",
     "title": "Профили и изоляция",
     "heading": "Что изолировано в профиле",
-    "body": "Ресурс Путь -------- ------ Ключ доступа к профилю (хэш) Окружение (ключи API, порты) Telegram-бот Состояние и лог gateway Модели, MCP, навыки Память (SQLite + ChromaDB) Навыки Cron-задачи Глобально в : Путь Назначение ------ ------------ Общие модели, MCP, search, поведение Общие ключи API, голос, флаги инструментов , клоны MCP Общие операционные данные Профили по умолчанию наследуют глобальные настройки. Файлы профиля хранят только переопределения — можно сменить модель в одном профиле, не трогая global; изменение global обновит все наследующие профили. Токены Telegram, память и состояние gateway остаются на профиль (не наследуются).",
+    "body": "Ресурс Путь -------- ------ Ключ доступа к профилю (хэш) Окружение (ключи API, порты) Telegram-бот Состояние и лог gateway Модели, MCP, навыки Память (SQLite + ChromaDB) Навыки Cron-задачи Душа агента Профиль пользователя Маркер первого запуска (удаляется после онбординга) Глобально в : Путь Назначение ------ ------------ Общие модели, MCP, search, поведение Общие ключи API, голос, флаги инструментов , клоны MCP Общие операционные данные Профили по умолчанию наследуют глобальные настройки. Файлы профиля хранят только переопределения — можно сменить модель в одном профиле, не трогая global; изменение global обновит все наследующие профили. Токены Telegram, память и состояние gateway остаются на профиль (не наследуются).",
     "keywords": [
       "profile",
       "профиль",
@@ -6014,7 +6239,7 @@
     "section": "профили",
     "title": "Справочник CLI",
     "heading": "Профили",
-    "body": "Путь Содержимое ------ ------------ Ключи API, порт gateway, флаги Токен бота, allowlist, Привязки Telegram user id → профиль (общий бот) Состояние и лог gateway Модели, MCP, workspace jail SQLite + ChromaDB Навыки ---",
+    "body": "Путь Содержимое ------ ------------ Ключи API, порт gateway, флаги Токен бота, allowlist, Привязки Telegram user id → профиль (общий бот) Состояние и лог gateway Модели, MCP, workspace jail Личность агента (в каждой сессии) Факты и предпочтения пользователя Маркер онбординга первого запуска SQLite + ChromaDB Навыки ---",
     "keywords": [
       "command",
       "команды",
@@ -7322,7 +7547,7 @@
     "section": "архитектура",
     "title": "Архитектура",
     "heading": "Архитектура",
-    "body": "Слой Путь ------ ------ События DI , Dishka Инструменты Память API CLI Supervisor gateway Doctor Конфиг: из профиля + (.env).",
+    "body": "Слой Путь ------ ------ События DI , Dishka Инструменты Память API CLI Supervisor gateway Doctor Конфиг: из профиля + (.env). Идентичность профиля: (личность агента, вставляется в каждую сессию), (факты о пользователе), (онбординг до ). См. , PROFILES.md.",
     "keywords": [
       "architecture",
       "архитектура",
@@ -7898,7 +8123,7 @@
     "section": "проверки",
     "title": "Доктор",
     "heading": "Проверки",
-    "body": "- Запись в (или ) - Платформа: ОС, путь данных, / / / в PATH; Windows: подсказка psutil, whitelist терминала - YAML профиля и providers - LLM endpoint и модель - Gateway state / health - Telegram token, access requests и allowlist - Production: pepper, CORS, auth, code executor После исправлений смотрите runtime-логи: — LOGS.md.",
+    "body": "- Запись в (или ) - Платформа: ОС, путь данных, / / / в PATH; Windows: подсказка psutil, whitelist терминала - YAML профиля и providers - LLM endpoint и модель (пропускается с ) - Gateway state / health - Telegram token, access requests и allowlist - Production: pepper, CORS, auth, code executor После исправлений смотрите runtime-логи: — LOGS.md.",
     "keywords": [
       "doctor",
       "диагностика",
@@ -8453,7 +8678,7 @@
     "section": "62-профиль",
     "title": "Руководство",
     "heading": "6.2. Профиль",
-    "body": "Каждый профиль — изолированное окружение: По умолчанию используется профиль . При первом запуске Helix создаёт нужные каталоги. Workspace jail (опционально): ограничить файловые/терминальные инструменты одной папкой — . См. CONFIGURATION.md. Whitelist терминала (опционально): , , — см. PROFILES.md. Просмотр настроек: Смена профиля: В чате: или (список).",
+    "body": "Каждый профиль — изолированное окружение: По умолчанию используется профиль . При первом запуске Helix создаёт нужные каталоги. Первый диалог: если есть , агент представляется, узнаёт имя и предпочтения и сохраняет их в / встроенными инструментами. Скажите «сохрани свою личность» или «запомни, меня зовут …», когда будете готовы. Подробнее: PROFILES.md. Workspace jail (опционально): ограничить файловые/терминальные инструменты одной папкой — . См. CONFIGURATION.md. Whitelist терминала (опционально): , , — см. PROFILES.md. Просмотр настроек: Смена профиля: В чате: или (список).",
     "keywords": [
       "guide",
       "руководство",

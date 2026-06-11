@@ -50,6 +50,9 @@ helix profile create carol --clean     # чистый профиль, настр
 | `profiles/<имя>/telegram-users.json` | Привязки Telegram user id → профиль Helix |
 | `profiles/<имя>/gateway/state.json` | PID и bind запущенного gateway |
 | `profiles/<имя>/config.yaml` | Только переопределения (наследует `global/config.yaml`) |
+| `profiles/<имя>/SOUL.md` | Личность агента (вставляется в каждую сессию) |
+| `profiles/<имя>/USER.md` | Факты и предпочтения пользователя |
+| `profiles/<имя>/INIT.md` | Маркер онбординга (удаляется после `complete_agent_initialization`) |
 | `profiles/<имя>/data/` | Память, навыки, security, cron |
 
 ## Workspace jail (опционально)

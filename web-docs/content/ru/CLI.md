@@ -336,6 +336,9 @@ helix -p shared gateway start
 | `~/.helix/profiles/<имя>/telegram-users.json` | Привязки Telegram user id → профиль (общий бот) |
 | `~/.helix/profiles/<имя>/gateway/` | Состояние и лог gateway |
 | `~/.helix/profiles/<имя>/config.yaml` | Модели, MCP, workspace jail |
+| `~/.helix/profiles/<имя>/SOUL.md` | Личность агента (в каждой сессии) |
+| `~/.helix/profiles/<имя>/USER.md` | Факты и предпочтения пользователя |
+| `~/.helix/profiles/<имя>/INIT.md` | Маркер онбординга первого запуска |
 | `.../data/memory/` | SQLite + ChromaDB |
 | `.../data/skills/` | Навыки |
 

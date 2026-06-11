@@ -186,10 +186,15 @@ cp .env.example ~/.helix/profiles/default/.env
 ~/.helix/profiles/<имя>/telegram.env  # Telegram-бот (опционально)
 ~/.helix/profiles/<имя>/gateway/        # состояние и лог gateway
 ~/.helix/profiles/<имя>/config.yaml
+~/.helix/profiles/<имя>/SOUL.md        # личность агента (каждая сессия)
+~/.helix/profiles/<имя>/USER.md        # факты о вас
+~/.helix/profiles/<имя>/INIT.md        # онбординг первого запуска (временно)
 ~/.helix/profiles/<имя>/data/
 ```
 
 По умолчанию используется профиль **`default`**. При первом запуске Helix создаёт нужные каталоги.
+
+**Первый диалог:** если есть `INIT.md`, агент представляется, узнаёт имя и предпочтения и сохраняет их в `USER.md` / `SOUL.md` встроенными инструментами. Скажите «сохрани свою личность» или «запомни, меня зовут …», когда будете готовы. Подробнее: [PROFILES.md](PROFILES.md#идентичность-агента-soul-init-user).
 
 **Workspace jail** (опционально): ограничить файловые/терминальные инструменты одной папкой — `helix profile jail enable /path/to/dir`. См. [CONFIGURATION.md](CONFIGURATION.md).
 

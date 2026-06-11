@@ -30,6 +30,9 @@ HELIX_ENV=production helix -p alice profile env --edit
 | Memory (SQLite + ChromaDB) | `~/.helix/profiles/<name>/data/memory/` |
 | Skills | `~/.helix/profiles/<name>/data/skills/` |
 | Cron jobs | `~/.helix/profiles/<name>/data/cron/` |
+| Agent soul | `~/.helix/profiles/<name>/SOUL.md` |
+| User profile | `~/.helix/profiles/<name>/USER.md` |
+| First-run marker | `~/.helix/profiles/<name>/INIT.md` (removed after onboarding) |
 
 Global under `~/.helix/`:
 
@@ -49,6 +52,45 @@ helix -p team-a config set model smart    # override model for one profile only
 ```
 
 Telegram tokens, memory, and gateway state remain **per profile** (not inherited).
+
+## Agent identity (SOUL, INIT, USER)
+
+Each profile can persist **who the agent is** and **who the user is** across sessions.
+
+| File | Purpose |
+|------|---------|
+| `SOUL.md` | Agent personality, values, tone, and behavior |
+| `USER.md` | Stable facts about the human (name, work style, language, notes) |
+| `INIT.md` | First-run marker — while present, Helix runs a short onboarding chat |
+
+When you run `helix profile create <name>`, Helix creates `INIT.md` and a placeholder `SOUL.md`.
+
+### First conversation (onboarding)
+
+While `INIT.md` exists, the agent:
+
+1. Introduces itself and learns how you prefer to work together.
+2. Saves facts with `save_user_profile` → `USER.md` + long-term memory.
+3. Saves personality with `save_agent_soul` → `SOUL.md` (write or append).
+4. Finishes with `complete_agent_initialization` — removes `INIT.md`.
+
+You can say things like “save this as your personality” or “remember my name is …” in chat or Telegram; the agent picks the right tool. Match your language — Russian and English work.
+
+### Every session
+
+- **SOUL** is injected as a pinned system message at the start of each conversation and **re-applied after context compression** so personality is never lost.
+- **USER** is included in the system prompt when `USER.md` exists.
+
+Edit the files directly anytime:
+
+```bash
+helix -p alice profile env --edit   # secrets only
+# identity files:
+nano ~/.helix/profiles/alice/SOUL.md
+nano ~/.helix/profiles/alice/USER.md
+```
+
+To reset onboarding for a profile, recreate `INIT.md` manually or run `helix profile create` on a new profile.
 
 ## Multiple gateways and Telegram bots
 

@@ -47,6 +47,16 @@ HelixAgent (core/agent.py)
 
 Project dir may supplement `./.helix/skills`, `.helix/plan`, local MCP — merged, not replacing profile system keys.
 
+### Profile identity
+
+Per profile, markdown files at `profiles/<name>/`:
+
+- `SOUL.md` — agent personality; injected as a pinned system message on every session (`core/profile/soul.py`, `prepare_session`)
+- `USER.md` — user facts; merged into the system prompt when present
+- `INIT.md` — onboarding gate; removed by tool `complete_agent_initialization`
+
+Tools: `save_agent_soul`, `save_user_profile` in `core/tools/profile_identity.py`.
+
 ## Extension points
 
 - **Events** — subscribe to `AgentEventBus` for UI, logging, metrics without changing the loop

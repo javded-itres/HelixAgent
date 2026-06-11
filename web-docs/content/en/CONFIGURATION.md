@@ -50,6 +50,9 @@ Initialized on first run (seeded from `profiles/default/config.yaml` when presen
 | `profiles/<name>/telegram-users.json` | Telegram user id → Helix profile bindings |
 | `profiles/<name>/gateway/state.json` | Running gateway PID and bind |
 | `profiles/<name>/config.yaml` | Overrides only (inherits `global/config.yaml`) |
+| `profiles/<name>/SOUL.md` | Agent personality (injected every session) |
+| `profiles/<name>/USER.md` | User facts and preferences |
+| `profiles/<name>/INIT.md` | First-run onboarding marker (removed after `complete_agent_initialization`) |
 | `profiles/<name>/data/` | Memory, skills, security, cron |
 
 ## Workspace jail (optional)

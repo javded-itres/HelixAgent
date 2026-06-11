@@ -17,3 +17,5 @@ HelixAgent → run_agent_loop() (core/agent_execution.py)
 | Doctor | `cli/doctor/` |
 
 Конфиг: `HelixRuntimeConfig` из профиля + `Settings` (.env).
+
+**Идентичность профиля:** `SOUL.md` (личность агента, вставляется в каждую сессию), `USER.md` (факты о пользователе), `INIT.md` (онбординг до `complete_agent_initialization`). См. `core/profile/`, [PROFILES.md](PROFILES.md).
