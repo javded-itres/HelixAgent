@@ -129,7 +129,15 @@ helix gateway start --with-docs
 # or: HELIX_GATEWAY_WITH_DOCS=1 helix gateway start
 ```
 
-Serves the built docs SPA on a companion port (default `8080`) alongside the API. Build content first with `helix docs build`. Optional docs-chat widget uses a **separate** token (`HELIX_DOCS_CHAT_TOKEN`) — not the gateway `hx_` key. See [DEPLOYMENT.md](DEPLOYMENT.md#documentation-site-build-and-seo).
+Serves the built docs SPA on a companion port (default `8080`) alongside the API:
+
+| Docs site | Content |
+|-----------|---------|
+| `http://127.0.0.1:8080/docs` | Documentation hub |
+| `http://127.0.0.1:8080/docs/gateway-api` | **Full API reference** (every endpoint, curl examples) |
+| `http://127.0.0.1:8000/docs` | **Swagger UI** on gateway port — try live requests |
+
+Build content first with `helix docs build`. Optional docs-chat widget uses a **separate** token (`HELIX_DOCS_CHAT_TOKEN`) — not the gateway `hx_` key. See [DEPLOYMENT.md](DEPLOYMENT.md#documentation-site-build-and-seo).
 
 ## Metrics
 

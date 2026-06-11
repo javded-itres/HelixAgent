@@ -1,5 +1,8 @@
 # Helix Gateway API — Complete Reference
 
+> **On this documentation site:** `/docs/gateway-api` (same content as this page).  
+> **Live OpenAPI (try requests):** `http://127.0.0.1:8000/docs` on the gateway port — not the docs site port.
+
 Helix runs a **single multi-profile HTTP gateway** with three public surfaces:
 
 | Surface | Prefix | Purpose |

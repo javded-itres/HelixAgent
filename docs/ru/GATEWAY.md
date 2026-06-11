@@ -129,7 +129,15 @@ helix gateway start --with-docs
 # или: HELIX_GATEWAY_WITH_DOCS=1 helix gateway start
 ```
 
-SPA документации на companion-порту (по умолчанию `8080`) рядом с API. Сначала соберите контент: `helix docs build`. Виджет docs-chat использует **отдельный** токен (`HELIX_DOCS_CHAT_TOKEN`) — не ключ gateway `hx_`. См. [DEPLOYMENT.md](DEPLOYMENT.md).
+SPA документации на companion-порту (по умолчанию `8080`) рядом с API:
+
+| Сайт docs | Содержимое |
+|-----------|------------|
+| `http://127.0.0.1:8080/docs` | Хаб документации |
+| `http://127.0.0.1:8080/docs/gateway-api` | **Полный справочник API** (все эндпоинты, curl) |
+| `http://127.0.0.1:8000/docs` | **Swagger UI** на порту gateway — живые запросы |
+
+Сначала соберите контент: `helix docs build`. Виджет docs-chat использует **отдельный** токен (`HELIX_DOCS_CHAT_TOKEN`) — не ключ gateway `hx_`. См. [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Метрики
 

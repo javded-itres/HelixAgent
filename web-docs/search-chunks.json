@@ -2594,6 +2594,27 @@
     "nav_order": 11
   },
   {
+    "id": "en/gateway#or-helix_gateway_with_docs1-helix-gateway-start",
+    "lang": "en",
+    "slug": "gateway",
+    "section": "or-helix_gateway_with_docs1-helix-gateway-start",
+    "title": "API Gateway",
+    "heading": "or: HELIX_GATEWAY_WITH_DOCS=1 helix gateway start",
+    "body": "`` 8080 http://127.0.0.1:8080/docs http://127.0.0.1:8080/docs/gateway-api http://127.0.0.1:8000/docs helix docs build HELIX DOCS CHAT TOKEN hx ` key. See DEPLOYMENT.md.",
+    "keywords": [
+      "api",
+      "gateway",
+      "гейтвей",
+      "uvicorn",
+      "openai",
+      "helix_gateway_with_docs1",
+      "helix",
+      "start",
+      "helix_gateway_with_docs"
+    ],
+    "nav_order": 11
+  },
+  {
     "id": "en/gateway#profilesbobenv",
     "lang": "en",
     "slug": "gateway",
@@ -2845,7 +2866,7 @@
     "section": "helix-gateway-api-complete-reference",
     "title": "Complete API Reference",
     "heading": "Helix Gateway API — Complete Reference",
-    "body": "Helix runs a single multi-profile HTTP gateway with three public surfaces: Surface Prefix Purpose --------- -------- --------- Hermes-compatible API , , Drop-in for Open WebUI, LobeChat, Hermes clients Helix agent extensions , permissions, plans OpenAI chat + tool permissions + plan review Helix Management API SaaS control plane: profiles, models, MCP, skills, Telegram Operational guide (start/stop, ports, logs): GATEWAY.md. ---",
+    "body": "On this documentation site: (same content as this page). Live OpenAPI (try requests): on the gateway port — not the docs site port. Helix runs a single multi-profile HTTP gateway with three public surfaces: Surface Prefix Purpose --------- -------- --------- Hermes-compatible API , , Drop-in for Open WebUI, LobeChat, Hermes clients Helix agent extensions , permissions, plans OpenAI chat + tool permissions + plan review Helix Management API SaaS control plane: profiles, models, MCP, skills, Telegram Operational guide (start/stop, ports, logs): GATEWAY.md. ---",
     "keywords": [
       "helix",
       "gateway",
@@ -7846,6 +7867,28 @@
     "nav_order": 11
   },
   {
+    "id": "ru/gateway#или-helix_gateway_with_docs1-helix-gateway-start",
+    "lang": "ru",
+    "slug": "gateway",
+    "section": "или-helix_gateway_with_docs1-helix-gateway-start",
+    "title": "API Gateway",
+    "heading": "или: HELIX_GATEWAY_WITH_DOCS=1 helix gateway start",
+    "body": "`` 8080 http://127.0.0.1:8080/docs http://127.0.0.1:8080/docs/gateway-api http://127.0.0.1:8000/docs helix docs build HELIX DOCS CHAT TOKEN hx `. См. DEPLOYMENT.md.",
+    "keywords": [
+      "api",
+      "gateway",
+      "гейтвей",
+      "uvicorn",
+      "openai",
+      "или",
+      "helix_gateway_with_docs1",
+      "helix",
+      "start",
+      "helix_gateway_with_docs"
+    ],
+    "nav_order": 11
+  },
+  {
     "id": "ru/gateway#интерактивная-документация-api",
     "lang": "ru",
     "slug": "gateway",
@@ -8161,7 +8204,7 @@
     "section": "helix-gateway-api-полный-справочник",
     "title": "Полный справочник API",
     "heading": "Helix Gateway API — полный справочник",
-    "body": "Helix запускает единый multi-profile HTTP gateway с тремя публичными поверхностями: Поверхность Префикс Назначение ------------- --------- ------------ Hermes-compatible API , , Drop-in для Open WebUI, LobeChat, Hermes-клиентов Расширения агента Helix , permissions, plans OpenAI chat + разрешения на инструменты + ревью планов Helix Management API SaaS control plane: профили, модели, MCP, навыки, Telegram Эксплуатационное руководство (start/stop, порты, логи): GATEWAY.md. ---",
+    "body": "На сайте документации: (тот же текст, что и эта страница). Живой OpenAPI (вызов запросов): на порту gateway — не на порту сайта docs. Helix запускает единый multi-profile HTTP gateway с тремя публичными поверхностями: Поверхность Префикс Назначение ------------- --------- ------------ Hermes-compatible API , , Drop-in для Open WebUI, LobeChat, Hermes-клиентов Расширения агента Helix , permissions, plans OpenAI chat + разрешения на инструменты + ревью планов Helix Management API SaaS control plane: профили, модели, MCP, навыки, Telegram Эксплуатационное руководство (start/stop, порты, логи): GATEWAY.md. ---",
     "keywords": [
       "helix",
       "gateway",
