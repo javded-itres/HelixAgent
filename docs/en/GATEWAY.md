@@ -1,6 +1,8 @@
 # API Gateway
 
-OpenAI-compatible HTTP API and companion services (Telegram when configured).
+OpenAI-compatible HTTP API, Hermes-compatible surface, Helix Management API, and companion services (Telegram + cron when configured).
+
+**Full API reference:** [GATEWAY_API.md](GATEWAY_API.md) — Hermes mapping, `/api/helix/` management, auth, SaaS curl examples.
 
 ## Commands
 
@@ -37,6 +39,16 @@ helix -p bob gateway start
 
 The supervisor also runs **cron** and **Telegram** (when configured for that profile) as companion processes.
 
+## Multi-profile gateway (v0.2+)
+
+A single uvicorn process can serve **multiple Helix profiles**:
+
+- Profile routing: `X-Helix-Profile` → `model` field → host profile
+- Per-profile reload: `POST /api/helix/profiles/{id}/reload` (agent + Telegram + cron)
+- Management API: `/api/helix/` for profiles, models, MCP, skills, Telegram admin
+
+See [GATEWAY_API.md](GATEWAY_API.md) for endpoint tables and authentication.
+
 ## Environment
 
 Set bind address and port in the **profile** `.env` (`helix profile env --edit`):
@@ -45,20 +57,29 @@ Set bind address and port in the **profile** `.env` (`helix profile env --edit`)
 |----------|---------|-------------|
 | `HELIX_GATEWAY_HOST` | `127.0.0.1` | Bind address |
 | `HELIX_GATEWAY_PORT` | `8000` | Port |
-| `HELIX_REQUIRE_AUTH` | `false` | API key for `/v1/*` |
+| `HELIX_REQUIRE_AUTH` | `true` | API key required (except `/health`, `/v1/health`) |
 | `HELIX_ENV=production` | — | Forces auth + stricter checks |
 
 Admin routes (`/admin/*`) **always** require an admin API key.
 
-## Endpoints
+## Quick endpoint map
 
-- `GET /health` — health check
-- `GET /metrics` — Prometheus text metrics
-- `POST /v1/chat/completions` — OpenAI-compatible chat
-- `POST /admin/api-keys` — create API key (admin)
+| Group | Examples |
+|-------|----------|
+| Health | `GET /health`, `GET /v1/health`, `GET /health/detailed` |
+| Chat | `POST /v1/chat/completions` |
+| Hermes | `GET /v1/models`, `/v1/capabilities`, `/v1/runs`, `/api/sessions`, `/api/jobs` |
+| Management | `GET/POST /api/helix/profiles`, `…/models`, `…/telegram`, `…/reload` |
+| Admin | `POST /admin/api-keys`, `GET /metrics` |
 
-Create first admin key (with auth enabled):
+Create first admin key:
 
 ```bash
-# Bootstrap: temporarily set HELIX_REQUIRE_AUTH=false, create key with permissions admin, then enable auth
+# Bootstrap with auth disabled once, or use helix admin key create from CLI
+export HELIX_REQUIRE_AUTH=false
+helix gateway start -f
+# POST /admin/api-keys with permissions including admin
+# Then set HELIX_REQUIRE_AUTH=true and restart
 ```
+
+Interactive API docs: `http://127.0.0.1:8000/docs` (OpenAPI).

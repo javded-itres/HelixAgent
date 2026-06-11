@@ -3,12 +3,19 @@
 ## Unreleased
 
 ### Added
+- **Multi-profile gateway (v0.2)** — one uvicorn process, `ProfileAgentRegistry`, per-profile Telegram + cron companions
+- **Hermes-compatible API** — `/v1/models`, `/v1/capabilities`, `/v1/responses`, `/v1/runs` (SSE), `/api/jobs`, `/api/sessions`; session header aliases `X-Helix-*` / `X-Hermes-*`
+- **Helix Management API** — `/api/helix/` profiles, models, skills, MCP, config/env, global settings; profile key auth (`X-Helix-Profile-Key`)
+- **Telegram admin API** — `/api/helix/profiles/{id}/telegram/*` (setup, requests approve/reject, admin, map, sync-menu)
+- **`HELIX_REQUIRE_AUTH=true`** by default — public without key: only `GET /health`, `GET /v1/health`
 - **Profile identity** — `SOUL.md`, `USER.md`, `INIT.md` per profile; first-run onboarding with `save_agent_soul`, `save_user_profile`, `complete_agent_initialization`
 - **SOUL injection** — pinned agent soul in every session and after context compression
 - **Telegram admin** — single admin via `telegram requests approve --set-admin`; `telegram admin show|clear`
 - **Telegram access flow** — admin notifications on `/start`; slash menu hidden until approve; `telegram sync-menu`
 
 ### Documentation
+- **GATEWAY_API.md** (EN/RU) — full Gateway API reference: Hermes 1:1 mapping, management endpoints, SaaS curl workflow
+- **GATEWAY.md** (EN/RU) — multi-profile gateway, updated auth defaults, link to API reference
 - **PROFILES**, **CONFIGURATION**, **USER_GUIDE**, **START_HERE**, **DOCTOR** (EN/RU) — agent identity files and onboarding
 - **CHANGELOG** — unreleased features from `feature/telegram-profiles`
 

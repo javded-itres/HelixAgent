@@ -279,6 +279,30 @@ SEO_PAGES: dict[str, dict[str, dict[str, str]]] = {
             "keywords": "Helix gateway, API gateway, OpenAI compatible API, helix gateway start, Prometheus",
         },
     },
+    "gateway-api": {
+        "ru": {
+            "title": "Справочник Gateway API Helix — Hermes, Management, SaaS",
+            "description": (
+                "Полный справочник Helix Gateway API: Hermes-compatible endpoints, Helix Management "
+                "/api/helix/, двухуровневая auth, multi-profile routing, Telegram admin API и curl-примеры SaaS."
+            ),
+            "keywords": (
+                "Helix Gateway API, Hermes API, Helix Management API, /api/helix, multi-profile gateway, "
+                "SaaS API, Telegram admin API"
+            ),
+        },
+        "en": {
+            "title": "Helix Gateway API Reference — Hermes, Management, SaaS",
+            "description": (
+                "Complete Helix Gateway API reference: Hermes-compatible endpoints, Helix Management "
+                "/api/helix/, two-level auth, multi-profile routing, Telegram admin API, and SaaS curl examples."
+            ),
+            "keywords": (
+                "Helix Gateway API, Hermes API, Helix Management API, /api/helix, multi-profile gateway, "
+                "SaaS API, Telegram admin API"
+            ),
+        },
+    },
     "telegram": {
         "ru": {
             "title": "Telegram-бот Helix — настройка, голос, slash-команды",

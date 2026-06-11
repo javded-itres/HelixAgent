@@ -1,6 +1,8 @@
 # API Gateway
 
-HTTP API (совместим с OpenAI) и companion-сервисы (Telegram при настройке).
+HTTP API (OpenAI-совместимый), Hermes-compatible surface, Helix Management API и companion-сервисы (Telegram + cron при настройке).
+
+**Полный справочник API:** [GATEWAY_API.md](GATEWAY_API.md) — Hermes mapping, `/api/helix/` management, auth, SaaS curl-примеры.
 
 ## Команды
 
@@ -37,6 +39,16 @@ helix -p bob gateway start
 
 Supervisor также запускает **cron** и **Telegram** (если настроены для этого профиля) как companion-процессы.
 
+## Multi-profile gateway (v0.2+)
+
+Один процесс uvicorn обслуживает **несколько профилей Helix**:
+
+- Роутинг: `X-Helix-Profile` → поле `model` → host profile
+- Per-profile reload: `POST /api/helix/profiles/{id}/reload` (agent + Telegram + cron)
+- Management API: `/api/helix/` — профили, модели, MCP, навыки, Telegram admin
+
+Таблицы эндпоинтов и аутентификация: [GATEWAY_API.md](GATEWAY_API.md).
+
 ## Переменные окружения
 
 Задаются в **`.env` профиля** (`helix profile env --edit`):
@@ -45,14 +57,29 @@ Supervisor также запускает **cron** и **Telegram** (если на
 |------------|--------------|----------|
 | `HELIX_GATEWAY_HOST` | `127.0.0.1` | Адрес bind |
 | `HELIX_GATEWAY_PORT` | `8000` | Порт |
-| `HELIX_REQUIRE_AUTH` | `false` | API key для `/v1/*` |
+| `HELIX_REQUIRE_AUTH` | `true` | API key обязателен (кроме `/health`, `/v1/health`) |
 | `HELIX_ENV=production` | — | Включает auth и строгие проверки |
 
 Маршруты `/admin/*` **всегда** требуют admin API key.
 
-## Эндпоинты
+## Краткая карта эндпоинтов
 
-- `GET /health` — проверка здоровья
-- `GET /metrics` — метрики Prometheus
-- `POST /v1/chat/completions` — чат OpenAI-формата
-- `POST /admin/api-keys` — создать ключ (admin)
+| Группа | Примеры |
+|--------|---------|
+| Health | `GET /health`, `GET /v1/health`, `GET /health/detailed` |
+| Chat | `POST /v1/chat/completions` |
+| Hermes | `GET /v1/models`, `/v1/capabilities`, `/v1/runs`, `/api/sessions`, `/api/jobs` |
+| Management | `GET/POST /api/helix/profiles`, `…/models`, `…/telegram`, `…/reload` |
+| Admin | `POST /admin/api-keys`, `GET /metrics` |
+
+Создание первого admin-ключа:
+
+```bash
+# Однократно с HELIX_REQUIRE_AUTH=false или через CLI
+export HELIX_REQUIRE_AUTH=false
+helix gateway start -f
+# POST /admin/api-keys с правом admin
+# Затем HELIX_REQUIRE_AUTH=true и перезапуск
+```
+
+Интерактивная документация: `http://127.0.0.1:8000/docs` (OpenAPI).

@@ -42,7 +42,7 @@
     "section": "interfaces",
     "title": "Overview",
     "heading": "Interfaces",
-    "body": "- CLI.md — complete command reference - SLASH COMMANDS.md — all commands (TUI, Telegram, chat) - EXECUTION MODES.md — ReAct, Plan, Hybrid, Auto — how modes work and prompt examples - TUI.md — , web mode, copy, hub UI - HUB.md — , catalogs, - GATEWAY.md — - TELEGRAM.md — Telegram - TELEGRAM MULTI PROFILE.md — one bot / multiple bots, access requests, manual - BROWSER TOOLS.md — Playwright tools",
+    "body": "- CLI.md — complete command reference - SLASH COMMANDS.md — all commands (TUI, Telegram, chat) - EXECUTION MODES.md — ReAct, Plan, Hybrid, Auto — how modes work and prompt examples - TUI.md — , web mode, copy, hub UI - HUB.md — , catalogs, - GATEWAY.md — - GATEWAY API.md — Hermes + Helix Management API reference (auth, , SaaS curl) - TELEGRAM.md — Telegram - TELEGRAM MULTI PROFILE.md — one bot / multiple bots, access requests, manual - BROWSER TOOLS.md — Playwright tools",
     "keywords": [
       "overview",
       "обзор",
@@ -2383,6 +2383,23 @@
     "nav_order": 10
   },
   {
+    "id": "en/gateway#api-gateway",
+    "lang": "en",
+    "slug": "gateway",
+    "section": "api-gateway",
+    "title": "API Gateway",
+    "heading": "API Gateway",
+    "body": "OpenAI-compatible HTTP API, Hermes-compatible surface, Helix Management API, and companion services (Telegram + cron when configured). Full API reference: GATEWAY API.md — Hermes mapping, management, auth, SaaS curl examples.",
+    "keywords": [
+      "api",
+      "gateway",
+      "гейтвей",
+      "uvicorn",
+      "openai"
+    ],
+    "nav_order": 11
+  },
+  {
     "id": "en/gateway#commands",
     "lang": "en",
     "slug": "gateway",
@@ -2401,31 +2418,13 @@
     "nav_order": 11
   },
   {
-    "id": "en/gateway#endpoints",
-    "lang": "en",
-    "slug": "gateway",
-    "section": "endpoints",
-    "title": "API Gateway",
-    "heading": "Endpoints",
-    "body": "- — health check - — Prometheus text metrics - — OpenAI-compatible chat - — create API key (admin) Create first admin key (with auth enabled): ```bash",
-    "keywords": [
-      "api",
-      "gateway",
-      "гейтвей",
-      "uvicorn",
-      "openai",
-      "endpoints"
-    ],
-    "nav_order": 11
-  },
-  {
     "id": "en/gateway#environment",
     "lang": "en",
     "slug": "gateway",
     "section": "environment",
     "title": "API Gateway",
     "heading": "Environment",
-    "body": "Set bind address and port in the profile ( ): Variable Default Description ---------- --------- ------------- Bind address Port API key for — Forces auth + stricter checks Admin routes ( ) always require an admin API key.",
+    "body": "Set bind address and port in the profile ( ): Variable Default Description ---------- --------- ------------- Bind address Port API key required (except , ) — Forces auth + stricter checks Admin routes ( ) always require an admin API key.",
     "keywords": [
       "api",
       "gateway",
@@ -2433,6 +2432,26 @@
       "uvicorn",
       "openai",
       "environment"
+    ],
+    "nav_order": 11
+  },
+  {
+    "id": "en/gateway#multi-profile-gateway-v02",
+    "lang": "en",
+    "slug": "gateway",
+    "section": "multi-profile-gateway-v02",
+    "title": "API Gateway",
+    "heading": "Multi-profile gateway (v0.2+)",
+    "body": "A single uvicorn process can serve multiple Helix profiles : - Profile routing: → field → host profile - Per-profile reload: (agent + Telegram + cron) - Management API: for profiles, models, MCP, skills, Telegram admin See GATEWAY API.md for endpoint tables and authentication.",
+    "keywords": [
+      "api",
+      "gateway",
+      "гейтвей",
+      "uvicorn",
+      "openai",
+      "multi",
+      "profile",
+      "v02"
     ],
     "nav_order": 11
   },
@@ -2458,6 +2477,429 @@
     "nav_order": 11
   },
   {
+    "id": "en/gateway#quick-endpoint-map",
+    "lang": "en",
+    "slug": "gateway",
+    "section": "quick-endpoint-map",
+    "title": "API Gateway",
+    "heading": "Quick endpoint map",
+    "body": "Group Examples ------- ---------- Health , , Chat Hermes , , , , Management , , , Admin , Create first admin key: ```bash",
+    "keywords": [
+      "api",
+      "gateway",
+      "гейтвей",
+      "uvicorn",
+      "openai",
+      "quick",
+      "endpoint",
+      "map"
+    ],
+    "nav_order": 11
+  },
+  {
+    "id": "en/gateway-api#1-create-tenant-profile-admin",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "1-create-tenant-profile-admin",
+    "title": "Gateway API Reference",
+    "heading": "1. Create tenant profile (admin)",
+    "body": "curl -sS -X POST \"$HELIX URL/api/helix/profiles\" \\ -H \"Authorization: Bearer $ADMIN KEY\" \\ -H \"Content-Type: application/json\" \\ -d '{\"name\":\"tenant-42\",\"with access key\":true}'",
+    "keywords": [
+      "create",
+      "tenant",
+      "profile",
+      "admin"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#2-add-llm-provider",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "2-add-llm-provider",
+    "title": "Gateway API Reference",
+    "heading": "2. Add LLM provider",
+    "body": "curl -sS -X POST \"$HELIX URL/api/helix/profiles/tenant-42/models/providers\" \\ -H \"Authorization: Bearer $ADMIN KEY\" \\ -H \"X-Helix-Profile-Key: $ADMIN PROFILE KEY\" \\ -H \"Content-Type: application/json\" \\ -d '{\"preset id\":\"openrouter\",\"skip test\":true}'",
+    "keywords": [
+      "add",
+      "llm",
+      "provider"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#3-reload-tenant-agent-companions",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "3-reload-tenant-agent-companions",
+    "title": "Gateway API Reference",
+    "heading": "3. Reload tenant agent + companions",
+    "body": "curl -sS -X POST \"$HELIX URL/api/helix/profiles/tenant-42/reload\" \\ -H \"Authorization: Bearer $ADMIN KEY\" \\ -H \"X-Helix-Profile-Key: $ADMIN PROFILE KEY\"",
+    "keywords": [
+      "reload",
+      "tenant",
+      "agent",
+      "companions"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#4-chat-as-tenant-openai-client-model-profile-name",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "4-chat-as-tenant-openai-client-model-profile-name",
+    "title": "Gateway API Reference",
+    "heading": "4. Chat as tenant (OpenAI client: model = profile name)",
+    "body": "curl -sS \"$HELIX URL/v1/chat/completions\" \\ -H \"Authorization: Bearer $TENANT API KEY\" \\ -H \"Content-Type: application/json\" \\ -d '{\"model\":\"tenant-42\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}]}'",
+    "keywords": [
+      "chat",
+      "tenant",
+      "openai",
+      "client",
+      "model",
+      "profile",
+      "name"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#5-telegram-setup-for-tenant-bot-profile",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "5-telegram-setup-for-tenant-bot-profile",
+    "title": "Gateway API Reference",
+    "heading": "5. Telegram setup for tenant bot profile",
+    "body": "curl -sS -X POST \"$HELIX URL/api/helix/profiles/tenant-42/telegram/setup\" \\ -H \"Authorization: Bearer $ADMIN KEY\" \\ -H \"X-Helix-Profile-Key: $TENANT PROFILE KEY\" \\ -H \"Content-Type: application/json\" \\ -d '{\"bot token\":\"123456789:AAH…\"}'",
+    "keywords": [
+      "telegram",
+      "setup",
+      "for",
+      "tenant",
+      "bot",
+      "profile"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#6-approve-telegram-user-admin-only",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "6-approve-telegram-user-admin-only",
+    "title": "Gateway API Reference",
+    "heading": "6. Approve Telegram user (admin only)",
+    "body": "curl -sS -X POST \"$HELIX URL/api/helix/profiles/tenant-42/telegram/requests/12345/approve\" \\ -H \"Authorization: Bearer $ADMIN KEY\" \\ -H \"X-Helix-Profile-Key: $ADMIN PROFILE KEY\" \\ -H \"Content-Type: application/json\" \\ -d '{\"profile\":\"tenant-42\"}' `` \"reload required\": true POST /api/helix/profiles/{id}/reload` to apply config changes without restarting uvicorn. ---",
+    "keywords": [
+      "approve",
+      "telegram",
+      "user",
+      "admin",
+      "only"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#admin-routes-admin",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "admin-routes-admin",
+    "title": "Gateway API Reference",
+    "heading": "Admin routes (`/admin`)",
+    "body": "Method Path Description -------- ------ ------------- POST Create API key GET List keys DELETE Revoke key GET Prometheus (admin; disabled unless enabled) ---",
+    "keywords": [
+      "admin",
+      "routes"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#api-key-layer-1",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "api-key-layer-1",
+    "title": "Gateway API Reference",
+    "heading": "API key (layer 1)",
+    "body": "All routes except and require a valid API key when (default). Header Example -------- --------- Permissions: , , , (see SECURITY.md). Create keys via (admin permission required).",
+    "keywords": [
+      "api",
+      "key",
+      "layer"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#config-apihelixprofilesid",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "config-apihelixprofilesid",
+    "title": "Gateway API Reference",
+    "heading": "Config — `/api/helix/profiles/{id}`",
+    "body": "Method Path Description -------- ------ ------------- GET/PATCH Profile YAML (secrets masked) GET/PATCH Profile (secrets masked)",
+    "keywords": [
+      "config",
+      "apihelixprofilesid",
+      "api",
+      "helix",
+      "profiles"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#gateway-api-reference",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "gateway-api-reference",
+    "title": "Gateway API Reference",
+    "heading": "Gateway API Reference",
+    "body": "Helix gateway exposes two HTTP API layers on a single multi-profile process : 1. Hermes-compatible API — drop-in for Open WebUI, LobeChat, and other Hermes clients 2. Helix Management API — control plane for SaaS: profiles, models, MCP, skills, Telegram admin Operational guide (start/stop, ports, logs): GATEWAY.md. ---",
+    "keywords": [
+      "gateway",
+      "api",
+      "reference"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#global-apihelixglobal-admin-only",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "global-apihelixglobal-admin-only",
+    "title": "Gateway API Reference",
+    "heading": "Global — `/api/helix/global` (admin only)",
+    "body": "Method Path Description -------- ------ ------------- POST Create global config + env GET/PATCH GET/PATCH",
+    "keywords": [
+      "global",
+      "apihelixglobal",
+      "admin",
+      "only",
+      "api",
+      "helix"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#helix-legacy-extensions-v1",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "helix-legacy-extensions-v1",
+    "title": "Gateway API Reference",
+    "heading": "Helix legacy extensions (`/v1`)",
+    "body": "Method Path Description -------- ------ ------------- POST OpenAI-compatible chat GET Conversation history GET Tool list POST Memory search POST/GET/DELETE Tool permissions POST Approve risky actions POST/GET Plan review ---",
+    "keywords": [
+      "helix",
+      "legacy",
+      "extensions"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#helix-management-api-apihelix",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "helix-management-api-apihelix",
+    "title": "Gateway API Reference",
+    "heading": "Helix Management API (`/api/helix/`)",
+    "body": "Prefix for control-plane operations. All routes require API key + profile access (see above).",
+    "keywords": [
+      "helix",
+      "management",
+      "api",
+      "apihelix"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#hermes-compatible-api",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "hermes-compatible-api",
+    "title": "Gateway API Reference",
+    "heading": "Hermes-compatible API",
+    "body": "Mapping to Hermes API Server endpoints. Hermes Helix Notes -------- ------- ------- ✅ Lists profile names as model ids ✅ Agent capabilities ✅ Public ✅ Extended health (auth optional) ✅ From agent tools ✅ ✅ SQLite store, LRU 100 ✅ ✅ ✅ In-memory + SSE ✅ ✅ SSE stream ✅ ✅ Human-in-the-loop ✅ Cron jobs per profile ✅ ✅ ✅ ✅ ✅ ✅ ✅ SSE",
+    "keywords": [
+      "hermes",
+      "compatible",
+      "api"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#mcp-apihelixprofilesidmcp",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "mcp-apihelixprofilesidmcp",
+    "title": "Gateway API Reference",
+    "heading": "MCP — `/api/helix/profiles/{id}/mcp`",
+    "body": "Method Path Description -------- ------ ------------- GET List servers + assignments POST Create server GET Server config DELETE Remove server POST Connect + list tools GET/PATCH Agent ↔ server mapping GET Curated install list POST Install popular or git MCP",
+    "keywords": [
+      "mcp",
+      "apihelixprofilesidmcp",
+      "api",
+      "helix",
+      "profiles"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#models-apihelixprofilesidmodels",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "models-apihelixprofilesidmodels",
+    "title": "Gateway API Reference",
+    "heading": "Models — `/api/helix/profiles/{id}/models`",
+    "body": "Method Path Description -------- ------ ------------- GET Provider catalog GET Configured providers (keys masked) POST Add preset provider DELETE Remove provider POST Probe + discover models GET/PATCH Agent model routing GET/PATCH Fallback provider chain",
+    "keywords": [
+      "models",
+      "apihelixprofilesidmodels",
+      "api",
+      "helix",
+      "profiles"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#multi-profile-architecture",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "multi-profile-architecture",
+    "title": "Gateway API Reference",
+    "heading": "Multi-profile architecture",
+    "body": "One uvicorn process serves N profiles via in-memory : - Agents are lazy-loaded per profile - runs Telegram polling + cron per profile - stops and restarts companions for one profile without gateway restart Host profile is set at startup ( ). Other profiles load on first request or via management API. ---",
+    "keywords": [
+      "multi",
+      "profile",
+      "architecture"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#profile-access-key-layer-2",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "profile-access-key-layer-2",
+    "title": "Gateway API Reference",
+    "heading": "Profile access key (layer 2)",
+    "body": "management routes also require profile authorization: Who Headers Scope ----- --------- ------- Profile owner Own profile only Gateway admin API key with or master key of admin profile All profiles Admin profile name defaults to ( ).",
+    "keywords": [
+      "profile",
+      "access",
+      "key",
+      "layer"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#profile-routing-chat-hermes-surface",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "profile-routing-chat-hermes-surface",
+    "title": "Gateway API Reference",
+    "heading": "Profile routing (chat / Hermes surface)",
+    "body": "Priority (first non-empty wins): 1. or 2. field in or (profile name) 3. Gateway host profile ( at process start)",
+    "keywords": [
+      "profile",
+      "routing",
+      "chat",
+      "hermes",
+      "surface"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#profiles-apihelixprofiles",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "profiles-apihelixprofiles",
+    "title": "Gateway API Reference",
+    "heading": "Profiles — `/api/helix/profiles`",
+    "body": "Method Path Description -------- ------ ------------- GET List profiles (admin) POST Create profile (admin) GET Profile details GET Agent + companions status DELETE Delete profile (admin) POST Reload agent + Telegram + cron GET Access key status POST Enable profile key + jail POST Rotate key (body: ) POST Remove key (admin) GET Workspace jail status POST Enable jail (optional ) POST Disable jail",
+    "keywords": [
+      "profiles",
+      "apihelixprofiles",
+      "api",
+      "helix"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#saas-workflow-curl",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "saas-workflow-curl",
+    "title": "Gateway API Reference",
+    "heading": "SaaS workflow (curl)",
+    "body": "```bash export HELIX URL=http://127.0.0.1:8000 export ADMIN KEY=hx admin … export ADMIN PROFILE KEY=hp … master key of admin profile",
+    "keywords": [
+      "saas",
+      "workflow",
+      "curl"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#security-notes",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "security-notes",
+    "title": "Gateway API Reference",
+    "heading": "Security notes",
+    "body": "- Secrets in management responses are masked (tokens, API keys, env vars) - Access keys are returned once on create/init/rotate — store securely - requires admin API key - Security headers on all responses: , - Production: set , bind to , terminate TLS at reverse proxy See also: SECURITY.md, DEPLOYMENT.md, PROFILES.md.",
+    "keywords": [
+      "security",
+      "notes"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#session-continuity-header-aliases",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "session-continuity-header-aliases",
+    "title": "Gateway API Reference",
+    "heading": "Session continuity (header aliases)",
+    "body": "Purpose Helix Hermes (alias) --------- ------- ---------------- Conversation / transcript id Stable memory scope Session key max 256 chars; control characters rejected. ---",
+    "keywords": [
+      "session",
+      "continuity",
+      "header",
+      "aliases"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#skills-apihelixprofilesidskills",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "skills-apihelixprofilesidskills",
+    "title": "Gateway API Reference",
+    "heading": "Skills — `/api/helix/profiles/{id}/skills`",
+    "body": "Method Path Description -------- ------ ------------- GET List skills ( , ) GET Semantic search GET Skill detail GET/PATCH Per-agent skill allowlists POST Install bundled skills",
+    "keywords": [
+      "skills",
+      "apihelixprofilesidskills",
+      "api",
+      "helix",
+      "profiles"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "en/gateway-api#telegram-apihelixprofilesidtelegram",
+    "lang": "en",
+    "slug": "gateway-api",
+    "section": "telegram-apihelixprofilesidtelegram",
+    "title": "Gateway API Reference",
+    "heading": "Telegram — `/api/helix/profiles/{id}/telegram`",
+    "body": "CLI equivalents in TELEGRAM.md. Method Path CLI Auth -------- ------ ----- ------ GET owner/admin POST owner/admin GET owner/admin POST admin POST admin GET owner/admin DELETE admin GET owner/admin POST owner/admin DELETE owner/admin POST owner/admin body: . Verifies token via Telegram , saves , reloads Telegram companion when gateway companions are active. body: or or . ---",
+    "keywords": [
+      "telegram",
+      "apihelixprofilesidtelegram",
+      "api",
+      "helix",
+      "profiles"
+    ],
+    "nav_order": 12
+  },
+  {
     "id": "en/telegram#1-admin-connect-the-bot",
     "lang": "en",
     "slug": "telegram",
@@ -2477,7 +2919,7 @@
       "connect",
       "the"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#2-bootstrap-designate-the-telegram-admin-cli-only",
@@ -2502,7 +2944,7 @@
       "cli",
       "only"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#3-user-request-access",
@@ -2524,7 +2966,7 @@
       "request",
       "access"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#4-admin-approve-and-create-an-isolated-profile",
@@ -2549,7 +2991,7 @@
       "isolated",
       "profile"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#command-menu-visibility",
@@ -2571,7 +3013,7 @@
       "menu",
       "visibility"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#ffmpeg-required-on-path",
@@ -2593,7 +3035,7 @@
       "required",
       "path"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#one-bot-many-users-recommended",
@@ -2616,7 +3058,7 @@
       "users",
       "recommended"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#option-b-local-on-the-agent-machine-offline",
@@ -2641,7 +3083,7 @@
       "machine",
       "offline"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#production-notes",
@@ -2662,7 +3104,7 @@
       "production",
       "notes"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#telegram",
@@ -2681,7 +3123,7 @@
       "whisper",
       "голосовые"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#usage",
@@ -2701,7 +3143,7 @@
       "голосовые",
       "usage"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#user-id-profile-mapping-manual",
@@ -2724,7 +3166,7 @@
       "mapping",
       "manual"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram#voice-messages",
@@ -2745,7 +3187,7 @@
       "voice",
       "messages"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "en/telegram-multi-profile#3-one-bot-per-profile",
@@ -2761,7 +3203,7 @@
       "per",
       "profile"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/telegram-multi-profile#5-restrict-access-in-production",
@@ -2776,7 +3218,7 @@
       "access",
       "production"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/telegram-multi-profile#alternative-one-bot-manual-profile-or-map",
@@ -2794,7 +3236,7 @@
       "profile",
       "map"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/telegram-multi-profile#common-mistakes",
@@ -2808,7 +3250,7 @@
       "common",
       "mistakes"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/telegram-multi-profile#comparison",
@@ -2821,7 +3263,7 @@
     "keywords": [
       "comparison"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/telegram-multi-profile#helixprofilesbobenv",
@@ -2838,7 +3280,7 @@
       "bob",
       "env"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/telegram-multi-profile#how-helix-is-designed",
@@ -2853,7 +3295,7 @@
       "helix",
       "designed"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/telegram-multi-profile#limits-of-a-single-bot",
@@ -2868,7 +3310,7 @@
       "single",
       "bot"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/telegram-multi-profile#one-bot-many-users-access-requests-recommended",
@@ -2887,7 +3329,7 @@
       "requests",
       "recommended"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/telegram-multi-profile#summary",
@@ -2900,7 +3342,7 @@
     "keywords": [
       "summary"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/telegram-multi-profile#telegram-multiple-isolated-profiles",
@@ -2916,7 +3358,7 @@
       "isolated",
       "profiles"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/telegram-multi-profile#user-id-profile-mapping-single-bot-manual",
@@ -2934,7 +3376,7 @@
       "bot",
       "manual"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "en/browser-tools#browser-automation-playwright",
@@ -2950,7 +3392,7 @@
       "браузер",
       "automation"
     ],
-    "nav_order": 14
+    "nav_order": 15
   },
   {
     "id": "en/browser-tools#profile-gateway",
@@ -2967,7 +3409,7 @@
       "profile",
       "gateway"
     ],
-    "nav_order": 14
+    "nav_order": 15
   },
   {
     "id": "en/browser-tools#security",
@@ -2983,7 +3425,7 @@
       "браузер",
       "security"
     ],
-    "nav_order": 14
+    "nav_order": 15
   },
   {
     "id": "en/browser-tools#tools",
@@ -2999,7 +3441,7 @@
       "браузер",
       "tools"
     ],
-    "nav_order": 14
+    "nav_order": 15
   },
   {
     "id": "en/browser-tools#when-to-use",
@@ -3016,7 +3458,7 @@
       "when",
       "use"
     ],
-    "nav_order": 14
+    "nav_order": 15
   },
   {
     "id": "en/architecture#architecture",
@@ -3032,7 +3474,7 @@
       "runtime",
       "events"
     ],
-    "nav_order": 15
+    "nav_order": 16
   },
   {
     "id": "en/architecture#component-map",
@@ -3050,7 +3492,7 @@
       "component",
       "map"
     ],
-    "nav_order": 15
+    "nav_order": 16
   },
   {
     "id": "en/architecture#configuration",
@@ -3067,7 +3509,7 @@
       "events",
       "configuration"
     ],
-    "nav_order": 15
+    "nav_order": 16
   },
   {
     "id": "en/architecture#execution-flow",
@@ -3085,7 +3527,7 @@
       "execution",
       "flow"
     ],
-    "nav_order": 15
+    "nav_order": 16
   },
   {
     "id": "en/architecture#extension-points",
@@ -3103,7 +3545,7 @@
       "extension",
       "points"
     ],
-    "nav_order": 15
+    "nav_order": 16
   },
   {
     "id": "en/architecture#interfaces",
@@ -3120,7 +3562,7 @@
       "events",
       "interfaces"
     ],
-    "nav_order": 15
+    "nav_order": 16
   },
   {
     "id": "en/architecture#profile-identity",
@@ -3138,7 +3580,7 @@
       "profile",
       "identity"
     ],
-    "nav_order": 15
+    "nav_order": 16
   },
   {
     "id": "en/security#api-keys",
@@ -3157,7 +3599,7 @@
       "api",
       "keys"
     ],
-    "nav_order": 16
+    "nav_order": 17
   },
   {
     "id": "en/security#production-checklist",
@@ -3176,7 +3618,7 @@
       "production",
       "checklist"
     ],
-    "nav_order": 16
+    "nav_order": 17
   },
   {
     "id": "en/security#tools",
@@ -3194,7 +3636,7 @@
       "token",
       "tools"
     ],
-    "nav_order": 16
+    "nav_order": 17
   },
   {
     "id": "en/security#web-tui-helix-tui---web",
@@ -3214,7 +3656,7 @@
       "tui",
       "helix"
     ],
-    "nav_order": 16
+    "nav_order": 17
   },
   {
     "id": "en/terminal-security#1-enable-disable-terminal-tool",
@@ -3230,7 +3672,7 @@
       "terminal",
       "tool"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#2-always-forbidden-patterns-dangerous-commands",
@@ -3247,7 +3689,7 @@
       "dangerous",
       "commands"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#3-command-whitelist-allowlist",
@@ -3262,7 +3704,7 @@
       "whitelist",
       "allowlist"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#4-user-confirmation-actionguard",
@@ -3277,7 +3719,7 @@
       "confirmation",
       "actionguard"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#5-workspace-jail-working-directory",
@@ -3293,7 +3735,7 @@
       "working",
       "directory"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#allowed-vs-forbidden-practical-guide",
@@ -3309,7 +3751,7 @@
       "practical",
       "guide"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#built-in-allowlist-unix",
@@ -3324,7 +3766,7 @@
       "allowlist",
       "unix"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#built-in-allowlist-windows",
@@ -3339,7 +3781,7 @@
       "allowlist",
       "windows"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#how-matching-works",
@@ -3354,7 +3796,7 @@
       "matching",
       "works"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#production-recommendations",
@@ -3368,7 +3810,7 @@
       "production",
       "recommendations"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#protection-layers-order-of-checks",
@@ -3384,7 +3826,7 @@
       "order",
       "checks"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#related-docs",
@@ -3398,7 +3840,7 @@
       "related",
       "docs"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#terminal-command-security",
@@ -3413,7 +3855,7 @@
       "command",
       "security"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#unix-macos-linux",
@@ -3428,7 +3870,7 @@
       "macos",
       "linux"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#when-whitelist-is-disabled",
@@ -3443,7 +3885,7 @@
       "whitelist",
       "disabled"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/terminal-security#windows-additional",
@@ -3457,7 +3899,7 @@
       "windows",
       "additional"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "en/deployment#2-configure-the-profile",
@@ -3477,7 +3919,7 @@
       "the",
       "profile"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/deployment#3-install-unit-files",
@@ -3497,7 +3939,7 @@
       "unit",
       "files"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/deployment#4-start-and-manage",
@@ -3517,7 +3959,7 @@
       "and",
       "manage"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/deployment#5-documentation-site-chat-widget",
@@ -3538,7 +3980,7 @@
       "chat",
       "widget"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/deployment#6-documentation-site-build-and-seo",
@@ -3560,7 +4002,7 @@
       "and",
       "seo"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/deployment#7-reverse-proxy-tls",
@@ -3580,7 +4022,7 @@
       "proxy",
       "tls"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/deployment#docker",
@@ -3597,7 +4039,7 @@
       "docker",
       "ci"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/deployment#edit-helix_python-and-helix_bin-to-match-pipx-paths-on-your-host",
@@ -3623,7 +4065,7 @@
       "your",
       "host"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/deployment#helixprofilesbobenv",
@@ -3645,7 +4087,7 @@
       "bob",
       "env"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/deployment#or-bind-to-an-existing-profile",
@@ -3665,7 +4107,7 @@
       "existing",
       "profile"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/deployment#or-for-a-named-profile",
@@ -3685,7 +4127,7 @@
       "named",
       "profile"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/deployment#systemd",
@@ -3702,7 +4144,7 @@
       "docker",
       "ci"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "en/doctor#checks",
@@ -3719,7 +4161,7 @@
       "repair",
       "checks"
     ],
-    "nav_order": 19
+    "nav_order": 20
   },
   {
     "id": "en/doctor#with---fix",
@@ -3736,7 +4178,7 @@
       "repair",
       "with"
     ],
-    "nav_order": 19
+    "nav_order": 20
   },
   {
     "id": "en/logs#data-directory",
@@ -3754,7 +4196,7 @@
       "data",
       "directory"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "en/logs#debug-mode",
@@ -3771,7 +4213,7 @@
       "rotation",
       "mode"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "en/logs#log-files",
@@ -3789,7 +4231,7 @@
       "log",
       "files"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "en/logs#logs-and-observability",
@@ -3807,7 +4249,7 @@
       "and",
       "observability"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "en/logs#related",
@@ -3824,7 +4266,7 @@
       "rotation",
       "related"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "en/logs#rotation-and-retention",
@@ -3842,7 +4284,7 @@
       "and",
       "retention"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "en/logs#troubleshooting",
@@ -3859,7 +4301,7 @@
       "rotation",
       "troubleshooting"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "en/logs#when-logs-are-written",
@@ -3878,7 +4320,7 @@
       "are",
       "written"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "en/pypi#checklist-before-every-release",
@@ -3898,7 +4340,7 @@
       "every",
       "release"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#github-actions-recommended",
@@ -3917,7 +4359,7 @@
       "actions",
       "recommended"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#helixagentai-010targz",
@@ -3936,7 +4378,7 @@
       "010targz",
       "tar"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#known-limitations",
@@ -3954,7 +4396,7 @@
       "known",
       "limitations"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#local-build-check",
@@ -3973,7 +4415,7 @@
       "build",
       "check"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#one-time-setup",
@@ -3992,7 +4434,7 @@
       "time",
       "setup"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#option-b-twine-compatible",
@@ -4011,7 +4453,7 @@
       "twine",
       "compatible"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#or",
@@ -4027,7 +4469,7 @@
       "публикация",
       "package"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#or-inside-a-venv",
@@ -4045,7 +4487,7 @@
       "inside",
       "venv"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#package-name",
@@ -4062,7 +4504,7 @@
       "package",
       "name"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#prerequisites",
@@ -4079,7 +4521,7 @@
       "package",
       "prerequisites"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#publishing-to-pypi",
@@ -4096,7 +4538,7 @@
       "package",
       "publishing"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#user-facing-install-docs",
@@ -4116,7 +4558,7 @@
       "install",
       "docs"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#version-already-bumped-in-pyprojecttoml-cli__init__py",
@@ -4141,7 +4583,7 @@
       "cli",
       "__init__"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#versioning",
@@ -4158,7 +4600,7 @@
       "package",
       "versioning"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/pypi#what-is-already-configured",
@@ -4177,7 +4619,7 @@
       "already",
       "configured"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "en/troubleshooting#telegram-access-denied",
@@ -4196,7 +4638,7 @@
       "access",
       "denied"
     ],
-    "nav_order": 22
+    "nav_order": 23
   },
   {
     "id": "en/troubleshooting#telegram-menu-visible-before-approval",
@@ -4217,7 +4659,7 @@
       "before",
       "approval"
     ],
-    "nav_order": 22
+    "nav_order": 23
   },
   {
     "id": "en/troubleshooting#windows-specific",
@@ -4235,7 +4677,7 @@
       "windows",
       "specific"
     ],
-    "nav_order": 22
+    "nav_order": 23
   },
   {
     "id": "en/user-guide#1-what-helix-can-do",
@@ -4253,7 +4695,7 @@
       "helix",
       "can"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#10-step-8-execution-modes",
@@ -4271,7 +4713,7 @@
       "execution",
       "modes"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#11-step-9-how-to-write-prompts",
@@ -4290,7 +4732,7 @@
       "write",
       "prompts"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#12-step-10-mcp-step-by-step",
@@ -4307,7 +4749,7 @@
       "step",
       "mcp"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#122-install-mcp-easy-way",
@@ -4327,7 +4769,7 @@
       "easy",
       "way"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#15-slash-commands-in-chat",
@@ -4345,7 +4787,7 @@
       "commands",
       "chat"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#16-helix-features",
@@ -4362,7 +4804,7 @@
       "helix",
       "features"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#17-troubleshooting",
@@ -4378,7 +4820,7 @@
       "usage",
       "troubleshooting"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#2-requirements",
@@ -4394,7 +4836,7 @@
       "usage",
       "requirements"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#3-step-1-install-python",
@@ -4412,7 +4854,7 @@
       "install",
       "python"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#4-step-2-install-uv-recommended",
@@ -4430,7 +4872,7 @@
       "install",
       "recommended"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#5-step-3-install-from-pypi",
@@ -4449,7 +4891,7 @@
       "from",
       "pypi"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#51-global-install-recommended",
@@ -4467,7 +4909,7 @@
       "install",
       "recommended"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#54-windows",
@@ -4483,7 +4925,7 @@
       "usage",
       "windows"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#61-create-the-environment-file",
@@ -4502,7 +4944,7 @@
       "environment",
       "file"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#62-profile",
@@ -4518,7 +4960,7 @@
       "usage",
       "profile"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#63-diagnostics",
@@ -4534,7 +4976,7 @@
       "usage",
       "diagnostics"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#7-step-5-configure-models-via-litellm",
@@ -4554,7 +4996,7 @@
       "via",
       "litellm"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#71-what-to-get-from-the-litellm-administrator",
@@ -4575,7 +5017,7 @@
       "litellm",
       "administrator"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#73-add-the-litellm-provider-to-the-profile-interactive",
@@ -4596,7 +5038,7 @@
       "profile",
       "interactive"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#74-full-setup-wizard-recommended",
@@ -4615,7 +5057,7 @@
       "wizard",
       "recommended"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#75-assigning-models-to-agents",
@@ -4633,7 +5075,7 @@
       "models",
       "agents"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#8-step-6-web-search-optional",
@@ -4652,7 +5094,7 @@
       "search",
       "optional"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#92-create-a-bot-in-telegram",
@@ -4670,7 +5112,7 @@
       "bot",
       "telegram"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#93-connect-the-bot-admin",
@@ -4689,7 +5131,7 @@
       "bot",
       "admin"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#94-designate-the-telegram-admin-once-cli-only",
@@ -4711,7 +5153,7 @@
       "cli",
       "only"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#95-users-request-access",
@@ -4729,7 +5171,7 @@
       "request",
       "access"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#951-admin-approves-and-creates-an-isolated-profile",
@@ -4751,7 +5193,7 @@
       "isolated",
       "profile"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#97-update-the-telegram-command-menu",
@@ -4771,7 +5213,7 @@
       "command",
       "menu"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#98-production",
@@ -4787,7 +5229,7 @@
       "usage",
       "production"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#98-voice-messages-optional",
@@ -4805,7 +5247,7 @@
       "messages",
       "optional"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#build-from-source",
@@ -4823,7 +5265,7 @@
       "from",
       "source"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#helix-complete-user-guide",
@@ -4841,7 +5283,7 @@
       "complete",
       "user"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#helix-config",
@@ -4858,7 +5300,7 @@
       "helix",
       "config"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#helix-models",
@@ -4875,7 +5317,7 @@
       "helix",
       "models"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#install",
@@ -4891,7 +5333,7 @@
       "usage",
       "install"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#litellm-proxy",
@@ -4908,7 +5350,7 @@
       "litellm",
       "proxy"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#main-commands",
@@ -4925,7 +5367,7 @@
       "main",
       "commands"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#or-manually",
@@ -4941,7 +5383,7 @@
       "usage",
       "manually"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#or-simply",
@@ -4957,7 +5399,7 @@
       "usage",
       "simply"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#quick-checklist-from-zero-to-chat",
@@ -4977,7 +5419,7 @@
       "zero",
       "chat"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#see-also",
@@ -4994,7 +5436,7 @@
       "see",
       "also"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "en/user-guide#table-of-contents",
@@ -5011,7 +5453,7 @@
       "table",
       "contents"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/readme#документация-helix-русский",
@@ -5037,7 +5479,7 @@
     "section": "интерфейсы",
     "title": "Обзор",
     "heading": "Интерфейсы",
-    "body": "- CLI.md — справочник команд - SLASH COMMANDS.md — слэш-команды - EXECUTION MODES.md — ReAct, Plan, Hybrid, Auto — как работают режимы и примеры промптов - TUI.md — - HUB.md — каталоги навыков - GATEWAY.md — API gateway - TELEGRAM.md — Telegram - TELEGRAM MULTI PROFILE.md — один бот / несколько ботов, access requests, ручной - BROWSER TOOLS.md — Playwright",
+    "body": "- CLI.md — справочник команд - SLASH COMMANDS.md — слэш-команды - EXECUTION MODES.md — ReAct, Plan, Hybrid, Auto — как работают режимы и примеры промптов - TUI.md — - HUB.md — каталоги навыков - GATEWAY.md — API gateway - GATEWAY API.md — справочник Hermes + Helix Management API (auth, , SaaS curl) - TELEGRAM.md — Telegram - TELEGRAM MULTI PROFILE.md — один бот / несколько ботов, access requests, ручной - BROWSER TOOLS.md — Playwright",
     "keywords": [
       "overview",
       "обзор",
@@ -6946,6 +7388,43 @@
     "nav_order": 10
   },
   {
+    "id": "ru/gateway#api-gateway",
+    "lang": "ru",
+    "slug": "gateway",
+    "section": "api-gateway",
+    "title": "API Gateway",
+    "heading": "API Gateway",
+    "body": "HTTP API (OpenAI-совместимый), Hermes-compatible surface, Helix Management API и companion-сервисы (Telegram + cron при настройке). Полный справочник API: GATEWAY API.md — Hermes mapping, management, auth, SaaS curl-примеры.",
+    "keywords": [
+      "api",
+      "gateway",
+      "гейтвей",
+      "uvicorn",
+      "openai"
+    ],
+    "nav_order": 11
+  },
+  {
+    "id": "ru/gateway#multi-profile-gateway-v02",
+    "lang": "ru",
+    "slug": "gateway",
+    "section": "multi-profile-gateway-v02",
+    "title": "API Gateway",
+    "heading": "Multi-profile gateway (v0.2+)",
+    "body": "Один процесс uvicorn обслуживает несколько профилей Helix : - Роутинг: → поле → host profile - Per-profile reload: (agent + Telegram + cron) - Management API: — профили, модели, MCP, навыки, Telegram admin Таблицы эндпоинтов и аутентификация: GATEWAY API.md.",
+    "keywords": [
+      "api",
+      "gateway",
+      "гейтвей",
+      "uvicorn",
+      "openai",
+      "multi",
+      "profile",
+      "v02"
+    ],
+    "nav_order": 11
+  },
+  {
     "id": "ru/gateway#profilesbobenv",
     "lang": "ru",
     "slug": "gateway",
@@ -6985,13 +7464,33 @@
     "nav_order": 11
   },
   {
+    "id": "ru/gateway#краткая-карта-эндпоинтов",
+    "lang": "ru",
+    "slug": "gateway",
+    "section": "краткая-карта-эндпоинтов",
+    "title": "API Gateway",
+    "heading": "Краткая карта эндпоинтов",
+    "body": "Группа Примеры -------- --------- Health , , Chat Hermes , , , , Management , , , Admin , Создание первого admin-ключа: ```bash",
+    "keywords": [
+      "api",
+      "gateway",
+      "гейтвей",
+      "uvicorn",
+      "openai",
+      "краткая",
+      "карта",
+      "эндпоинтов"
+    ],
+    "nav_order": 11
+  },
+  {
     "id": "ru/gateway#переменные-окружения",
     "lang": "ru",
     "slug": "gateway",
     "section": "переменные-окружения",
     "title": "API Gateway",
     "heading": "Переменные окружения",
-    "body": "Задаются в профиля ( ): Переменная По умолчанию Описание ------------ -------------- ---------- Адрес bind Порт API key для — Включает auth и строгие проверки Маршруты всегда требуют admin API key.",
+    "body": "Задаются в профиля ( ): Переменная По умолчанию Описание ------------ -------------- ---------- Адрес bind Порт API key обязателен (кроме , ) — Включает auth и строгие проверки Маршруты всегда требуют admin API key.",
     "keywords": [
       "api",
       "gateway",
@@ -7004,22 +7503,375 @@
     "nav_order": 11
   },
   {
-    "id": "ru/gateway#эндпоинты",
+    "id": "ru/gateway-api#1-создать-tenant-профиль-admin",
     "lang": "ru",
-    "slug": "gateway",
-    "section": "эндпоинты",
-    "title": "API Gateway",
-    "heading": "Эндпоинты",
-    "body": "- — проверка здоровья - — метрики Prometheus - — чат OpenAI-формата - — создать ключ (admin)",
+    "slug": "gateway-api",
+    "section": "1-создать-tenant-профиль-admin",
+    "title": "Справочник Gateway API",
+    "heading": "1. Создать tenant-профиль (admin)",
+    "body": "curl -sS -X POST \"$HELIX URL/api/helix/profiles\" \\ -H \"Authorization: Bearer $ADMIN KEY\" \\ -H \"Content-Type: application/json\" \\ -d '{\"name\":\"tenant-42\",\"with access key\":true}'",
+    "keywords": [
+      "создать",
+      "tenant",
+      "профиль",
+      "admin"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#2-добавить-llm-провайдер",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "2-добавить-llm-провайдер",
+    "title": "Справочник Gateway API",
+    "heading": "2. Добавить LLM-провайдер",
+    "body": "curl -sS -X POST \"$HELIX URL/api/helix/profiles/tenant-42/models/providers\" \\ -H \"Authorization: Bearer $ADMIN KEY\" \\ -H \"X-Helix-Profile-Key: $ADMIN PROFILE KEY\" \\ -H \"Content-Type: application/json\" \\ -d '{\"preset id\":\"openrouter\",\"skip test\":true}'",
+    "keywords": [
+      "добавить",
+      "llm",
+      "провайдер"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#3-reload-agent-companions-для-tenant",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "3-reload-agent-companions-для-tenant",
+    "title": "Справочник Gateway API",
+    "heading": "3. Reload agent + companions для tenant",
+    "body": "curl -sS -X POST \"$HELIX URL/api/helix/profiles/tenant-42/reload\" \\ -H \"Authorization: Bearer $ADMIN KEY\" \\ -H \"X-Helix-Profile-Key: $ADMIN PROFILE KEY\"",
+    "keywords": [
+      "reload",
+      "agent",
+      "companions",
+      "для",
+      "tenant"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#4-chat-от-имени-tenant-openai-client-model-имя-профиля",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "4-chat-от-имени-tenant-openai-client-model-имя-профиля",
+    "title": "Справочник Gateway API",
+    "heading": "4. Chat от имени tenant (OpenAI client: model = имя профиля)",
+    "body": "curl -sS \"$HELIX URL/v1/chat/completions\" \\ -H \"Authorization: Bearer $TENANT API KEY\" \\ -H \"Content-Type: application/json\" \\ -d '{\"model\":\"tenant-42\",\"messages\":[{\"role\":\"user\",\"content\":\"привет\"}]}'",
+    "keywords": [
+      "chat",
+      "имени",
+      "tenant",
+      "openai",
+      "client",
+      "model",
+      "имя",
+      "профиля"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#5-настройка-telegram-для-профиля-бота",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "5-настройка-telegram-для-профиля-бота",
+    "title": "Справочник Gateway API",
+    "heading": "5. Настройка Telegram для профиля бота",
+    "body": "curl -sS -X POST \"$HELIX URL/api/helix/profiles/tenant-42/telegram/setup\" \\ -H \"Authorization: Bearer $ADMIN KEY\" \\ -H \"X-Helix-Profile-Key: $TENANT PROFILE KEY\" \\ -H \"Content-Type: application/json\" \\ -d '{\"bot token\":\"123456789:AAH…\"}'",
+    "keywords": [
+      "настройка",
+      "telegram",
+      "для",
+      "профиля",
+      "бота"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#6-одобрить-пользователя-telegram-только-admin",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "6-одобрить-пользователя-telegram-только-admin",
+    "title": "Справочник Gateway API",
+    "heading": "6. Одобрить пользователя Telegram (только admin)",
+    "body": "curl -sS -X POST \"$HELIX URL/api/helix/profiles/tenant-42/telegram/requests/12345/approve\" \\ -H \"Authorization: Bearer $ADMIN KEY\" \\ -H \"X-Helix-Profile-Key: $ADMIN PROFILE KEY\" \\ -H \"Content-Type: application/json\" \\ -d '{\"profile\":\"tenant-42\"}' `` \"reload required\": true POST /api/helix/profiles/{id}/reload` — без рестарта uvicorn. ---",
+    "keywords": [
+      "одобрить",
+      "пользователя",
+      "telegram",
+      "только",
+      "admin"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#admin-admin",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "admin-admin",
+    "title": "Справочник Gateway API",
+    "heading": "Admin (`/admin`)",
+    "body": "Метод Путь Описание -------- ------ ------------- POST Создать ключ GET Список DELETE Отозвать GET Prometheus (admin) ---",
+    "keywords": [
+      "admin"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#api-key-уровень-1",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "api-key-уровень-1",
+    "title": "Справочник Gateway API",
+    "heading": "API key (уровень 1)",
+    "body": "Все маршруты кроме и требуют валидный API key при (по умолчанию). Заголовок Пример ----------- -------- Права: , , , — см. SECURITY.md. Создание ключей: (нужно право admin).",
     "keywords": [
       "api",
-      "gateway",
-      "гейтвей",
-      "uvicorn",
-      "openai",
-      "эндпоинты"
+      "key",
+      "уровень"
     ],
-    "nav_order": 11
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#global-apihelixglobal-только-admin",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "global-apihelixglobal-только-admin",
+    "title": "Справочник Gateway API",
+    "heading": "Global — `/api/helix/global` (только admin)",
+    "body": "Метод Путь Описание -------- ------ ---------- POST Инициализация global GET/PATCH GET/PATCH",
+    "keywords": [
+      "global",
+      "apihelixglobal",
+      "только",
+      "admin",
+      "api",
+      "helix"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#hermes-compatible-api",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "hermes-compatible-api",
+    "title": "Справочник Gateway API",
+    "heading": "Hermes-compatible API",
+    "body": "Соответствие Hermes API Server. Hermes Helix Примечание -------- ------- ------------ ✅ Имена профилей как model id ✅ Возможности агента ✅ Публичный ✅ Расширенный health ✅ Инструменты агента ✅ ✅ SQLite, LRU 100 ✅ , SSE events ✅ ✅ CRUD + pause/resume/run ✅ Cron на профиль CRUD + chat/stream ✅",
+    "keywords": [
+      "hermes",
+      "compatible",
+      "api"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#mcp-mcp",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "mcp-mcp",
+    "title": "Справочник Gateway API",
+    "heading": "MCP — `…/mcp`",
+    "body": "Метод Путь Описание -------- ------ ---------- GET/POST/DELETE CRUD серверов POST Тест подключения GET/PATCH Назначения GET Популярные серверы POST Установка popular/git",
+    "keywords": [
+      "mcp"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#multi-profile-архитектура",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "multi-profile-архитектура",
+    "title": "Справочник Gateway API",
+    "heading": "Multi-profile архитектура",
+    "body": "Один uvicorn обслуживает N профилей через : - Агенты загружаются lazy по профилю - — Telegram polling + cron на профиль - перезапускает companions одного профиля без рестарта gateway Host profile задаётся при старте ( ). ---",
+    "keywords": [
+      "multi",
+      "profile",
+      "архитектура"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#saas-workflow-curl",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "saas-workflow-curl",
+    "title": "Справочник Gateway API",
+    "heading": "SaaS workflow (curl)",
+    "body": "```bash export HELIX URL=http://127.0.0.1:8000 export ADMIN KEY=hx admin … export ADMIN PROFILE KEY=hp … master key профиля admin",
+    "keywords": [
+      "saas",
+      "workflow",
+      "curl"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#telegram-telegram",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "telegram-telegram",
+    "title": "Справочник Gateway API",
+    "heading": "Telegram — `…/telegram`",
+    "body": "Эквиваленты CLI: TELEGRAM.md. Метод Путь CLI Auth -------- ------ ----- ------ GET owner/admin POST owner/admin GET owner/admin POST admin POST admin GET/DELETE clear — admin GET/POST/DELETE owner/admin POST owner/admin ---",
+    "keywords": [
+      "telegram"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#безопасность",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "безопасность",
+    "title": "Справочник Gateway API",
+    "heading": "Безопасность",
+    "body": "- Секреты в ответах management API маскируются - Ключи доступа возвращаются один раз при create/init/rotate - — только admin API key - Заголовки: , - Production: , bind , TLS на reverse proxy См. также: SECURITY.md, DEPLOYMENT.md, PROFILES.md.",
+    "keywords": [
+      "безопасность"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#ключ-доступа-к-профилю-уровень-2",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "ключ-доступа-к-профилю-уровень-2",
+    "title": "Справочник Gateway API",
+    "heading": "Ключ доступа к профилю (уровень 2)",
+    "body": "Маршруты дополнительно требуют авторизацию профиля: Кто Заголовки Область ----- ----------- --------- Владелец профиля Только свой профиль Админ gateway API key с или master key admin-профиля Все профили Имя admin-профиля по умолчанию: ( ).",
+    "keywords": [
+      "ключ",
+      "доступа",
+      "профилю",
+      "уровень"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#конфиг-apihelixprofilesid",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "конфиг-apihelixprofilesid",
+    "title": "Справочник Gateway API",
+    "heading": "Конфиг — `/api/helix/profiles/{id}`",
+    "body": "Метод Путь Описание -------- ------ ---------- GET/PATCH config.yaml (секреты замаскированы) GET/PATCH профиля",
+    "keywords": [
+      "конфиг",
+      "apihelixprofilesid",
+      "api",
+      "helix",
+      "profiles"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#модели-models",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "модели-models",
+    "title": "Справочник Gateway API",
+    "heading": "Модели — `…/models`",
+    "body": "Метод Путь Описание -------- ------ ---------- GET Каталог провайдеров GET/POST/DELETE CRUD провайдеров POST Проверка + список моделей GET/PATCH , Маршрутизация моделей",
+    "keywords": [
+      "модели",
+      "models"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#навыки-skills",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "навыки-skills",
+    "title": "Справочник Gateway API",
+    "heading": "Навыки — `…/skills`",
+    "body": "Метод Путь Описание -------- ------ ---------- GET Список GET Поиск GET Детали GET/PATCH Назначения по агентам POST Установка bundled skills",
+    "keywords": [
+      "навыки",
+      "skills"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#профили-apihelixprofiles",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "профили-apihelixprofiles",
+    "title": "Справочник Gateway API",
+    "heading": "Профили — `/api/helix/profiles`",
+    "body": "Метод Путь Описание -------- ------ ---------- GET Список (admin) POST Создать (admin) GET Детали GET Статус agent + companions DELETE Удалить (admin) POST Reload agent + Telegram + cron GET/POST Ключ доступа к профилю GET/POST , Workspace jail",
+    "keywords": [
+      "профили",
+      "apihelixprofiles",
+      "api",
+      "helix",
+      "profiles"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#расширения-helix-v1",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "расширения-helix-v1",
+    "title": "Справочник Gateway API",
+    "heading": "Расширения Helix (`/v1`)",
+    "body": "Метод Путь Описание -------- ------ ---------- POST OpenAI-совместимый чат GET История GET Список инструментов POST Поиск по памяти POST/GET/DELETE Права на инструменты POST Подтверждение рискованных действий POST/GET Ревью плана ---",
+    "keywords": [
+      "расширения",
+      "helix"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#роутинг-профиля-chat-hermes-surface",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "роутинг-профиля-chat-hermes-surface",
+    "title": "Справочник Gateway API",
+    "heading": "Роутинг профиля (chat / Hermes surface)",
+    "body": "Приоритет (первый непустой wins): 1. или 2. Поле в или (имя профиля) 3. Host profile процесса gateway ( при старте)",
+    "keywords": [
+      "роутинг",
+      "профиля",
+      "chat",
+      "hermes",
+      "surface"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#сессии-алиасы-заголовков",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "сессии-алиасы-заголовков",
+    "title": "Справочник Gateway API",
+    "heading": "Сессии (алиасы заголовков)",
+    "body": "Назначение Helix Hermes (алиас) ------------ ------- ---------------- ID разговора / транскрипт Стабильная область памяти Ключ сессии — до 256 символов; control-символы отклоняются. ---",
+    "keywords": [
+      "сессии",
+      "алиасы",
+      "заголовков"
+    ],
+    "nav_order": 12
+  },
+  {
+    "id": "ru/gateway-api#справочник-gateway-api",
+    "lang": "ru",
+    "slug": "gateway-api",
+    "section": "справочник-gateway-api",
+    "title": "Справочник Gateway API",
+    "heading": "Справочник Gateway API",
+    "body": "Gateway Helix предоставляет два слоя HTTP API в одном multi-profile процессе : 1. Hermes-compatible API — совместимость с Open WebUI, LobeChat и другими Hermes-клиентами 2. Helix Management API — control plane для SaaS: профили, модели, MCP, навыки, Telegram admin Эксплуатация (start/stop, порты, логи): GATEWAY.md. ---",
+    "keywords": [
+      "справочник",
+      "gateway",
+      "api"
+    ],
+    "nav_order": 12
   },
   {
     "id": "ru/telegram#1-админ-подключение-бота",
@@ -7041,7 +7893,7 @@
       "подключение",
       "бота"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#2-первый-администратор-только-cli",
@@ -7064,7 +7916,7 @@
       "только",
       "cli"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#3-пользователь-запрос-доступа",
@@ -7086,7 +7938,7 @@
       "запрос",
       "доступа"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#4-админ-одобрение-и-изолированный-профиль",
@@ -7109,7 +7961,7 @@
       "изолированный",
       "профиль"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#ffmpeg-должен-быть-в-path",
@@ -7132,7 +7984,7 @@
       "быть",
       "path"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#production",
@@ -7152,7 +8004,7 @@
       "голосовые",
       "production"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#telegram",
@@ -7171,7 +8023,7 @@
       "whisper",
       "голосовые"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#видимость-меню-команд",
@@ -7193,7 +8045,7 @@
       "меню",
       "команд"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#голосовые-сообщения",
@@ -7213,7 +8065,7 @@
       "голосовые",
       "сообщения"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#использование",
@@ -7233,7 +8085,7 @@
       "голосовые",
       "использование"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#как-это-работает",
@@ -7255,7 +8107,7 @@
       "это",
       "работает"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#настройка",
@@ -7275,7 +8127,7 @@
       "голосовые",
       "настройка"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram#привязка-user-id-профиль-вручную",
@@ -7298,7 +8150,7 @@
       "профиль",
       "вручную"
     ],
-    "nav_order": 12
+    "nav_order": 13
   },
   {
     "id": "ru/telegram-multi-profile#3-свой-бот-у-каждого-профиля",
@@ -7314,7 +8166,7 @@
       "каждого",
       "профиля"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/telegram-multi-profile#5-ограничить-доступ-в-production",
@@ -7329,7 +8181,7 @@
       "доступ",
       "production"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/telegram-multi-profile#helixprofilesbobenv",
@@ -7346,7 +8198,7 @@
       "bob",
       "env"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/telegram-multi-profile#telegram-несколько-изолированных-профилей",
@@ -7362,7 +8214,7 @@
       "изолированных",
       "профилей"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/telegram-multi-profile#альтернатива-один-бот-ручной-profile-или-map",
@@ -7381,7 +8233,7 @@
       "или",
       "map"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/telegram-multi-profile#итог",
@@ -7394,7 +8246,7 @@
     "keywords": [
       "итог"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/telegram-multi-profile#как-устроено-в-helix",
@@ -7409,7 +8261,7 @@
       "устроено",
       "helix"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/telegram-multi-profile#ограничения-одного-бота",
@@ -7424,7 +8276,7 @@
       "одного",
       "бота"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/telegram-multi-profile#один-бот-много-пользователей-access-requests-рекомендуется",
@@ -7443,7 +8295,7 @@
       "requests",
       "рекомендуется"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/telegram-multi-profile#привязка-user-id-профиль-один-бот-вручную",
@@ -7461,7 +8313,7 @@
       "бот",
       "вручную"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/telegram-multi-profile#сравнение-подходов",
@@ -7475,7 +8327,7 @@
       "сравнение",
       "подходов"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/telegram-multi-profile#типичные-ошибки",
@@ -7489,7 +8341,7 @@
       "типичные",
       "ошибки"
     ],
-    "nav_order": 13
+    "nav_order": 14
   },
   {
     "id": "ru/browser-tools#безопасность",
@@ -7505,7 +8357,7 @@
       "браузер",
       "безопасность"
     ],
-    "nav_order": 14
+    "nav_order": 15
   },
   {
     "id": "ru/browser-tools#браузерная-автоматизация-playwright",
@@ -7522,7 +8374,7 @@
       "браузерная",
       "автоматизация"
     ],
-    "nav_order": 14
+    "nav_order": 15
   },
   {
     "id": "ru/browser-tools#инструменты",
@@ -7538,7 +8390,7 @@
       "браузер",
       "инструменты"
     ],
-    "nav_order": 14
+    "nav_order": 15
   },
   {
     "id": "ru/architecture#архитектура",
@@ -7554,7 +8406,7 @@
       "runtime",
       "events"
     ],
-    "nav_order": 15
+    "nav_order": 16
   },
   {
     "id": "ru/security#api-keys",
@@ -7573,7 +8425,7 @@
       "api",
       "keys"
     ],
-    "nav_order": 16
+    "nav_order": 17
   },
   {
     "id": "ru/security#web-tui-helix-tui---web",
@@ -7593,7 +8445,7 @@
       "tui",
       "helix"
     ],
-    "nav_order": 16
+    "nav_order": 17
   },
   {
     "id": "ru/security#инструменты",
@@ -7611,7 +8463,7 @@
       "token",
       "инструменты"
     ],
-    "nav_order": 16
+    "nav_order": 17
   },
   {
     "id": "ru/security#чеклист-production",
@@ -7630,7 +8482,7 @@
       "чеклист",
       "production"
     ],
-    "nav_order": 16
+    "nav_order": 17
   },
   {
     "id": "ru/terminal-security#1-включение-отключение-терминала",
@@ -7645,7 +8497,7 @@
       "отключение",
       "терминала"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#3-whitelist-команд-allowlist",
@@ -7660,7 +8512,7 @@
       "команд",
       "allowlist"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#4-подтверждение-пользователем-actionguard",
@@ -7675,7 +8527,7 @@
       "пользователем",
       "actionguard"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#5-workspace-jail-рабочая-директория",
@@ -7691,7 +8543,7 @@
       "рабочая",
       "директория"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#unix-macos-linux",
@@ -7706,7 +8558,7 @@
       "macos",
       "linux"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#windows-дополнительно",
@@ -7720,7 +8572,7 @@
       "windows",
       "дополнительно"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#безопасность-команд-терминала",
@@ -7735,7 +8587,7 @@
       "команд",
       "терминала"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#встроенный-whitelist-unix",
@@ -7750,7 +8602,7 @@
       "whitelist",
       "unix"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#встроенный-whitelist-windows",
@@ -7765,7 +8617,7 @@
       "whitelist",
       "windows"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#если-whitelist-отключён",
@@ -7780,7 +8632,7 @@
       "whitelist",
       "отключён"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#как-работает-сопоставление",
@@ -7795,7 +8647,7 @@
       "работает",
       "сопоставление"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#разрешено-и-запрещено-практика",
@@ -7810,7 +8662,7 @@
       "запрещено",
       "практика"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#рекомендации-для-production",
@@ -7825,7 +8677,7 @@
       "для",
       "production"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#слои-защиты-порядок-проверок",
@@ -7841,7 +8693,7 @@
       "порядок",
       "проверок"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/terminal-security#см-также",
@@ -7854,7 +8706,7 @@
     "keywords": [
       "также"
     ],
-    "nav_order": 17
+    "nav_order": 18
   },
   {
     "id": "ru/deployment#2-настройка-профиля",
@@ -7873,7 +8725,7 @@
       "настройка",
       "профиля"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/deployment#3-установка-unit-файлов",
@@ -7893,7 +8745,7 @@
       "unit",
       "файлов"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/deployment#4-запуск-и-управление",
@@ -7912,7 +8764,7 @@
       "запуск",
       "управление"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/deployment#5-виджет-чата-на-сайте-документации",
@@ -7933,7 +8785,7 @@
       "сайте",
       "документации"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/deployment#6-сборка-сайта-документации-и-seo",
@@ -7954,7 +8806,7 @@
       "документации",
       "seo"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/deployment#7-reverse-proxy-tls",
@@ -7974,7 +8826,7 @@
       "proxy",
       "tls"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/deployment#docker",
@@ -7991,7 +8843,7 @@
       "docker",
       "ci"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/deployment#helixprofilesbobenv",
@@ -8013,7 +8865,7 @@
       "bob",
       "env"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/deployment#systemd",
@@ -8030,7 +8882,7 @@
       "docker",
       "ci"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/deployment#или-для-именованного-профиля",
@@ -8051,7 +8903,7 @@
       "именованного",
       "профиля"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/deployment#или-привязка-к-существующему-профилю",
@@ -8072,7 +8924,7 @@
       "существующему",
       "профилю"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/deployment#отредактируйте-helix_python-и-helix_bin-под-пути-pipx-на-вашем-х",
@@ -8097,7 +8949,7 @@
       "вашем",
       "хосте"
     ],
-    "nav_order": 18
+    "nav_order": 19
   },
   {
     "id": "ru/doctor#без---fix",
@@ -8114,7 +8966,7 @@
       "repair",
       "без"
     ],
-    "nav_order": 19
+    "nav_order": 20
   },
   {
     "id": "ru/doctor#проверки",
@@ -8131,7 +8983,7 @@
       "repair",
       "проверки"
     ],
-    "nav_order": 19
+    "nav_order": 20
   },
   {
     "id": "ru/doctor#с---fix",
@@ -8147,7 +8999,7 @@
       "fix",
       "repair"
     ],
-    "nav_order": 19
+    "nav_order": 20
   },
   {
     "id": "ru/logs#каталог-данных",
@@ -8165,7 +9017,7 @@
       "каталог",
       "данных"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "ru/logs#логи-и-наблюдаемость",
@@ -8182,7 +9034,7 @@
       "rotation",
       "наблюдаемость"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "ru/logs#режим-debug",
@@ -8199,7 +9051,7 @@
       "rotation",
       "режим"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "ru/logs#ротация",
@@ -8216,7 +9068,7 @@
       "rotation",
       "ротация"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "ru/logs#файлы-логов",
@@ -8234,7 +9086,7 @@
       "файлы",
       "логов"
     ],
-    "nav_order": 20
+    "nav_order": 21
   },
   {
     "id": "ru/pypi#1-аккаунт-и-имя",
@@ -8252,7 +9104,7 @@
       "аккаунт",
       "имя"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "ru/pypi#3-перед-каждым-релизом",
@@ -8271,7 +9123,7 @@
       "каждым",
       "релизом"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "ru/pypi#4-публикация-через-github-actions-рекомендуется",
@@ -8291,7 +9143,7 @@
       "actions",
       "рекомендуется"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "ru/pypi#имя-пакета",
@@ -8309,7 +9161,7 @@
       "имя",
       "пакета"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "ru/pypi#ограничения",
@@ -8326,7 +9178,7 @@
       "package",
       "ограничения"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "ru/pypi#публикация-на-pypi",
@@ -8342,7 +9194,7 @@
       "публикация",
       "package"
     ],
-    "nav_order": 21
+    "nav_order": 22
   },
   {
     "id": "ru/troubleshooting#telegram-access-denied",
@@ -8361,7 +9213,7 @@
       "access",
       "denied"
     ],
-    "nav_order": 22
+    "nav_order": 23
   },
   {
     "id": "ru/troubleshooting#windows",
@@ -8378,7 +9230,7 @@
       "fix",
       "windows"
     ],
-    "nav_order": 22
+    "nav_order": 23
   },
   {
     "id": "ru/troubleshooting#меню-telegram-видно-до-одобрения",
@@ -8398,7 +9250,7 @@
       "видно",
       "одобрения"
     ],
-    "nav_order": 22
+    "nav_order": 23
   },
   {
     "id": "ru/user-guide#1-что-умеет-helix",
@@ -8416,7 +9268,7 @@
       "умеет",
       "helix"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#10-шаг-8-режимы-выполнения",
@@ -8434,7 +9286,7 @@
       "режимы",
       "выполнения"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#11-шаг-9-как-писать-запросы",
@@ -8453,7 +9305,7 @@
       "писать",
       "запросы"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#12-шаг-10-mcp-пошагово",
@@ -8471,7 +9323,7 @@
       "mcp",
       "пошагово"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#122-установить-mcp-простой-способ",
@@ -8491,7 +9343,7 @@
       "простой",
       "способ"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#127-переменные-окружения-для-mcp",
@@ -8511,7 +9363,7 @@
       "для",
       "mcp"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#15-слэш-команды-в-чате",
@@ -8529,7 +9381,7 @@
       "команды",
       "чате"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#16-особенности-helix",
@@ -8546,7 +9398,7 @@
       "особенности",
       "helix"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#17-что-делать-если-что-то-не-работает",
@@ -8565,7 +9417,7 @@
       "если",
       "работает"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#2-требования",
@@ -8581,7 +9433,7 @@
       "usage",
       "требования"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#3-шаг-1-установить-python",
@@ -8599,7 +9451,7 @@
       "установить",
       "python"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#4-шаг-2-установить-uv-рекомендуется",
@@ -8617,7 +9469,7 @@
       "установить",
       "рекомендуется"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#5-шаг-3-установка-с-pypi",
@@ -8635,7 +9487,7 @@
       "установка",
       "pypi"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#54-windows",
@@ -8651,7 +9503,7 @@
       "usage",
       "windows"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#61-создать-файл-окружения",
@@ -8669,7 +9521,7 @@
       "файл",
       "окружения"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#62-профиль",
@@ -8685,7 +9537,7 @@
       "usage",
       "профиль"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#63-диагностика",
@@ -8701,7 +9553,7 @@
       "usage",
       "диагностика"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#7-шаг-5-настройка-моделей-через-litellm",
@@ -8721,7 +9573,7 @@
       "через",
       "litellm"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#71-что-нужно-получить-у-администратора-litellm",
@@ -8741,7 +9593,7 @@
       "администратора",
       "litellm"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#73-добавить-провайдер-litellm-в-профиль-интерактивно",
@@ -8761,7 +9613,7 @@
       "профиль",
       "интерактивно"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#74-полный-мастер-настройки-рекомендуется",
@@ -8780,7 +9632,7 @@
       "настройки",
       "рекомендуется"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#75-назначение-моделей-агентам",
@@ -8798,7 +9650,7 @@
       "моделей",
       "агентам"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#8-шаг-6-поиск-в-интернете-опционально",
@@ -8817,7 +9669,7 @@
       "интернете",
       "опционально"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#92-создать-бота-в-telegram",
@@ -8835,7 +9687,7 @@
       "бота",
       "telegram"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#93-подключить-бота-админ",
@@ -8853,7 +9705,7 @@
       "бота",
       "админ"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#94-назначение-telegram-администратора-один-раз-только-cli",
@@ -8875,7 +9727,7 @@
       "только",
       "cli"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#95-пользователи-запрашивают-доступ",
@@ -8893,7 +9745,7 @@
       "запрашивают",
       "доступ"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#951-админ-одобряет-и-создаёт-изолированный-профиль",
@@ -8914,7 +9766,7 @@
       "изолированный",
       "профиль"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#97-обновить-меню-команд-в-telegram",
@@ -8933,7 +9785,7 @@
       "команд",
       "telegram"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#98-production",
@@ -8949,7 +9801,7 @@
       "usage",
       "production"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#98-голосовые-сообщения-опционально",
@@ -8967,7 +9819,7 @@
       "сообщения",
       "опционально"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#helix-config",
@@ -8984,7 +9836,7 @@
       "helix",
       "config"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#helix-models",
@@ -9001,7 +9853,7 @@
       "helix",
       "models"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#helix-полное-руководство-пользователя",
@@ -9019,7 +9871,7 @@
       "полное",
       "пользователя"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#litellm-proxy",
@@ -9036,7 +9888,7 @@
       "litellm",
       "proxy"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#быстрый-чеклист-с-нуля-до-чата",
@@ -9055,7 +9907,7 @@
       "нуля",
       "чата"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#или-вручную",
@@ -9072,7 +9924,7 @@
       "или",
       "вручную"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#или-просто",
@@ -9089,7 +9941,7 @@
       "или",
       "просто"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#основные-команды",
@@ -9106,7 +9958,7 @@
       "основные",
       "команды"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#см-также",
@@ -9122,7 +9974,7 @@
       "usage",
       "также"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#содержание",
@@ -9138,7 +9990,7 @@
       "usage",
       "содержание"
     ],
-    "nav_order": 23
+    "nav_order": 24
   },
   {
     "id": "ru/user-guide#установка",
@@ -9154,6 +10006,6 @@
       "usage",
       "установка"
     ],
-    "nav_order": 23
+    "nav_order": 24
   }
 ]
