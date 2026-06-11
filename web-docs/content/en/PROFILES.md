@@ -2,14 +2,21 @@
 
 Helix **profiles** are fully isolated agent environments on one machine. Each profile has its own configuration, secrets, memory, Telegram bot, and API gateway — so different people or projects do not interfere with each other.
 
-For the **default** profile you do not need `-p`:
+### Profile `default` (development only)
+
+In **development** (`HELIX_ENV` not `production`), you can omit `-p` — Helix uses profile `default`:
 
 ```bash
 helix gateway start
 helix profile env --edit
 ```
 
-Other profiles: `helix -p alice gateway start`.
+In **production**, profile `default` is **not available**. Always pass a named profile:
+
+```bash
+HELIX_ENV=production helix -p shared gateway start
+HELIX_ENV=production helix -p alice profile env --edit
+```
 
 ## What is isolated per profile
 
@@ -23,8 +30,67 @@ Other profiles: `helix -p alice gateway start`.
 | Memory (SQLite + ChromaDB) | `~/.helix/profiles/<name>/data/memory/` |
 | Skills | `~/.helix/profiles/<name>/data/skills/` |
 | Cron jobs | `~/.helix/profiles/<name>/data/cron/` |
+| Agent soul | `~/.helix/profiles/<name>/SOUL.md` |
+| User profile | `~/.helix/profiles/<name>/USER.md` |
+| First-run marker | `~/.helix/profiles/<name>/INIT.md` (removed after onboarding) |
 
-Global under `~/.helix/`: shared logs, MCP server clones. Everything agent-specific lives under the profile.
+Global under `~/.helix/`:
+
+| Path | Purpose |
+|------|---------|
+| `global/config.yaml` | Shared models, MCP, search, behavior |
+| `global/.env` | Shared API keys, voice, tool flags |
+| `logs/`, MCP clones | Operational shared data |
+
+Profiles **inherit** global settings by default. Per-profile files store **overrides only** — change a model in one profile without touching global; change global and all inheriting profiles update automatically.
+
+```bash
+helix profile global edit                 # edit shared settings
+helix profile create team-a               # inherits global (default)
+helix profile create team-b --clean       # empty profile, configure manually
+helix -p team-a config set model smart    # override model for one profile only
+```
+
+Telegram tokens, memory, and gateway state remain **per profile** (not inherited).
+
+## Agent identity (SOUL, INIT, USER)
+
+Each profile can persist **who the agent is** and **who the user is** across sessions.
+
+| File | Purpose |
+|------|---------|
+| `SOUL.md` | Agent personality, values, tone, and behavior |
+| `USER.md` | Stable facts about the human (name, work style, language, notes) |
+| `INIT.md` | First-run marker — while present, Helix runs a short onboarding chat |
+
+When you run `helix profile create <name>`, Helix creates `INIT.md` and a placeholder `SOUL.md`.
+
+### First conversation (onboarding)
+
+While `INIT.md` exists, the agent:
+
+1. Introduces itself and learns how you prefer to work together.
+2. Saves facts with `save_user_profile` → `USER.md` + long-term memory.
+3. Saves personality with `save_agent_soul` → `SOUL.md` (write or append).
+4. Finishes with `complete_agent_initialization` — removes `INIT.md`.
+
+You can say things like “save this as your personality” or “remember my name is …” in chat or Telegram; the agent picks the right tool. Match your language — Russian and English work.
+
+### Every session
+
+- **SOUL** is injected as a pinned system message at the start of each conversation and **re-applied after context compression** so personality is never lost.
+- **USER** is included in the system prompt when `USER.md` exists.
+
+Edit the files directly anytime:
+
+```bash
+helix -p alice profile env --edit   # secrets only
+# identity files:
+nano ~/.helix/profiles/alice/SOUL.md
+nano ~/.helix/profiles/alice/USER.md
+```
+
+To reset onboarding for a profile, recreate `INIT.md` manually or run `helix profile create` on a new profile.
 
 ## Multiple gateways and Telegram bots
 
@@ -48,15 +114,32 @@ helix -p alice telegram setup
 helix -p bob telegram setup
 ```
 
+### One bot for multiple users
+
+**Recommended** — access requests + per-user protected profiles:
+
+```bash
+helix -p shared telegram setup
+HELIX_ENV=production helix -p shared gateway start -f
+# users send /start; admin approves:
+helix -p shared telegram requests approve USER_ID --create-profile ivan
+```
+
+Each approved user gets a protected profile, workspace jail, and the access key in Telegram.
+
+Manual bindings (`helix telegram map`) are still supported. See [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
+
 ## Workspace jail (directory isolation)
 
-Optional **workspace jail** restricts file and terminal tools to a single directory tree. The agent cannot read, write, or run commands outside that folder — but works freely inside it.
+**Workspace jail** restricts file and terminal tools to a single directory tree. The agent cannot read, write, or run commands outside that folder — but works freely inside it.
 
-Use cases:
+**Automatic:** when you create a **protected** profile (`--protect`, `profile key init`, or `telegram requests approve --create-profile`), Helix creates:
 
-- Give each user their own folder on a shared server
-- Limit a data-analysis agent to `~/data-agent`
-- Prevent accidental access to the rest of the filesystem
+`~/.helix/profiles/<name>/workspace/`
+
+and enables jail pointing at that directory.
+
+**Manual** (any profile):
 
 ```bash
 helix profile jail enable ~/data-agent
@@ -111,10 +194,11 @@ Optionally, enable an **access key** (format `hp_…`) so only someone who knows
 helix profile create alice
 helix -p alice gateway start
 
-# Create with key protection from the start
+# Create with key protection + workspace jail from the start
 helix profile create bob --protect
+# → ~/.helix/profiles/bob/workspace/ + profile.key (hp_…)
 
-# Protect an existing open profile
+# Protect an existing open profile (also enables workspace jail)
 helix -p alice profile key init
 
 # Switch into a protected profile
@@ -154,6 +238,8 @@ HELIX_PROFILE_KEY=hp_xxxxxxxx
 
 The access key protects **switching into** a profile from Helix interfaces. It does not replace filesystem permissions on `~/.helix` or gateway API keys — see [SECURITY.md](SECURITY.md).
 
+Telegram guide (one bot vs multiple bots): [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).
+
 ## Typical multi-user setup
 
 ```bash
@@ -177,8 +263,13 @@ helix -p bob gateway start
 |---------|-------------|
 | `helix -p <name> …` | Select profile (omit for `default`) |
 | `helix --profile-key <key>` | Access key for a protected profile |
-| `helix profile create <name>` | Create profile (open by default) |
+| `helix profile create <name>` | Create profile inheriting global settings (default) |
+| `helix profile create <name> --clean` | Standalone profile without global inheritance |
 | `helix profile create <name> --protect` | Create profile with access key |
+| `helix profile global show` | Show shared global config |
+| `helix profile global edit` | Edit `global/config.yaml` |
+| `helix profile global edit --env` | Edit `global/.env` |
+| `helix profile global init` | (Re)create global config from defaults or `--from-profile` |
 | `helix profile key status` | Show whether active profile is protected |
 | `helix profile key init` | Generate key for an existing open profile |
 | `helix profile key rotate` | Replace access key |

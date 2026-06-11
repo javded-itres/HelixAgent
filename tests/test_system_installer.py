@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from cli.installer.system import (
     MIN_PYTHON,
     detect_repo_root,
@@ -30,6 +29,7 @@ def test_ensure_path_in_shell_idempotent(tmp_path: Path, monkeypatch: pytest.Mon
     home.mkdir()
     rc = home / ".zshrc"
     rc.write_text("# shell\n", encoding="utf-8")
+    monkeypatch.setattr("cli.installer.system.platform.system", lambda: "Linux")
     monkeypatch.setattr("cli.installer.system.Path.home", lambda: home)
 
     bin_dir = tmp_path / "bin"

@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import Any
 
 from core.project.helix_md import HELIX_MD_REL_PATH, task_context_note
 
@@ -16,7 +16,7 @@ def language_instruction_block(*, locale: str | None = None, profile_name: str |
 
 def build_system_prompt(
     tools_description: str,
-    active_skills: List[Dict[str, Any]],
+    active_skills: list[dict[str, Any]],
     skills_formatted: str = "",
     relevant_memories: str = "",
     *,
@@ -108,12 +108,23 @@ Remember: You are a helpful, capable agent that learns and improves with each ta
         env_paths=format_env_context_block(profile_name=profile_name),
     )
 
+    from core.profile.soul import format_identity_instructions, format_soul_block
+    from core.profile.user_profile import format_user_block
     from core.project.helix_md import append_helix_project_context
 
-    return append_helix_project_context(f"{formatted_prompt}\n\n{lang_block}")
+    blocks = [formatted_prompt.rstrip()]
+    identity = format_identity_instructions(profile_name)
+    if identity:
+        blocks.append(identity)
+    user_block = format_user_block(profile_name)
+    if user_block:
+        blocks.append(user_block)
+    blocks.append(format_soul_block(profile_name))
+    blocks.append(lang_block)
+    return append_helix_project_context("\n\n".join(blocks))
 
 
-def format_tools_description(tools_schemas: List[Dict[str, Any]]) -> str:
+def format_tools_description(tools_schemas: list[dict[str, Any]]) -> str:
     """Format tool schemas for the system prompt.
 
     Args:

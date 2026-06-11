@@ -6,14 +6,16 @@ Entry point: **`helix`** (Typer). Every subcommand inherits global options unles
 
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
-| `--profile` | `-p` | `default` | Active profile (`~/.helix/profiles/<name>/`) |
+| `--profile` | `-p` | *(dev: `default`)* | Active profile (`~/.helix/profiles/<name>/`) |
+| `--profile-key` | | env `HELIX_PROFILE_KEY` | Access key for a protected profile |
 | `--verbose` | `-v` | off | Print profile and model on startup |
 
-For **default** profile, omit `-p`:
+In **development**, omit `-p` to use profile `default`. In **production** (`HELIX_ENV=production`), `-p` with a **named** profile is required — `default` is not available:
 
 ```bash
-helix gateway stop           # profile default
-helix -p work status         # non-default profiles
+helix gateway stop                    # dev: profile default
+helix -p work status
+HELIX_ENV=production helix -p shared gateway start
 helix --help
 ```
 
@@ -204,26 +206,33 @@ Project supplements: `./.helix/skills`, `./.helix/plan`, local `config.yaml` mer
 
 | Subcommand | Description |
 |------------|-------------|
-| `setup` | Interactive wizard: providers, tests, `agent_models` |
+| `setup` | Interactive wizard: providers, tests, `agent_models`, fallbacks |
 | `list` | List configured providers |
 | `agents` | Show per-agent model assignments |
+| `fallback list` | Show effective fallback chain |
+| `fallback set PROVIDERS` | Set profile fallbacks (`litellm,ollama`) |
+| `fallback clear` | Remove profile fallbacks |
 
 ```bash
 helix models setup
-helix models setup -p work
+helix models fallback set litellm,ollama
+helix models fallback list
 helix models list
-helix models agents
 ```
 
 Example `config.yaml` fragment:
 
 ```yaml
 default_provider: litellm
+fallback_providers:
+  - ollama
 providers:
   litellm:
     base_url: http://localhost:4000/v1
     api_key: ${LITELLM_KEY}
     default_model: smart
+    fallback_providers:
+      - openrouter
 agent_models:
   main:
     provider: litellm
@@ -276,12 +285,18 @@ In TUI/chat use `/memory <query>`.
 
 ## `helix profile`
 
-Per-profile isolation: env file, optional workspace jail, and terminal whitelist.
+Per-profile isolation plus **shared global settings** inherited by default.
 
 | Subcommand | Description |
 |------------|-------------|
+| `create <name>` | New profile (`--inherit` default, `--clean` for standalone) |
+| `create <name> --protect` | Create with access key + workspace jail |
+| `global show` | Show `~/.helix/global/config.yaml` |
+| `global edit` | Edit global YAML (models, MCP, behavior) |
+| `global edit --env` | Edit `~/.helix/global/.env` |
+| `global init` | (Re)create global config (`--from-profile default`) |
 | `env` | Show profile `.env` path and contents |
-| `env --edit` | Open `profiles/<name>/.env` in `$EDITOR` |
+| `env --edit` | Open profile overrides in `$EDITOR` |
 | `jail enable <path>` | Restrict file/terminal tools to one directory |
 | `jail disable` | Turn off workspace jail |
 | `jail status` | Show jail settings |
@@ -290,10 +305,11 @@ Per-profile isolation: env file, optional workspace jail, and terminal whitelist
 | `whitelist enable` | Enable terminal whitelist enforcement |
 
 ```bash
+helix profile global edit
+helix profile create team-a
+helix profile create team-b --clean
 helix -p alice profile env --edit
 helix -p data-agent profile jail enable ~/data-agent
-helix -p dev profile whitelist add "docker, make"
-helix -p dev profile whitelist list
 ```
 
 See [CONFIGURATION.md](CONFIGURATION.md#workspace-jail-optional) and [PROFILES.md](PROFILES.md).
@@ -323,6 +339,28 @@ helix gateway reload
 
 State: `~/.helix/profiles/<profile>/gateway/state.json` · Logs: `profiles/<profile>/gateway/gateway.log`  
 API details: [GATEWAY.md](GATEWAY.md).
+
+### Gateway API keys
+
+There is **no** `helix` CLI command for creating gateway API keys (`hx_…`) yet. Use one of:
+
+```bash
+# curl (requires an existing admin hx_ key)
+curl -sS -X POST "http://127.0.0.1:8000/admin/api-keys?name=my-app&permissions=read,write" \
+  -H "Authorization: Bearer hx_admin_…"
+
+# or Swagger UI after helix gateway start
+open http://127.0.0.1:8000/docs   # Authorize → HelixApiKey → paste hx_…
+```
+
+**Profile access keys** (`hp_…`) are different — they protect profile switching and `/api/helix/*` management, not the gateway HTTP surface:
+
+```bash
+helix -p alice profile key init    # generates hp_… (shown once)
+helix -p alice --profile-key hp_…  # use on CLI/TUI
+```
+
+First admin key bootstrap: temporarily set `HELIX_REQUIRE_AUTH=false`, create via `POST /admin/api-keys`, then re-enable auth. Full endpoint reference: [GATEWAY_API.md](GATEWAY_API.md).
 
 ---
 
@@ -484,19 +522,33 @@ Requires `uv sync --extra telegram`. Bot token is stored per profile in `profile
 
 | Subcommand | Description |
 |------------|-------------|
-| `setup` | Token, allowlist, save to profile |
-| `run` | Start polling (`-p` selects profile) |
-| `status` | Show saved config (token masked) |
-| `sync-menu` | Push slash menu to Telegram |
+| `setup` | Wizard: bot token only; enables access-request mode |
+| `run` | Start polling (`-p` selects bot host profile) |
+| `status` | Saved config (token masked) and bindings |
+| `sync-menu` | Push slash menu to **authorized** users only (hidden until approve) |
+| `admin show` | Show the single Telegram admin (CLI-assigned) |
+| `admin clear` | Clear admin before reassigning (`--set-admin` on approve) |
+| `requests list` | Pending `/start` access requests |
+| `requests approve USER_ID` | Approve user (`--create-profile`, `--profile`, `-i`, or `--set-admin`) |
+| `requests reject USER_ID` | Reject a pending request |
+| `map set USER_ID PROFILE` | Manual bind Telegram user id → Helix profile |
+| `map list` | List bindings |
+| `map remove USER_ID` | Remove a binding |
+| `map bind PROFILE` | Quick bind (`--user-id` or id from allowlist) |
+| `map import "ID:prof,..."` | Import multiple bindings |
 
 ```bash
-helix -p alice telegram setup
-helix -p alice telegram run
-helix -p alice telegram sync-menu
+helix -p shared telegram setup
+helix -p shared telegram requests approve 123456789 --set-admin   # first admin + profile admin
+helix -p shared telegram requests list
+helix -p shared telegram requests approve 123456789 --create-profile ivan
+helix -p shared telegram admin show
+helix -p shared telegram map set 123456789 alice   # manual alternative
+helix -p shared gateway start
 ```
 
-Or start with gateway: `helix -p alice gateway start`.  
-See [TELEGRAM.md](TELEGRAM.md).
+Shared bot with isolated profiles: [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md).  
+See also [TELEGRAM.md](TELEGRAM.md).
 
 ---
 
@@ -505,9 +557,13 @@ See [TELEGRAM.md](TELEGRAM.md).
 | Path | Content |
 |------|---------|
 | `~/.helix/profiles/<name>/.env` | API keys, gateway port, feature flags |
-| `~/.helix/profiles/<name>/telegram.env` | Telegram bot token and allowlist |
+| `~/.helix/profiles/<name>/telegram.env` | Bot token, allowlist, `HELIX_TELEGRAM_USER_PROFILES` |
+| `~/.helix/profiles/<name>/telegram-users.json` | Telegram user id → profile bindings (shared bot) |
 | `~/.helix/profiles/<name>/gateway/` | Gateway PID state and log |
 | `~/.helix/profiles/<name>/config.yaml` | Models, MCP, hub, workspace jail |
+| `~/.helix/profiles/<name>/SOUL.md` | Agent personality (injected each session) |
+| `~/.helix/profiles/<name>/USER.md` | User facts and preferences |
+| `~/.helix/profiles/<name>/INIT.md` | First-run onboarding marker |
 | `.../data/memory/` | SQLite + ChromaDB |
 | `.../data/skills/` | Skill files and hub bundles |
 | `.../data/security/` | API keys DB (if used) |

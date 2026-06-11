@@ -40,6 +40,8 @@ helix doctor
 helix doctor --fix
 ```
 
+При **первом диалоге** в новом профиле Helix проводит короткий онбординг (пока есть `INIT.md`): знакомство, личность агента (`SOUL.md`) и ваши предпочтения (`USER.md`). См. [PROFILES.md](PROFILES.md#идентичность-агента-soul-init-user).
+
 ## 3. Модели
 
 ```bash
@@ -62,7 +64,8 @@ helix config show
 
 ```bash
 pipx install "HelixAgentAi[telegram]"
-helix telegram setup
+helix -p shared telegram setup
+# мультипользовательский бот: /start → helix -p shared telegram requests approve …
 pipx install "HelixAgentAi[browser]"
 playwright install chromium
 helix hub browse

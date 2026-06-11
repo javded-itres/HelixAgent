@@ -1,7 +1,6 @@
+from core.env_loader import bootstrap_env
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
-from core.env_loader import bootstrap_env
 
 bootstrap_env()
 
@@ -88,10 +87,16 @@ class Settings(BaseSettings):
     )
     docs_host: str = Field(default="127.0.0.1", validation_alias="HELIX_DOCS_HOST")
     docs_port: int = Field(default=8080, validation_alias="HELIX_DOCS_PORT")
-    require_auth: bool = False
+    require_auth: bool = True
     cors_origins: str = "http://127.0.0.1:8000,http://localhost:8000"
-    api_keys_db_path: str = "data/security/api_keys.db"
-    api_key_pepper: str = ""
+    api_keys_db_path: str = Field(
+        default="data/security/api_keys.db",
+        validation_alias=AliasChoices("HELIX_API_KEYS_DB", "API_KEYS_DB"),
+    )
+    api_key_pepper: str = Field(
+        default="",
+        validation_alias=AliasChoices("HELIX_API_KEY_PEPPER", "API_KEY_PEPPER"),
+    )
     rate_limit_rpm: int = 100
     admin_rate_limit_rpm: int = 30
     public_rate_limit_rpm: int = 60
@@ -264,6 +269,10 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.helix_env.strip().lower() == "production"
+
+    @property
+    def is_development(self) -> bool:
+        return not self.is_production
 
     @property
     def effective_require_auth(self) -> bool:

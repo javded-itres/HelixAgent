@@ -2,6 +2,47 @@
 
 ## Unreleased
 
+### Added
+- **Multi-profile gateway (v0.2)** — one uvicorn process, `ProfileAgentRegistry`, per-profile Telegram + cron companions
+- **Hermes-compatible API** — `/v1/models`, `/v1/capabilities`, `/v1/responses`, `/v1/runs` (SSE), `/api/jobs`, `/api/sessions`; session header aliases `X-Helix-*` / `X-Hermes-*`
+- **Helix Management API** — `/api/helix/` profiles, models, skills, MCP, config/env, global settings; profile key auth (`X-Helix-Profile-Key`)
+- **Telegram admin API** — `/api/helix/profiles/{id}/telegram/*` (setup, requests approve/reject, admin, map, sync-menu)
+- **`HELIX_REQUIRE_AUTH=true`** by default — public without key: only `GET /health`, `GET /v1/health`
+- **Profile identity** — `SOUL.md`, `USER.md`, `INIT.md` per profile; first-run onboarding with `save_agent_soul`, `save_user_profile`, `complete_agent_initialization`
+- **SOUL injection** — pinned agent soul in every session and after context compression
+- **Telegram admin** — single admin via `telegram requests approve --set-admin`; `telegram admin show|clear`
+- **Telegram access flow** — admin notifications on `/start`; slash menu hidden until approve; `telegram sync-menu`
+
+### Documentation
+- **GATEWAY_API.md** (EN/RU) — **complete API reference** (~110 endpoints): auth, Swagger Authorize, Hermes, sessions, jobs, `/api/helix/`, admin, metrics, docs-chat; curl examples per section
+- **GATEWAY.md** (EN/RU) — interactive `/docs`, API key bootstrap, metrics endpoints, bundled docs site
+- **CLI.md**, **SECURITY.md**, **README** (EN/RU) — gateway API keys (`hx_` vs `hp_`), two-layer auth, docs-chat token
+- **web-docs** — nav label "Complete API Reference" / "Полный справочник API", updated SEO for `gateway-api`
+- **PROFILES**, **CONFIGURATION**, **USER_GUIDE**, **START_HERE**, **DOCTOR** (EN/RU) — agent identity files and onboarding
+- **CHANGELOG** — unreleased features from `feature/telegram-profiles`
+
+### Fixed
+- **CI** — ruff, SOUL-related tests, Python 3.12 annotations, Linux port checks, Windows pytest/doctor encoding
+- **`helix doctor --no-llm`** — skips live LLM endpoint probe (deterministic checks only)
+
+## 0.1.8 — 2026-06-10
+
+### Added
+- **`helix telegram map`** — bind Telegram user id → Helix profile (`set`, `list`, `remove`, `bind`, `import`) for a shared bot
+- Auto profile routing per Telegram chat from `telegram-users.json` / `HELIX_TELEGRAM_USER_PROFILES`
+- **TELEGRAM_MULTI_PROFILE** (EN/RU) — one bot vs multiple bots, isolation, mapping guide
+
+### Documentation
+- **CLI**, **CONFIGURATION**, **USER_GUIDE**, **TELEGRAM**, **PROFILES** (EN/RU) — `telegram map` and user→profile bindings
+- **INSTALLATION** (EN/RU) — dedicated Windows section (PowerShell, data paths, typical workflow)
+- **instruction.md** — quick reference at repo root
+
+### Fixed
+- **CI (ruff)** — auto-fix import/style across `core`, `cli`, `api`, `integrations`, `tests`; restore TUI re-exports and session rename handler
+- **Telegram MCP remove picker** — stray profile-picker block removed from `_show_mcp_remove_picker`
+- **Sub-agent tool guard** — pass `data_dir` into permission checks in subprocess
+- **Tests** — isolated telegram vision settings; skill slug names in assignments test
+
 ## 0.1.7 — 2026-06-10
 
 ### Added
@@ -88,40 +129,3 @@
 
 ### Fixed
 - web-docs routing for in-page TOC anchors, home route (`#/`), mobile search and sidebar menu
-
-## Unreleased
-
-### Added
-- **Telegram voice messages** — Whisper transcription for voice notes and audio attachments (`OPENAI_API_KEY`)
-- **`helix logs`** — unified log viewer (agent, sub-agent, gateway, cron, system); filters, follow, rotation, `debug on|off|status` — [docs/en/LOGS.md](en/LOGS.md)
-- Centralized logging under `{HELIX_HOME}/logs/` (`agent.jsonl`, `subagent.jsonl`, `helix.log`, debug JSONL)
-- **`helix cron`** — profile cron jobs with gateway scheduler, TUI manager, Telegram, bundled `helix-cron` skill
-- Cross-platform support: `HELIX_HOME` / XDG / `%LOCALAPPDATA%`, Windows terminal whitelist, optional `windows` extra (`psutil`), CI matrix (linux/windows/macos)
-- Per-session model persistence (`/models`, Telegram picker)
-- TUI GitHub-style file diffs; MCP path validation before spawn
-- PyPI packaging: distribution `HelixAgentAi`, build fixes, [docs/en/PYPI.md](en/PYPI.md)
-- GitHub workflow `.github/workflows/publish-pypi.yml` (manual)
-- Full CLI reference: `docs/en/CLI.md`, `docs/ru/CLI.md`
-- Slash command reference: `docs/en/SLASH_COMMANDS.md`, `docs/ru/SLASH_COMMANDS.md`
-- Installation guide: `docs/en/INSTALLATION.md`, `docs/ru/INSTALLATION.md`
-- Browser tools (active): `docs/en/BROWSER_TOOLS.md`
-- `LICENSE`, `CONTRIBUTING.md`, GitHub-ready root `README.md`
-- Production settings in `config.py` (gateway, security, tools, Telegram)
-- `helix doctor` with `--fix` and LLM config repair
-- `helix gateway start|stop|status|reload` background supervisor
-- Gateway: admin auth always required; optional auth for `/v1/*`
-- Prometheus `/metrics` endpoint
-- Terminal command whitelist enforcement
-- Profile secret placeholders `${VAR}` / `${ENV:VAR}`
-- CI (GitHub Actions), pre-commit, systemd unit example
-- Bilingual docs: `docs/en/`, `docs/ru/`
-
-### Changed
-- Gateway bind default `127.0.0.1`; CORS from `HELIX_CORS_ORIGINS`
-- API keys: HMAC-SHA256 with `HELIX_API_KEY_PEPPER`
-- Docker uses `helix gateway start`
-
-### Removed
-- Root `cli.py`, `main.py` (dead entry points)
-- `helix models-legacy` command
-- Obsolete docs (merged into `docs/en/` and `docs/ru/`)

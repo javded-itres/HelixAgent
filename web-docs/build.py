@@ -36,7 +36,9 @@ NAV = [
     ("TUI", {"en": "TUI", "ru": "TUI"}),
     ("HUB", {"en": "Hub & Skills", "ru": "Hub и навыки"}),
     ("GATEWAY", {"en": "API Gateway", "ru": "API Gateway"}),
+    ("GATEWAY_API", {"en": "Complete API Reference", "ru": "Полный справочник API"}),
     ("TELEGRAM", {"en": "Telegram", "ru": "Telegram"}),
+    ("TELEGRAM_MULTI_PROFILE", {"en": "Telegram Multi-Profile", "ru": "Telegram: несколько профилей"}),
     ("BROWSER_TOOLS", {"en": "Browser Tools", "ru": "Браузер"}),
     ("ARCHITECTURE", {"en": "Architecture", "ru": "Архитектура"}),
     ("SECURITY", {"en": "Security", "ru": "Безопасность"}),
@@ -196,7 +198,7 @@ def main() -> None:
     )
     write_seo_artifacts(entries)
     print(
-        f"Built {len(entries)} pages, {len(chunks)} chunks → "
+        f"Built {len(entries)} pages, {len(chunks)} chunks -> "
         f"{SEARCH_INDEX.name}, search-chunks.json, search-vectors.npz, sitemap.xml"
     )
 

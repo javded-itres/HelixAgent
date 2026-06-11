@@ -18,7 +18,12 @@ _REPO = Path(__file__).resolve().parent.parent
 if str(_REPO) not in sys.path:
     sys.path.insert(0, str(_REPO))
 
-from cli.installer import InstallOptions, detect_repo_root, install_helix, verify_helix_on_path  # noqa: E402
+from cli.installer import (  # noqa: E402
+    InstallOptions,
+    detect_repo_root,
+    install_helix,
+    verify_helix_on_path,
+)
 from cli.installer.system import record_install  # noqa: E402
 
 

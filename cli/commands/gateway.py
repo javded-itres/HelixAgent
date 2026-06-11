@@ -6,7 +6,6 @@ import os
 
 import typer
 
-from config import settings
 from cli.services.gateway_daemon import (
     gateway_status,
     reload_gateway_daemon,
@@ -14,6 +13,7 @@ from cli.services.gateway_daemon import (
     stop_gateway_daemon,
 )
 from cli.utils.rich_console import print_error
+from config import settings
 
 app = typer.Typer(
     help="Manage Helix API gateway and companion services (Telegram, …)",
@@ -114,3 +114,31 @@ def gateway_status_cmd(ctx: typer.Context) -> None:
 def gateway_reload(ctx: typer.Context) -> None:
     """Restart gateway with the same host, port, and profile."""
     reload_gateway_daemon(_profile(ctx))
+
+
+@app.command("show")
+def gateway_show(ctx: typer.Context) -> None:
+    """Show effective gateway settings for the active profile."""
+    from cli.commands.gateway_configure import show_gateway_config
+
+    show_gateway_config(_profile(ctx))
+
+
+@app.command("configure")
+def gateway_configure(
+    ctx: typer.Context,
+    start: bool = typer.Option(
+        False,
+        "--start",
+        help="Start gateway after saving settings",
+    ),
+) -> None:
+    """Interactively configure gateway host, port, auth, and docs companion.
+
+    Example:
+        helix gateway configure
+        helix -p alice gateway configure --start
+    """
+    from cli.commands.gateway_configure import run_gateway_configure
+
+    run_gateway_configure(profile=_profile(ctx), start_after=start)

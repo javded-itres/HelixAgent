@@ -1,24 +1,26 @@
 """Main CLI entry point for Helix."""
 
+
 import typer
-from typing import Optional
 from rich.traceback import install
 
 # Install rich traceback handler
 install(show_locals=True)
 
-from cli.core import init_profile, get_current_profile, get_profile_manager
-from cli.utils.rich_console import console, print_info
-from cli.commands import chat, run, gateway, skills, memory, config, models, doctor, profile
-from cli.commands.mcp import app as mcp_app
-from cli.commands.search import app as search_app
+from core.profile_keys import ProfileNotFoundError
+
+from cli.commands import chat, config, doctor, gateway, memory, models, profile, run, skills
 from cli.commands.cron import app as cron_app
-from cli.commands.logs import app as logs_app
+from cli.commands.docs import app as docs_app
 from cli.commands.hub import app as hub_app
 from cli.commands.install_cmd import app as install_app
-from cli.commands.update_cmd import app as update_app
-from cli.commands.docs import app as docs_app
+from cli.commands.logs import app as logs_app
+from cli.commands.mcp import app as mcp_app
+from cli.commands.search import app as search_app
 from cli.commands.telegram import register_telegram_command
+from cli.commands.update_cmd import app as update_app
+from cli.core import get_profile_manager, init_profile, resolve_active_profile_name
+from cli.utils.rich_console import print_info
 
 # Create Typer app
 app = typer.Typer(
@@ -48,15 +50,14 @@ app.add_typer(docs_app, name="docs")
 
 
 @app.callback()
-def main(
+def _app_callback(
     ctx: typer.Context,
-    profile: str = typer.Option(
-        "default",
+    profile: str | None = typer.Option(
+        None,
         "--profile", "-p",
-        help="Profile name to use",
-        show_default=True
+        help="Profile name (required in production; implicit default is dev-only)",
     ),
-    profile_key: Optional[str] = typer.Option(
+    profile_key: str | None = typer.Option(
         None,
         "--profile-key",
         envvar="HELIX_PROFILE_KEY",
@@ -75,33 +76,37 @@ def main(
     # Initialize profile
     from core.profile_keys import ProfileKeyError
 
-    try:
-        config = init_profile(profile, profile_key=profile_key)
-    except ProfileKeyError as exc:
-        from cli.utils.rich_console import print_error
+    from cli.utils.rich_console import print_error
 
+    try:
+        resolved_profile = resolve_active_profile_name(profile)
+        config = init_profile(resolved_profile, profile_key=profile_key)
+    except ProfileNotFoundError as exc:
+        print_error(str(exc))
+        raise typer.Exit(1) from exc
+    except ProfileKeyError as exc:
         print_error(str(exc))
         raise typer.Exit(1) from exc
 
     # Store context
     ctx.obj = {
-        "profile": profile,
+        "profile": resolved_profile,
         "config": config,
         "verbose": verbose,
         "profile_key": profile_key,
     }
 
     if verbose:
-        print_info(f"Using profile: {profile}")
+        print_info(f"Using profile: {resolved_profile}")
         print_info(f"Model: {config.model}")
 
 
 @app.command()
 def chat_command(
     ctx: typer.Context,
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="Override model"),
-    temperature: Optional[float] = typer.Option(None, "--temperature", "-t", help="Override temperature"),
-    max_steps: Optional[int] = typer.Option(None, "--max-steps", help="Override max steps"),
+    model: str | None = typer.Option(None, "--model", "-m", help="Override model"),
+    temperature: float | None = typer.Option(None, "--temperature", "-t", help="Override temperature"),
+    max_steps: int | None = typer.Option(None, "--max-steps", help="Override max steps"),
 ):
     """Start interactive chat session.
 
@@ -134,8 +139,8 @@ def chat_command(
 def run_command(
     ctx: typer.Context,
     query: str = typer.Argument(..., help="Query to execute"),
-    model: Optional[str] = typer.Option(None, "--model", "-m", help="Override model"),
-    temperature: Optional[float] = typer.Option(None, "--temperature", "-t", help="Override temperature"),
+    model: str | None = typer.Option(None, "--model", "-m", help="Override model"),
+    temperature: float | None = typer.Option(None, "--temperature", "-t", help="Override temperature"),
     conversation_id: str = typer.Option("cli_oneshot", "--conversation-id", "-c", help="Conversation ID"),
 ):
     """Execute a single query and exit.
@@ -147,7 +152,7 @@ def run_command(
     """
     import asyncio
 
-    profile = ctx.obj["profile"]
+    ctx.obj["profile"]
     config = ctx.obj["config"]
 
     # Apply overrides
@@ -165,7 +170,7 @@ def status(ctx: typer.Context):
 
     Display information about the active profile, model, and statistics.
     """
-    from cli.utils.rich_console import print_table, print_panel
+    from cli.utils.rich_console import print_panel, print_table
 
     profile = ctx.obj["profile"]
     config = ctx.obj["config"]
@@ -209,8 +214,9 @@ def clear(
 
     WARNING: This will delete all memory, skills, and data for the active profile.
     """
-    from cli.utils.rich_console import print_warning, print_success, print_error
     import shutil
+
+    from cli.utils.rich_console import print_error, print_success, print_warning
 
     profile = ctx.obj["profile"]
 
@@ -277,12 +283,12 @@ def tui(
         "--port",
         help="Port for --web",
     ),
-    public_url: Optional[str] = typer.Option(
+    public_url: str | None = typer.Option(
         None,
         "--public-url",
         help="Public URL when behind a reverse proxy (--web)",
     ),
-    token: Optional[str] = typer.Option(
+    token: str | None = typer.Option(
         None,
         "--token",
         envvar="HELIX_TUI_WEB_TOKEN",
@@ -305,8 +311,8 @@ def tui(
     tool visibility, and better multitasking feel.
     """
     if web:
-        from cli.tui.web_serve import run_tui_web
         from cli.tui.web_security import WebTuiSecurityError
+        from cli.tui.web_serve import run_tui_web
         from cli.utils.rich_console import print_error, print_info
 
         try:

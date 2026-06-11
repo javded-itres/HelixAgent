@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -11,16 +11,23 @@ logger = logging.getLogger(__name__)
 async def compress_session_if_needed(
     agent: Any,
     conversation_id: str,
-    messages: List[Dict[str, Any]],
-) -> Tuple[List[Dict[str, Any]], bool]:
+    messages: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], bool]:
     """Compress in-memory messages when over threshold and persist to DB."""
     cm = getattr(agent, "context_manager", None)
     if not cm:
         return messages, False
 
+    from core.profile.soul import inject_soul_into_messages, profile_name_from_agent
+
+    profile = profile_name_from_agent(agent)
+    messages = inject_soul_into_messages(messages, profile)
+
     compressed, was_compressed = await cm.auto_compress_if_needed(messages)
     if not was_compressed:
         return messages, False
+
+    compressed = inject_soul_into_messages(compressed, profile)
 
     try:
         count = await agent.memory.replace_conversation_messages(

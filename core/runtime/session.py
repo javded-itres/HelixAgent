@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -12,13 +12,17 @@ async def prepare_session(
     agent: Any,
     user_input: str,
     conversation_id: str,
-) -> Tuple[List[Dict[str, Any]], bool]:
+) -> tuple[list[dict[str, Any]], bool]:
     """Load history, persist the user message, and apply context compression.
 
     Returns:
         (messages, was_compressed) — messages ready for the agent/graph loop.
     """
+    from core.profile.soul import inject_soul_into_messages, profile_name_from_agent
+
+    profile = profile_name_from_agent(agent)
     messages = await agent.memory.get_conversation(conversation_id)
+    messages = inject_soul_into_messages(messages, profile)
 
     messages.append({"role": "user", "content": user_input})
     await agent.memory.save_message(conversation_id, "user", user_input)

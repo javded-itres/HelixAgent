@@ -3,11 +3,10 @@
 from pathlib import Path
 
 import pytest
-
-from core.di.runtime_config import HelixRuntimeConfig
-from core.di.container import create_async_container, create_agent, resolve_runtime_config
-from core.agent import HelixAgent
 from cli.core import ProfileConfig
+from core.agent import HelixAgent
+from core.di.container import create_agent, create_async_container, resolve_runtime_config
+from core.di.runtime_config import HelixRuntimeConfig
 
 
 def test_runtime_config_from_settings():
@@ -35,7 +34,7 @@ def test_runtime_config_from_profile():
     )
     cfg = HelixRuntimeConfig.from_profile(profile)
     assert cfg.model == "profile-model"
-    assert Path(cfg.memory_db_path).resolve() == Path("/tmp/test_memory.db").resolve()
+    assert Path(cfg.memory_db_path) == Path(profile.memory_db_path)
     assert cfg.ltm_db_path.endswith("ltm.db")
     assert Path(cfg.ltm_db_path).is_absolute()
     assert cfg.profile_name == "test"
@@ -61,7 +60,6 @@ async def test_dishka_container_provides_agent(temp_dir):
         ltm_db_path=f"{temp_dir}/ltm.db",
         skills_dir=f"{temp_dir}/skills",
     )
-    from core.agent import HelixAgent
 
     container = create_async_container(cfg)
     try:

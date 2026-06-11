@@ -279,6 +279,30 @@ SEO_PAGES: dict[str, dict[str, dict[str, str]]] = {
             "keywords": "Helix gateway, API gateway, OpenAI compatible API, helix gateway start, Prometheus",
         },
     },
+    "gateway-api": {
+        "ru": {
+            "title": "Полный справочник Helix Gateway API — все эндпоинты",
+            "description": (
+                "Полное описание Helix Gateway API: 110+ эндпоинтов Hermes, chat, sessions, jobs, "
+                "/api/helix/ management, admin, metrics, docs-chat. Аутентификация, Swagger Authorize, curl-примеры."
+            ),
+            "keywords": (
+                "Helix Gateway API, справочник API, Hermes API, Helix Management API, /api/helix, "
+                "OpenAPI Swagger, Telegram admin API, REST API документация"
+            ),
+        },
+        "en": {
+            "title": "Complete Helix Gateway API Reference — Every Endpoint",
+            "description": (
+                "Full Helix Gateway API docs: 110+ endpoints for Hermes, chat, sessions, jobs, "
+                "/api/helix/ management, admin, metrics, docs-chat. Auth, Swagger Authorize, curl examples."
+            ),
+            "keywords": (
+                "Helix Gateway API, complete API reference, Hermes API, Helix Management API, /api/helix, "
+                "OpenAPI Swagger, Telegram admin API, REST API documentation"
+            ),
+        },
+    },
     "telegram": {
         "ru": {
             "title": "Telegram-бот Helix — настройка, голос, slash-команды",
@@ -295,6 +319,24 @@ SEO_PAGES: dict[str, dict[str, dict[str, str]]] = {
                 "voice messages (Whisper), inline approvals, and @helix_agent channel for news."
             ),
             "keywords": "Helix Telegram, helix telegram setup, Telegram AI bot, voice Whisper",
+        },
+    },
+    "telegram-multi-profile": {
+        "ru": {
+            "title": "Telegram Helix — один бот, несколько изолированных профилей",
+            "description": (
+                "Как настроить Helix в Telegram для нескольких пользователей: отдельный бот на профиль "
+                "или один бот с helix telegram map — привязка user id к профилю, jail и безопасность."
+            ),
+            "keywords": "Helix Telegram профили, helix telegram map, изоляция профилей, общий бот",
+        },
+        "en": {
+            "title": "Helix Telegram — One Bot, Multiple Isolated Profiles",
+            "description": (
+                "Run Helix in Telegram for multiple users: one bot per profile or a shared bot with "
+                "helix telegram map user id bindings, workspace jail, and security checklist."
+            ),
+            "keywords": "Helix Telegram profiles, helix telegram map, profile isolation, shared bot",
         },
     },
     "browser-tools": {

@@ -13,30 +13,35 @@ Goals achieved:
 - Clean separation: execution logic vs adapters
 """
 
-import time
+from __future__ import annotations
+
 import logging
-from typing import AsyncGenerator, List, Dict, Any, Optional
+import time
+from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from core.context import ContextManager
 
 logger = logging.getLogger(__name__)
-import json
 
 from openai import AsyncOpenAI
 
 from config import settings
-from core.prompt_builder import build_system_prompt, format_tools_description
 from core.agent_events import (
     AgentEvent,
-    ThinkingEvent,
+    AssistantDeltaEvent,
+    ErrorEvent,
     FinalResponseEvent,
     MaxStepsReachedEvent,
-    ErrorEvent,
-    ToolCallStartEvent,
-    ToolCallResultEvent,
-    ToolCallErrorEvent,
     SelfImprovementStartedEvent,
     SkillCreatedEvent,
-    AssistantDeltaEvent,
+    ThinkingEvent,
+    ToolCallErrorEvent,
+    ToolCallResultEvent,
+    ToolCallStartEvent,
 )
+from core.prompt_builder import build_system_prompt, format_tools_description
 
 
 async def run_agent_loop(
@@ -131,6 +136,15 @@ async def run_agent_loop(
     model = getattr(agent, "model", settings.model)
     temperature = getattr(agent_config, "temperature", settings.temperature)
     client: AsyncOpenAI = agent.client
+    agent_slot = getattr(agent, "agent_slot", "main")
+    model_manager = getattr(agent, "model_manager", None)
+
+    def _on_fallback_switch(cfg) -> None:
+        if hasattr(agent, "set_active_model_config"):
+            agent.set_active_model_config(cfg)
+            nonlocal client, model
+            client = agent.client
+            model = agent.model
 
     # Initial thinking signal
     yield ThinkingEvent(
@@ -158,17 +172,34 @@ async def run_agent_loop(
         try:
             if stream:
                 # ==================== STREAMING PATH ====================
-                stream_response = await client.chat.completions.create(
-                    model=model,
-                    messages=api_messages,
-                    tools=agent.tools.get_schemas(),
-                    tool_choice="auto",
-                    temperature=temperature,
-                    stream=True,
-                )
+                from core.models.fallback import run_with_provider_fallback
+
+                if model_manager:
+                    stream_response = await run_with_provider_fallback(
+                        model_manager,
+                        agent_name=agent_slot,
+                        on_switch=_on_fallback_switch,
+                        factory=lambda cfg, llm_client: llm_client.chat.completions.create(
+                            model=cfg.model,
+                            messages=api_messages,
+                            tools=agent.tools.get_schemas(),
+                            tool_choice="auto",
+                            temperature=temperature,
+                            stream=True,
+                        ),
+                    )
+                else:
+                    stream_response = await client.chat.completions.create(
+                        model=model,
+                        messages=api_messages,
+                        tools=agent.tools.get_schemas(),
+                        tool_choice="auto",
+                        temperature=temperature,
+                        stream=True,
+                    )
 
                 current_content = ""
-                tool_calls_dict: Dict[int, Dict[str, Any]] = {}
+                tool_calls_dict: dict[int, dict[str, Any]] = {}
 
                 async for chunk in stream_response:
                     delta = chunk.choices[0].delta
@@ -297,13 +328,26 @@ async def run_agent_loop(
 
             else:
                 # ==================== NON-STREAMING PATH ====================
-                response = await client.chat.completions.create(
-                    model=model,
-                    messages=api_messages,
-                    tools=agent.tools.get_schemas(),
-                    tool_choice="auto",
-                    temperature=temperature,
-                )
+                from core.models.fallback import chat_completions_with_fallback
+
+                if model_manager:
+                    response = await chat_completions_with_fallback(
+                        model_manager,
+                        agent_name=agent_slot,
+                        on_switch=_on_fallback_switch,
+                        messages=api_messages,
+                        tools=agent.tools.get_schemas(),
+                        tool_choice="auto",
+                        temperature=temperature,
+                    )
+                else:
+                    response = await client.chat.completions.create(
+                        model=model,
+                        messages=api_messages,
+                        tools=agent.tools.get_schemas(),
+                        tool_choice="auto",
+                        temperature=temperature,
+                    )
 
                 message = response.choices[0].message
                 msg_dict = {"role": "assistant", "content": message.content or ""}
@@ -412,7 +456,7 @@ async def run_agent_loop(
 async def _maybe_self_improve(
     agent,
     conversation_id: str,
-    messages: List[Dict[str, Any]],
+    messages: list[dict[str, Any]],
     final_response: str,
 ) -> None:
     """Internal helper for self-improvement (skill creation) and LTM auto-summarization."""
@@ -484,7 +528,7 @@ async def _maybe_self_improve(
                 conversation_id=conversation_id,
                 messages=messages,
                 llm_client=agent.client,
-                model=model,
+                model=agent.model,
             )
         except Exception as e:
             logger.warning(f"Auto-summarization failed for {conversation_id}: {e}")
@@ -492,9 +536,9 @@ async def _maybe_self_improve(
 
 def _build_api_messages(
     system_prompt: str,
-    messages: List[Dict[str, Any]],
-    context_manager: "ContextManager",
-) -> List[Dict[str, Any]]:
+    messages: list[dict[str, Any]],
+    context_manager: ContextManager,
+) -> list[dict[str, Any]]:
     """Build the API message list, fitting as many recent messages as possible
     within the context window.
 

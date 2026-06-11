@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import zipfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from integrations.telegram.file_handler import (
     SavedTelegramFile,
     _extract_docx_text,
@@ -20,14 +19,23 @@ from integrations.telegram.file_handler import (
 )
 
 
+def _patch_vision_settings(monkeypatch: pytest.MonkeyPatch, **overrides: str) -> None:
+    """Patch settings object used by resolve_vision_config (isolated from global singleton)."""
+
+    class _Settings:
+        telegram_vision_model = overrides.get("telegram_vision_model", "")
+        openai_api_key = overrides.get("openai_api_key", "")
+        openai_base_url = overrides.get("openai_base_url", "")
+
+    monkeypatch.setattr("integrations.telegram.file_handler.settings", _Settings())
+
+
 def test_resolve_vision_config_uses_env_when_model_explicit(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from config import settings
-
     monkeypatch.setenv("LITELLM_API_KEY", "sk-test-key")
     monkeypatch.setenv("LITELLM_API_BASE", "http://localhost:4000/v1")
-    monkeypatch.setattr(settings, "telegram_vision_model", "vision-smart")
+    _patch_vision_settings(monkeypatch, telegram_vision_model="vision-smart")
 
     class _Mgr:
         def load_profile(self, _profile: str):
@@ -44,12 +52,9 @@ def test_resolve_vision_config_uses_env_when_model_explicit(
 def test_resolve_vision_config_requires_api_when_only_model_set(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from config import settings
-
     monkeypatch.delenv("LITELLM_API_KEY", raising=False)
     monkeypatch.delenv("LITELLM_API_BASE", raising=False)
-    monkeypatch.setattr(settings, "telegram_vision_model", "vision-smart")
-    monkeypatch.setattr(settings, "openai_api_key", "")
+    _patch_vision_settings(monkeypatch, telegram_vision_model="vision-smart", openai_api_key="")
 
     class _Mgr:
         def load_profile(self, _profile: str):
@@ -67,7 +72,7 @@ def test_safe_filename_sanitizes() -> None:
 
 
 def test_profile_files_dir_under_data(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
-    from cli.core import ProfileManager, init_profile
+    from cli.core import ProfileManager
 
     profile = "default"
     pdir = tmp_path / "profiles" / profile
@@ -98,7 +103,7 @@ def test_build_agent_prompt_includes_path_and_description() -> None:
     assert "Сделай краткое резюме" in prompt
     assert "report.pdf" in prompt
     assert "Summary text" in prompt
-    assert "/tmp/profile/data/files/telegram/1/report.pdf" in prompt
+    assert saved.path.as_posix() in prompt.replace("\\", "/")
 
 
 def test_extract_pdf_text(tmp_path: Path) -> None:

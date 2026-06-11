@@ -72,10 +72,22 @@
     "file_key": "GATEWAY"
   },
   {
+    "slug": "gateway-api",
+    "en": "Complete API Reference",
+    "ru": "Полный справочник API",
+    "file_key": "GATEWAY_API"
+  },
+  {
     "slug": "telegram",
     "en": "Telegram",
     "ru": "Telegram",
     "file_key": "TELEGRAM"
+  },
+  {
+    "slug": "telegram-multi-profile",
+    "en": "Telegram Multi-Profile",
+    "ru": "Telegram: несколько профилей",
+    "file_key": "TELEGRAM_MULTI_PROFILE"
   },
   {
     "slug": "browser-tools",

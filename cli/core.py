@@ -1,22 +1,20 @@
 """Core profile management and initialization for Helix CLI."""
 
 import os
+from pathlib import Path
+from typing import Any
 
 import yaml
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
-
 from core.platform_compat import resolve_helix_home
 from core.profile_keys import (
     ProfileExistsError,
-    ProfileKeyError,
     ProfileNotFoundError,
     profile_has_access_key,
     require_profile_access_key,
     store_profile_access_key,
     verify_profile_access_key,
 )
+from pydantic import BaseModel, Field
 
 # Helix home directory (HELIX_HOME / XDG / %LOCALAPPDATA%\Helix / ~/.helix)
 HELIX_HOME = resolve_helix_home()
@@ -51,46 +49,95 @@ class ProfileConfig(BaseModel):
 
     # Profile settings
     profile_name: str = "default"
-    data_dir: Optional[str] = None
-    memory_db_path: Optional[str] = None
-    vector_db_path: Optional[str] = None
-    ltm_db_path: Optional[str] = None
-    langgraph_checkpoint_db_path: Optional[str] = None
-    skills_dir: Optional[str] = None
-    context_window: Optional[int] = None  # None = use default (128k), otherwise token count
+    data_dir: str | None = None
+    memory_db_path: str | None = None
+    vector_db_path: str | None = None
+    ltm_db_path: str | None = None
+    langgraph_checkpoint_db_path: str | None = None
+    skills_dir: str | None = None
+    context_window: int | None = None  # None = use default (128k), otherwise token count
 
     # System prompt
-    system_prompt: Optional[str] = None
+    system_prompt: str | None = None
 
     # Model providers and routing
-    providers: Dict[str, Any] = Field(default_factory=dict)
-    agent_models: Dict[str, Any] = Field(default_factory=dict)
-    default_provider: Optional[str] = None
+    providers: dict[str, Any] = Field(default_factory=dict)
+    agent_models: dict[str, Any] = Field(default_factory=dict)
+    default_provider: str | None = None
+    fallback_providers: list[str] = Field(default_factory=list)
     models_via_providers: bool = False  # True after catalog providers were used
 
     # MCP (Model Context Protocol) servers — stored under ~/.helix only
-    mcp_servers: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
-    mcp_assignments: Dict[str, List[str]] = Field(default_factory=dict)  # e.g. {"main": ["fs"], "researcher": ["fs", "git"]}
+    mcp_servers: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    mcp_assignments: dict[str, list[str]] = Field(default_factory=dict)  # e.g. {"main": ["fs"], "researcher": ["fs", "git"]}
     mcp_enabled: bool = True
 
     # Skills: which skill names each agent/subagent may use (empty dict = all skills)
-    skill_assignments: Dict[str, List[str]] = Field(default_factory=dict)  # e.g. {"main": ["git"], "coder": ["git", "docker"]}
+    skill_assignments: dict[str, list[str]] = Field(default_factory=dict)  # e.g. {"main": ["git"], "coder": ["git", "docker"]}
 
     # Sub-agents
-    enable_subagents: Optional[bool] = None
-    subagent_default_process_mode: Optional[str] = None
-    subagent_max_concurrent: Optional[int] = None
+    enable_subagents: bool | None = None
+    subagent_default_process_mode: str | None = None
+    subagent_max_concurrent: int | None = None
 
     # Hub: optional background ClawHub version updates
     hub_auto_update: bool = False
     hub_auto_update_interval_hours: float = 24.0
 
     # Web search providers (duckduckgo, searxng, firecrawl)
-    search: Dict[str, Any] = Field(default_factory=dict)
+    search: dict[str, Any] = Field(default_factory=dict)
 
     # Workspace jail: restrict file/terminal tools to a single directory tree
     workspace_jail_enabled: bool = False
-    workspace_root: Optional[str] = None
+    workspace_root: str | None = None
+
+
+def _helix_env_name() -> str:
+    return os.getenv("HELIX_ENV", "development").strip().lower()
+
+
+def default_profile_allowed() -> bool:
+    """Implicit profile ``default`` is available only outside production."""
+    return _helix_env_name() != "production"
+
+
+def validate_profile_name_for_env(profile: str) -> str:
+    """Reject reserved ``default`` profile name in production."""
+    name = (profile or "").strip() or "default"
+
+    if _helix_env_name() == "production" and name == "default":
+        raise ProfileNotFoundError(
+            "Profile 'default' is only available when HELIX_ENV is not production. "
+            "Use a named profile: helix -p <name> …"
+        )
+    return name
+
+
+def resolve_active_profile_name(explicit: str | None = None) -> str:
+    """Resolve CLI/gateway profile from flag or dev-only implicit default."""
+    if explicit and str(explicit).strip():
+        return validate_profile_name_for_env(str(explicit).strip())
+    if default_profile_allowed():
+        return "default"
+    raise ProfileNotFoundError(
+        "Profile name is required when HELIX_ENV=production. "
+        "Example: helix -p alice gateway start"
+    )
+
+
+def enable_profile_workspace_isolation(
+    manager: "ProfileManager",
+    profile: str,
+) -> Path:
+    """Create per-profile workspace directory and enable jail."""
+    profile_dir = manager.get_profile_dir(profile)
+    workspace_dir = profile_dir / "workspace"
+    workspace_dir.mkdir(parents=True, exist_ok=True)
+    config = manager.load_profile(profile)
+    config.workspace_jail_enabled = True
+    config.workspace_root = str(workspace_dir.resolve())
+    manager.save_profile(profile, config)
+    return workspace_dir
 
 
 def resolve_profile_storage_paths(
@@ -102,7 +149,7 @@ def resolve_profile_storage_paths(
     """Bind profile storage paths to ~/.helix/profiles/<name>/ (not process CWD)."""
     base = (profile_dir or (profiles_dir() / profile)).resolve()
 
-    def _resolve(path: Optional[str], default: Path) -> str:
+    def _resolve(path: str | None, default: Path) -> str:
         if not path or not str(path).strip():
             return str(default.resolve())
         expanded = Path(path).expanduser()
@@ -178,9 +225,10 @@ class ProfileManager:
     def create_profile(
         self,
         profile: str,
-        config: Optional[ProfileConfig] = None,
+        config: ProfileConfig | None = None,
         *,
         with_access_key: bool = False,
+        inherit_global: bool = True,
     ) -> ProfileConfig:
         """Create a new profile.
 
@@ -188,6 +236,8 @@ class ProfileManager:
             profile: Profile name
             config: Optional profile configuration
             with_access_key: Generate a profile access key on creation (opt-in)
+            inherit_global: When True, profile inherits ``global/`` settings and
+                stores only overrides. When False (--clean), write a standalone config.
 
         Returns:
             Profile configuration
@@ -213,8 +263,10 @@ class ProfileManager:
         (profile_dir / "gateway").mkdir(parents=True, exist_ok=True)
 
         from core.env_loader import ensure_profile_env_template
+        from core.profile.soul import bootstrap_profile_identity
 
-        ensure_profile_env_template(profile)
+        ensure_profile_env_template(profile, inherit_global=inherit_global)
+        bootstrap_profile_identity(profile)
 
         # Set default config if not provided
         if config is None:
@@ -223,6 +275,13 @@ class ProfileManager:
             config.profile_name = profile
 
         config = resolve_profile_storage_paths(profile, config, profile_dir=profile_dir)
+        storage_mode = "sparse" if inherit_global else "full"
+
+        if with_access_key:
+            workspace_dir = profile_dir / "workspace"
+            workspace_dir.mkdir(parents=True, exist_ok=True)
+            config.workspace_jail_enabled = True
+            config.workspace_root = str(workspace_dir.resolve())
 
         if seeded:
             try:
@@ -236,8 +295,20 @@ class ProfileManager:
             except Exception:
                 pass
 
-        # Save config
-        self.save_profile(profile, config)
+        # Save config (inherit mode: only profile_name + per-profile paths, no model defaults)
+        if storage_mode == "sparse" and inherit_global:
+            from core.global_config import PROFILE_ONLY_KEYS
+
+            storage: dict[str, Any] = {"profile_name": profile}
+            for key in PROFILE_ONLY_KEYS:
+                if key == "profile_name":
+                    continue
+                value = getattr(config, key, None)
+                if value is not None and value is not False and value != "":
+                    storage[key] = value
+            self._write_profile_yaml(profile, storage)
+        else:
+            self.save_profile(profile, config, storage_mode=storage_mode)
 
         self._last_created_access_key = None
         if with_access_key and not profile_has_access_key(profile):
@@ -261,17 +332,20 @@ class ProfileManager:
             Profile configuration
         """
         if not self.profile_exists(profile):
-            if profile == "default":
+            if profile == "default" and default_profile_allowed():
                 return self.create_profile(profile)
             raise ProfileNotFoundError(f"Profile '{profile}' does not exist")
 
         config_file = self.get_profile_dir(profile) / "config.yaml"
 
         with open(config_file, encoding="utf-8") as f:
-            data = yaml.safe_load(f) or {}
+            profile_data = yaml.safe_load(f) or {}
 
         from core.config_utils import load_local_overlay, merge_profile_with_local, resolve_env_refs
+        from core.global_config import load_global_config_resolved, merge_global_with_profile
 
+        global_data = load_global_config_resolved()
+        data = merge_global_with_profile(global_data, profile_data)
         data = resolve_env_refs(data)
         from core.models.profile_cleanup import sanitize_model_routing_data
 
@@ -282,17 +356,33 @@ class ProfileManager:
         config = ProfileConfig(**data)
         return resolve_profile_storage_paths(profile, config, profile_dir=self.get_profile_dir(profile))
 
-    def save_profile(self, profile: str, config: ProfileConfig):
+    def _write_profile_yaml(self, profile: str, data: dict[str, Any]) -> None:
+        config_file = self.get_profile_dir(profile) / "config.yaml"
+        with open(config_file, "w", encoding="utf-8") as handle:
+            yaml.dump(data, handle, default_flow_style=False, allow_unicode=True)
+
+    def save_profile(
+        self,
+        profile: str,
+        config: ProfileConfig,
+        *,
+        storage_mode: str = "sparse",
+    ):
         """Save profile configuration.
 
         Args:
             profile: Profile name
             config: Profile configuration
+            storage_mode: ``sparse`` stores only overrides vs global; ``full`` writes all fields
         """
-        config_file = self.get_profile_dir(profile) / "config.yaml"
+        from core.global_config import extract_profile_overrides, load_global_config_resolved
 
-        with open(config_file, 'w') as f:
-            yaml.dump(config.model_dump(), f, default_flow_style=False)
+        payload = config.model_dump()
+        if storage_mode == "full":
+            storage = payload
+        else:
+            storage = extract_profile_overrides(payload, load_global_config_resolved())
+        self._write_profile_yaml(profile, storage)
 
     def list_profiles(self) -> list[str]:
         """List all available profiles.
@@ -334,8 +424,8 @@ class ProfileManager:
 
 # Global profile manager
 _profile_manager = ProfileManager()
-_current_profile: Optional[str] = None
-_current_config: Optional[ProfileConfig] = None
+_current_profile: str | None = None
+_current_config: ProfileConfig | None = None
 _unlocked_profiles: set[str] = set()
 
 
@@ -381,7 +471,7 @@ def unlock_profile(profile: str, profile_key: str) -> bool:
 
 
 def init_profile(
-    profile: str = "default",
+    profile: str | None = None,
     *,
     profile_key: str | None = None,
     prompt_key: bool = True,
@@ -400,6 +490,7 @@ def init_profile(
 
     from core.env_loader import bootstrap_profile_env
 
+    profile = resolve_active_profile_name(profile)
     _ensure_profile_unlocked(profile, profile_key=profile_key, prompt_key=prompt_key)
 
     switching = _current_profile is not None and _current_profile != profile
@@ -431,7 +522,9 @@ def get_current_profile() -> str:
         Current profile name
     """
     global _current_profile
-    return _current_profile or "default"
+    if _current_profile:
+        return _current_profile
+    return resolve_active_profile_name(None)
 
 
 def get_current_config() -> ProfileConfig:

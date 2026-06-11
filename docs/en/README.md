@@ -8,11 +8,11 @@ Helix is a self-improving AI agent with memory, skills, tool calling, MCP, CLI, 
 
 ## Getting started
 
-1. [INSTALLATION.md](INSTALLATION.md) — PyPI install, extras, updates, Docker
+1. [INSTALLATION.md](INSTALLATION.md) — PyPI install, **Windows**, extras, updates, Docker
 2. [START_HERE.md](START_HERE.md) — first run checklist
 3. [QUICKSTART.md](QUICKSTART.md) — minimal command list
 4. [CONFIGURATION.md](CONFIGURATION.md) — `.env`, profiles, secrets
-5. [PROFILES.md](PROFILES.md) — **isolated profiles, access keys, multi-user setup, workspace jail**
+5. [PROFILES.md](PROFILES.md) — **isolated profiles, SOUL/USER identity, access keys, multi-user setup, workspace jail**
 
 ## Interfaces
 
@@ -22,7 +22,9 @@ Helix is a self-improving AI agent with memory, skills, tool calling, MCP, CLI, 
 - [TUI.md](TUI.md) — `helix tui`, web mode, copy, hub UI
 - [HUB.md](HUB.md) — `helix hub`, catalogs, `skill_assignments`
 - [GATEWAY.md](GATEWAY.md) — `helix gateway start|stop|status|reload`
-- [TELEGRAM.md](TELEGRAM.md) — Telegram bot
+- [GATEWAY_API.md](GATEWAY_API.md) — **Complete API reference — every endpoint documented** (auth, `/api/helix/`, SaaS curl)
+- [TELEGRAM.md](TELEGRAM.md) — Telegram
+- [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md) — one bot / multiple bots, access requests, manual `map`
 - [BROWSER_TOOLS.md](BROWSER_TOOLS.md) — Playwright `browser_*` tools
 
 ## Packaging

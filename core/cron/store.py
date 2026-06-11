@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from cli.core import ProfileManager
+
 from core.cron.expressions import format_next_run_iso, validate_cron_expression
 from core.cron.models import CronJob, CronJobStore
 
@@ -76,6 +77,8 @@ class CronStore:
         enabled: bool = True,
         notify_chat_id: int | None = None,
         session_id: str | None = None,
+        skills: list[str] | None = None,
+        model_override: str | None = None,
     ) -> CronJob:
         task = (task or "").strip()
         if not task:
@@ -90,6 +93,8 @@ class CronStore:
             profile=self.profile,
             notify_chat_id=notify_chat_id,
             session_id=(session_id or "").strip() or None,
+            skills=list(skills or []),
+            model_override=(model_override or "").strip() or None,
         )
         self._touch_next_run(job)
         store.jobs.append(job)
@@ -98,7 +103,7 @@ class CronStore:
 
     def update(self, job: CronJob) -> CronJob:
         store = self.load()
-        job.updated_at = datetime.now(timezone.utc).isoformat()
+        job.updated_at = datetime.now(UTC).isoformat()
         self._touch_next_run(job)
         for i, j in enumerate(store.jobs):
             if j.id == job.id:

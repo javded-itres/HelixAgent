@@ -8,11 +8,11 @@
 
 ## С чего начать
 
-1. [INSTALLATION.md](INSTALLATION.md) — установка с PyPI, extras, обновления
+1. [INSTALLATION.md](INSTALLATION.md) — установка с PyPI, **Windows**, extras, обновления
 2. [START_HERE.md](START_HERE.md) — первый запуск
 3. [QUICKSTART.md](QUICKSTART.md) — минимум команд
 4. [CONFIGURATION.md](CONFIGURATION.md) — `.env`, профили
-5. [PROFILES.md](PROFILES.md) — **изолированные профили, ключи доступа, несколько пользователей, workspace jail**
+5. [PROFILES.md](PROFILES.md) — **изолированные профили, SOUL/USER, ключи доступа, несколько пользователей, workspace jail**
 
 ## Интерфейсы
 
@@ -22,7 +22,9 @@
 - [TUI.md](TUI.md) — `helix tui`
 - [HUB.md](HUB.md) — каталоги навыков
 - [GATEWAY.md](GATEWAY.md) — API gateway
+- [GATEWAY_API.md](GATEWAY_API.md) — **полный справочник API — каждый эндпоинт задокументирован** (auth, `/api/helix/`, SaaS curl)
 - [TELEGRAM.md](TELEGRAM.md) — Telegram
+- [TELEGRAM_MULTI_PROFILE.md](TELEGRAM_MULTI_PROFILE.md) — один бот / несколько ботов, access requests, ручной `map`
 - [BROWSER_TOOLS.md](BROWSER_TOOLS.md) — Playwright
 
 ## Эксплуатация
