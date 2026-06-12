@@ -2,7 +2,7 @@
 
 **Статус:** черновик на согласование (реализация не начата)  
 **Ветка:** `feature/remote-folder-agent`  
-**Версия документа:** 0.1  
+**Версия документа:** 0.2  
 **Дата:** 2026-06-12
 
 ---
@@ -45,6 +45,7 @@
 - Работа **за NAT** (outbound-only).
 - На сервере — **отдельный профиль** или режим `link` с workspace jail = удалённая папка.
 - **Отзыв** связи с любой стороны, аудит операций.
+- **Паритет платформ:** клиент Holix Link с первого релиза на **Windows 10+**, **Linux** (glibc systemd/non-systemd), **macOS 12+** (Intel + Apple Silicon).
 
 ### Не входит в MVP
 
@@ -57,7 +58,8 @@
 
 - Latency: list/read &lt; 2 с на типичном канале; streaming read для больших файлов.
 - Переподключение после sleep/reboot клиента без повторного pairing (пока не отозван ключ).
-- Совместимость: Python 3.12+, Linux/macOS/Windows.
+- Совместимость: Python 3.12+ на **Windows, Linux, macOS** (единая кодовая база, без форка).
+- CI: матрица `ubuntu-latest`, `macos-latest`, `windows-latest` для клиента и jail-тестов.
 
 ---
 
@@ -66,7 +68,9 @@
 ### 4.1 Подключение (pairing)
 
 1. Админ на сервере: `holix link create --profile support` → код `LINK-7K3M-9Q2P` (TTL 10 мин).
-2. Пользователь на ПК: `holix-link pair LINK-7K3M-9Q2P --folder ~/Projects/acme`.
+2. Пользователь на ПК:
+   - Linux/macOS: `holix-link pair LINK-7K3M-9Q2P --folder ~/Projects/acme`
+   - Windows: `holix-link pair LINK-7K3M-9Q2P --folder C:\Users\me\Projects\acme`
 3. Клиент показывает fingerprint сервера; пользователь подтверждает.
 4. Сервер создаёт запись `link_id`, профиль `linked-acme` с `workspace_root` = виртуальный корень.
 5. Агент в Telegram/веб: «Папка Acme подключена».
@@ -168,19 +172,24 @@ flowchart TB
 
 ## 8. Установка (UX)
 
-### Клиент (пользователь)
+### Клиент — все платформы
+
+| Платформа | Установка | Требования |
+|-----------|-----------|------------|
+| **Linux** | `pipx install Holix-Link` или `curl … \| bash` | Python 3.12+ |
+| **macOS** | `pipx install Holix-Link` или `curl … \| bash` | Python 3.12+ (Homebrew/pyenv) |
+| **Windows** | `pipx install Holix-Link` или `install-link.ps1` | Python 3.12+ с python.org или `winget install Python.Python.3.12` |
+
+Общие команды (имя CLI одинаковое):
 
 ```bash
-# Вариант A — лёгкий пакет
-pipx install Holix-Link
-
-# Вариант B — из репозитория
-curl -fsSL https://holix-agent.ru/install-link.sh | bash
-
-holix-link wizard   # выбор папки, pairing, фоновый daemon
+holix-link wizard      # pairing + выбор папки + фоновый daemon
 holix-link status
 holix-link disconnect
+holix-link install-service   # автозапуск (см. §9)
 ```
+
+На Windows те же команды в **PowerShell** / **cmd** (после `pipx ensurepath`).
 
 ### Сервер (уже есть Holix)
 
@@ -190,13 +199,101 @@ holix link list
 holix link revoke <id>
 ```
 
-### systemd (Linux)
-
-`holix-link install-service` — user unit, автозапуск после pair.
+Серверная часть (gateway relay) — только Linux/macOS/Windows **как хост gateway**; клиент Link — обязательно все три ОС у пользователя.
 
 ---
 
-## 9. Компоненты кодовой базы
+## 9. Кроссплатформенная поддержка (Windows / Linux / macOS)
+
+Клиент Holix Link — **не серверный** компонент: он ставится на машину пользователя с любой из трёх ОС. Архитектура протокола и relay **одинаковая**; отличаются только пути, фоновый сервис и edge-cases ФС.
+
+### 9.1 Каталоги данных
+
+Переиспользовать `core/platform_compat.resolve_holix_home()`:
+
+| ОС | Путь по умолчанию |
+|----|-------------------|
+| Linux / macOS | `~/.holix/link/` |
+| Windows | `%LOCALAPPDATA%\Holix\link\` |
+
+Содержимое: `credentials.json`, `config.json` (folder, link_id, server URL), `link.log`, `daemon.pid`.
+
+Права: Unix `chmod 600` на секреты; Windows — ACL только для текущего пользователя (фаза 1), DPAPI — фаза 2.
+
+### 9.2 Выбор папки (workspace jail)
+
+| ОС | MVP | Фаза 2 |
+|----|-----|--------|
+| Все | Аргумент `--folder <path>` в CLI | `holix-link wizard` с нативным диалогом |
+| Linux/macOS | `~/…`, `/home/…` | `zenity` / AppleScript `choose folder` |
+| Windows | `C:\Users\…`, UNC `\\server\share` (read-only share — осторожно) | PowerShell `FolderBrowserDialog` |
+
+**Нормализация путей** (`integrations/link/paths.py`):
+
+- Внутреннее представление: POSIX-style относительно jail root (`src/main.py`).
+- Windows: `Path.resolve()`, поддержка длинных путей (`\\?\` при &gt;260 символов).
+- Запрет: `..`, absolute escape, **junction/symlink** за пределы jail (`os.path.realpath` / `Path.resolve(strict=False)` с проверкой `is_relative_to`).
+
+Отдельный набор тестов: `tests/test_link_paths_windows.py` (моки `sys.platform`), `test_link_jail_unix.py`.
+
+### 9.3 Фоновый daemon (автозапуск)
+
+Единая команда: `holix-link install-service` / `holix-link uninstall-service`.
+
+| ОС | Механизм | Заметки |
+|----|----------|---------|
+| **Linux** | systemd **user** unit `holix-link.service` | `WantedBy=default.target`, перезапуск при обрыве WS |
+| **macOS** | LaunchAgent `~/Library/LaunchAgents/ru.holix.link.plist` | `RunAtLoad`, `KeepAlive` |
+| **Windows** | Планировщик задач **или** `nssm`/pywin32 Service | MVP: Task Scheduler «при входе» + `--foreground` fallback; полноценная Service — фаза 2 |
+
+Без прав администратора: только user-level сервисы (не `/Library/LaunchDaemons`, не system systemd).
+
+Остановка: `holix-link stop` → корректный SIGTERM (POSIX) / `GenerateConsoleCtrlEvent` (Windows) через `core/platform_compat.terminate_process`.
+
+### 9.4 Сеть и NAT
+
+На всех ОС — **только исходящие** TCP 443 (WSS). Входящие порты и правила firewall на клиенте не нужны.
+
+| ОС | Типичные ограничения |
+|----|---------------------|
+| Windows | Корпоративный прокси — фаза 2: `HTTPS_PROXY` для WebSocket |
+| macOS | Little Snitch / firewall — пользователь разрешает исходящее к gateway |
+| Linux | `iptables` OUTPUT обычно разрешён |
+
+Sleep/hibernate: при пробуждении — автоматический reconnect (все платформы).
+
+### 9.5 Установщики
+
+| Скрипт | Платформа |
+|--------|-----------|
+| `scripts/install-link.sh` | Linux + macOS (проверка `python3.12`, `pipx`, PATH) |
+| `scripts/install-link.ps1` | Windows (проверка Python, `pipx`, добавление в PATH) |
+
+Документация: `docs/en/LINK.md`, `docs/ru/LINK.md` — отдельные подразделы per OS.
+
+### 9.6 CI и ручная матрица
+
+```yaml
+# .github/workflows/link-client.yml (план)
+strategy:
+  matrix:
+    os: [ubuntu-latest, macos-latest, windows-latest]
+    python: ["3.12", "3.13"]
+```
+
+Проверки: pairing mock, jail escape, path normalize, daemon start/stop (smoke), `holix doctor --link` (план).
+
+### 9.7 Зависимости клиента
+
+Минимальный набор (без Chromium/Playwright):
+
+- `httpx`, `websockets` (или `aiohttp`), `cryptography` (Ed25519)
+- Опционально `pywin32` / `psutil` — extra `Holix-Link[windows]` (как `Holix[windows]` сегодня)
+- **Без** компиляции: wheels на PyPI для win_amd64, macosx arm64/x86_64, manylinux
+
+---
+
+## 10. Компоненты кодовой базы
 
 | Компонент | Путь (план) | Описание |
 |-----------|-------------|----------|
@@ -205,17 +302,21 @@ holix link revoke <id>
 | `core/tools/link_fs.py` | новый | `link_read_file`, `link_write_file`, `link_list_directory` |
 | `cli/commands/link.py` | новый | `holix link *` |
 | `cli/link_worker.py` | новый | фоновый процесс (аналог `gateway_worker`) |
-| `docs/en|ru/LINK.md` | новый | пользовательская документация |
+| `integrations/link/service_install.py` | новый | systemd / LaunchAgent / Task Scheduler |
+| `integrations/link/paths.py` | новый | нормализация путей Win/Unix |
+| `scripts/install-link.sh` / `.ps1` | новый | установщики |
+| `docs/en|ru/LINK.md` | новый | пользовательская документация (Windows/Linux/macOS) |
 
 Переиспользование:
 
+- `core/platform_compat` — `resolve_holix_home`, `terminate_process`, `popen_background`
 - `workspace_jail` / path guards из `core/tools/`
 - `ProfileManager`, pairing UX как в `integrations/telegram/access_approval`
 - `gateway_daemon` / supervisor pattern для фонового link worker на сервере не нужен — WS внутри uvicorn
 
 ---
 
-## 10. Протокол (черновик)
+## 11. Протокол (черновик)
 
 ### WebSocket: клиент → сервер (после pair)
 
@@ -233,7 +334,7 @@ holix link revoke <id>
 
 ---
 
-## 11. План реализации по фазам
+## 12. План реализации по фазам
 
 > **Важно:** код пишется только после согласования этого документа.
 
@@ -243,25 +344,31 @@ holix link revoke <id>
 - [ ] Утвердить: только файлы в MVP или нужен read-only
 - [ ] Утвердить: отдельный PyPI-пакет `Holix-Link` vs extra `Holix[link]`
 - [ ] Утвердить модель хостинга relay (только self-hosted gateway / managed cloud)
+- [x] Поддержка клиента: **Windows + Linux + macOS** (обязательно в MVP)
 
-### Фаза 1 — MVP (оценка 3–4 недели)
+### Фаза 1 — MVP (оценка 4–5 недель с кроссплатформой)
 
 | PR | Содержание | Зависимости |
 |----|------------|-------------|
 | **PR-1** | Спецификация протокола + типы (`integrations/link/protocol.py`) | — |
-| **PR-2** | Gateway: `POST /v1/link/pair`, `WS /v1/link/connect`, хранение `links.db` | PR-1 |
-| **PR-3** | Клиент: `holix-link pair`, daemon, jail executor | PR-1, PR-2 |
-| **PR-4** | Agent tools `link_*` + профиль `linked-*` auto setup | PR-2 |
-| **PR-5** | CLI `holix link create|list|revoke`, doctor checks | PR-2 |
-| **PR-6** | Тесты: path escape, pairing TTL, offline, revoke | PR-3, PR-4 |
-| **PR-7** | Документация EN/RU + `holix docs build` | PR-5 |
+| **PR-2** | `integrations/link/paths.py` + jail (Unix + Windows path tests) | PR-1 |
+| **PR-3** | Gateway: `POST /v1/link/pair`, `WS /v1/link/connect`, `links.db` | PR-1 |
+| **PR-4** | Клиент: `holix-link pair`, daemon, jail executor (все ОС) | PR-2, PR-3 |
+| **PR-5** | `holix-link install-service` — systemd / LaunchAgent / Task Scheduler | PR-4 |
+| **PR-6** | Agent tools `link_*` + профиль `linked-*` auto setup | PR-3 |
+| **PR-7** | CLI `holix link create|list|revoke`, doctor checks | PR-3 |
+| **PR-8** | CI `link-client.yml` matrix (ubuntu, macos, windows) | PR-4, PR-5 |
+| **PR-9** | Установщики `install-link.sh` + `install-link.ps1` | PR-4 |
+| **PR-10** | Документация EN/RU (§ per OS) + `holix docs build` | PR-7, PR-9 |
 
-**Критерий готовности MVP:** пользователь за NAT подключает папку; оператор через Telegram-профиль на сервере читает файл из этой папки.
+**Критерий готовности MVP:** пользователь за NAT на **Windows, Linux или macOS** подключает папку; оператор через Telegram-профиль на сервере читает файл из этой папки; после перезагрузки клиента связь восстанавливается (`install-service`).
 
 ### Фаза 2 — Усиление (2 недели)
 
 - Read-only режим по умолчанию + toggle `holix link grant write`
-- OS keychain для credentials
+- OS keychain: **Keychain** (macOS), **Credential Manager** (Windows), **secretstorage** (Linux)
+- Нативный диалог выбора папки в `wizard`
+- Windows: полноценная Service + корпоративный `HTTPS_PROXY`
 - Ограничение MIME/расширений
 - Статус в `holix gateway status` / Prometheus метрики
 - Уведомление клиенту при каждой записи файла
@@ -275,7 +382,7 @@ holix link revoke <id>
 
 ---
 
-## 12. Альтернативы (кратко)
+## 13. Альтернативы (кратко)
 
 | Подход | Плюсы | Минусы |
 |--------|-------|--------|
@@ -288,7 +395,7 @@ holix link revoke <id>
 
 ---
 
-## 13. Открытые вопросы для согласования
+## 14. Открытые вопросы для согласования
 
 1. **Имя продукта:** Holix Link / Holix Remote / Holix Folder Bridge?
 2. **MVP write:** разрешать запись файлов сразу или только read-only?
@@ -299,9 +406,9 @@ holix link revoke <id>
 
 ---
 
-## 14. Следующий шаг после согласования
+## 15. Следующий шаг после согласования
 
-1. Зафиксировать ответы на §13 в этом файле (версия 1.0).
+1. Зафиксировать ответы на §14 в этом файле (версия 1.0).
 2. Создать issue/PR stack по таблице Фазы 1.
 3. Начать с **PR-1** (протокол + тесты контракта без сети).
 
