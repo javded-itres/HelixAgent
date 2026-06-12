@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 from typing import Any, Literal
-from uuid import UUID
+from uuid import uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -192,4 +192,4 @@ class LinkStatusResponse(BaseModel):
 
 
 def new_request_id() -> str:
-    return str(UUID.uuid4())
+    return str(uuid4())

@@ -52,7 +52,7 @@ def _register_base_commands() -> None:
     if _BASE_COMMANDS_REGISTERED:
         return
 
-    from cli.commands import config, doctor, gateway, models, profile
+    from cli.commands import config, doctor, gateway, link, models, profile
     from cli.commands.bootstrap import app as bootstrap_app
     from cli.commands.cron import app as cron_app
     from cli.commands.docs import app as docs_app
@@ -69,6 +69,7 @@ def _register_base_commands() -> None:
     app.add_typer(models.app, name="models")
     register_telegram_command(app)
     app.add_typer(gateway.app, name="gateway")
+    app.add_typer(link.app, name="link")
     app.add_typer(doctor.app, name="doctor")
     app.add_typer(mcp_app, name="mcp")
     app.add_typer(search_app, name="search")

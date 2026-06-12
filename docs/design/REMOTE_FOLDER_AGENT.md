@@ -473,7 +473,10 @@ strategy:
 | **PR-2** paths/jail | ✅ [Holix-Link](https://github.com/javded-itres/Holix-Link) |
 | **PR-3** gateway relay | ✅ `POST /v1/link/create\|pair`, `WS /v1/link/ws`, `links.db` |
 | **PR-4** клиент pair/daemon | ✅ [Holix-Link](https://github.com/javded-itres/Holix-Link) v0.1.1 |
-| PR-5 … PR-10 | очередь (Holix + Holix-Link) |
+| **PR-5** install-service | ✅ [Holix-Link](https://github.com/javded-itres/Holix-Link) v0.1.2 |
+| **PR-6** agent tools `link_*` | ✅ Holix |
+| **PR-7** `holix link create\|list\|revoke` | ✅ Holix |
+| PR-8 … PR-10 | очередь (CI docs, installers, EN/RU) |
 
 ---
 

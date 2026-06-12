@@ -241,6 +241,12 @@ class HolixAgent:
         await self.memory.initialize_db()
 
         self.tools.register_all()
+        from core.tools.link_fs import register_link_tools
+
+        profile_name = getattr(self.config, "profile_name", "default") or "default"
+        link_tool_count = register_link_tools(self.tools, profile_name)
+        if link_tool_count:
+            self.emit(ThinkingEvent(message=f"Registered {link_tool_count} Holix Link tools"))
         if getattr(self.config, "enable_subagents", False):
             from core.tools.subagents import register_subagent_tools
 
