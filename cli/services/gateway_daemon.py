@@ -194,6 +194,9 @@ def start_gateway_daemon(
         _print_log_tail(profile)
         raise SystemExit(1)
 
+    # Reload state: docs/Telegram PIDs are written after the initial save in gateway_worker.
+    state = load_state(profile) or state
+
     print_success(f"Gateway started in background (pid={state.pid})")
     print_info(f"Profile: {state.profile}")
     print_info(f"API: http://{state.host}:{state.port}")
@@ -202,7 +205,11 @@ def start_gateway_daemon(
 
     docs = docs_url(state)
     if docs:
-        print_info(f"Docs: {docs}")
+        docs_alive = state.docs_pid is not None and is_process_alive(state.docs_pid)
+        print_info(f"Docs: {docs}" + ("" if docs_alive else " (process stopped — check gateway.log)"))
+    elif with_docs:
+        print_warning("Documentation site was not started (see gateway.log)")
+        print_info("Try: holix docs  — or reinstall: uv tool install . --force")
     print_info(f"Logs: {state.log_file}")
     print_info("Stop: holix gateway stop")
 
