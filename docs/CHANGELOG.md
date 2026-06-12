@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+## 0.1.12 — 2026-06-12
+
+### Added
+- **Bootstrap web search** — optional search provider setup during `holix bootstrap` (`--skip-search`)
+- **Telegram admin broadcast** — `/message all` and `/message PROFILE` with draft confirmation
+- **Telegram inline access approval** — approve/reject buttons on admin notifications
+- **curl installer** — locale-aware first-run bootstrap wizard
+- **Yandex Webmaster** verification file `yandex_a50e5af9baf076d1.html` for holix-agent.ru
+
+### Fixed
+- **Gateway health check** — accept Hermes `{"status":"ok"}` on startup/reload (no false “not healthy”)
+- **Gateway docs companion** — reload state before printing docs URL after `--with-docs`
+- **Telegram profiles** — unlock approved users without interactive profile key; seed LLM settings from bot profile
+- **Telegram isolation** — non-admins no longer see profile list; switch hidden profiles via `/profile name key`
+- **Gateway SQLite paths** — API keys DB and profile memory DBs resolve under `HOLIX_HOME`
+- **LTM SQLite** — prepare `ltm.db` and colocate paths with `memory.db`
+- **Bootstrap on old CPUs** — pin `numpy<2.4` for Chromadb on x86 without AVX2
+- **web-docs chat widget** — align DOM ids with `helix-chat-*` selectors
+
+### Changed
+- **Version** — package `Holix` 0.1.12 on PyPI
+
 ## 0.1.11 — 2026-06-11
 
 ### Changed
