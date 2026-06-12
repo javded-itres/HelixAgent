@@ -288,7 +288,11 @@ class TelegramHost:
         self._session.profile_manual_override = True
         self._session.profile = new_profile
         self._session.conversation_id = f"tg_{new_profile}_{self._session.chat_id}"
-        self._session.agent = await create_agent(new_profile)
+        self._session.agent = await create_agent(
+            new_profile,
+            bot_profile=self._session.bot_profile,
+            telegram_user_id=self._session.user_id,
+        )
         self._session.active_model_slot = "main"
         self._session.active_model_label = "main"
         await self._create_new_session()

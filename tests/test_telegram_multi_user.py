@@ -87,7 +87,7 @@ async def test_sessions_isolated_per_chat(holix_home, monkeypatch: pytest.Monkey
 
     fake_agents: dict[str, object] = {}
 
-    async def _fake_create(profile: str):
+    async def _fake_create(profile: str, **_kwargs):
         agent = object()
         fake_agents[profile] = agent
         return agent
@@ -124,7 +124,7 @@ async def test_many_users_session_map_scales(holix_home, monkeypatch: pytest.Mon
 
     monkeypatch.setattr(
         "integrations.telegram.agent_setup.create_agent",
-        AsyncMock(side_effect=lambda profile: object()),
+        AsyncMock(side_effect=lambda profile, **_kwargs: object()),
     )
 
     for uid in range(1, user_count + 1):

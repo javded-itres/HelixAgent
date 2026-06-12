@@ -58,6 +58,7 @@ def _prepare_profile_for_user(
     target_profile: str,
     *,
     create_new: bool,
+    bot_profile: str | None = None,
 ) -> tuple[str | None, bool]:
     target_profile = validate_profile_name_for_env(target_profile)
     access_key: str | None = None
@@ -73,10 +74,26 @@ def _prepare_profile_for_user(
         else:
             manager.create_profile(target_profile, with_access_key=True)
             access_key = manager.pop_last_created_access_key()
+        if bot_profile:
+            from integrations.telegram.profile_seed import seed_telegram_user_profile_from_bot
+
+            seed_telegram_user_profile_from_bot(
+                manager,
+                bot_profile=bot_profile,
+                user_profile=target_profile,
+            )
         return access_key, key_already_set
 
     if not manager.profile_exists(target_profile):
         raise ValueError(f"Profile '{target_profile}' not found")
+    if bot_profile:
+        from integrations.telegram.profile_seed import seed_telegram_user_profile_from_bot
+
+        seed_telegram_user_profile_from_bot(
+            manager,
+            bot_profile=bot_profile,
+            user_profile=target_profile,
+        )
     return None, profile_has_access_key(target_profile)
 
 
@@ -125,6 +142,7 @@ def approve_access_request(
         manager,
         target_profile,
         create_new=bool(create_profile) and not set_admin,
+        bot_profile=bot_profile,
     )
 
     if set_admin:

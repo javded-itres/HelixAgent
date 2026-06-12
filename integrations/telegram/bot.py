@@ -125,7 +125,11 @@ class HolixTelegramBot:
 
         session.profile = profile
         session.conversation_id = f"tg_{profile}_{session.chat_id}"
-        session.agent = await create_agent(profile)
+        session.agent = await create_agent(
+            profile,
+            bot_profile=self.settings.profile,
+            telegram_user_id=session.user_id,
+        )
         session.pending_files.clear()
         session.pending_plan_review_id = None
         session.pending_confirmation_message_id = None
@@ -142,6 +146,7 @@ class HolixTelegramBot:
                 user_id=user_id,
                 profile=profile,
                 conversation_id=f"tg_{profile}_{chat_id}",
+                bot_profile=self.settings.profile,
             )
         session = self._sessions[chat_id]
         if not session.profile_manual_override:
@@ -304,6 +309,8 @@ class HolixTelegramBot:
                     file_name=item.file_name,
                     mime_type=item.mime_type,
                     file_size=item.file_size,
+                    bot_profile=session.bot_profile,
+                    telegram_user_id=session.user_id,
                 )
                 saved_files.append(saved)
             except Exception as exc:

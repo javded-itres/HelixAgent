@@ -156,7 +156,7 @@ async def test_save_telegram_attachment_downloads(
     monkeypatch.setattr(
         file_handler,
         "profile_files_dir",
-        lambda profile, chat_id: dest_root,
+        lambda profile, chat_id, **_kwargs: dest_root,
     )
 
     async def fake_download(bot, file_id, dest):

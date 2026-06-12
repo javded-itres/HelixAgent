@@ -19,6 +19,7 @@ class ChatSession:
     user_id: int
     profile: str
     conversation_id: str
+    bot_profile: str = "default"
     execution_modes: list[str] = field(
         default_factory=lambda: ["react", "plan_and_execute", "hybrid", "auto"]
     )
