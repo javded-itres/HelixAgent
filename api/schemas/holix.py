@@ -82,6 +82,7 @@ class ReloadResponse(BaseModel):
     status: str
     agent: str
     companions: dict[str, Any]
+    os_companions: dict[str, Any] = Field(default_factory=dict)
     reload_required: bool = False
 
 

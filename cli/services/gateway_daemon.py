@@ -317,7 +317,76 @@ def gateway_status(profile: str = "default") -> None:
     print_panel("\n".join(lines), title="Gateway Status", border_style="green")
 
 
+def _start_gateway_from_env(profile: str) -> None:
+    import os
+
+    from config import settings
+
+    def _env_bool(name: str) -> bool:
+        return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+    host = os.environ.get("HOLIX_GATEWAY_HOST", settings.gateway_host)
+    port = int(os.environ.get("HOLIX_GATEWAY_PORT", str(settings.gateway_port)))
+    with_docs = _env_bool("HOLIX_GATEWAY_WITH_DOCS") or _env_bool("HOLIX_GATEWAY_DOCS")
+    docs_host = os.environ.get("HOLIX_DOCS_HOST", settings.docs_host)
+    docs_port = int(os.environ.get("HOLIX_DOCS_PORT", str(settings.docs_port)))
+    start_gateway_daemon(
+        host,
+        port,
+        profile=profile,
+        with_docs=with_docs,
+        docs_host=docs_host,
+        docs_port=docs_port,
+    )
+
+
 def reload_gateway_daemon(profile: str = "default") -> None:
+    """Reload profile configuration without restarting the gateway process."""
+    from core.env_loader import bootstrap_profile_env
+
+    from cli.services.gateway_client import GatewayClientError, post_profile_reload
+
+    bootstrap_profile_env(profile, force=True)
+    state = _running_state(profile)
+    if state is None:
+        print_warning(f"Gateway is not running for profile '{profile}'. Starting…")
+        _start_gateway_from_env(profile)
+        return
+
+    print_info(
+        f"Reloading configuration for profile '{profile}' "
+        "(agent, cron, Telegram, docs)…"
+    )
+    try:
+        body = post_profile_reload(state, profile)
+    except GatewayClientError as exc:
+        print_error(str(exc))
+        print_info(
+            f"For a full process restart use: holix -p {profile} gateway restart"
+        )
+        raise SystemExit(1) from exc
+
+    state = load_state(profile) or state
+    print_success(f"Configuration reloaded for profile '{profile}'")
+    print_info(f"Agent: {body.get('agent', 'reloaded')}")
+    companions = body.get("companions") or {}
+    if companions:
+        cron = "running" if companions.get("cron_running") else "stopped"
+        telegram = "running" if companions.get("telegram_running") else "stopped"
+        print_info(f"Companions: cron={cron}, telegram={telegram}")
+    os_companions = body.get("os_companions") or {}
+    if os_companions.get("docs") == "restarted":
+        print_info("Docs companion restarted with updated configuration")
+    from cli.services.gateway_state import docs_url
+
+    docs = docs_url(state)
+    if docs:
+        print_info(f"Docs: {docs}")
+    print_info(f"API: http://{state.host}:{state.port}")
+
+
+def restart_gateway_daemon(profile: str = "default") -> None:
+    """Stop and start the gateway process and all companions."""
     import os
 
     from core.env_loader import bootstrap_profile_env
@@ -325,25 +394,11 @@ def reload_gateway_daemon(profile: str = "default") -> None:
     def _env_bool(name: str) -> bool:
         return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
-    bootstrap_profile_env(profile)
+    bootstrap_profile_env(profile, force=True)
     state = _running_state(profile)
     if state is None:
         print_warning(f"Gateway is not running for profile '{profile}'. Starting…")
-        from config import settings
-
-        host = os.environ.get("HOLIX_GATEWAY_HOST", settings.gateway_host)
-        port = int(os.environ.get("HOLIX_GATEWAY_PORT", str(settings.gateway_port)))
-        with_docs = _env_bool("HOLIX_GATEWAY_WITH_DOCS") or _env_bool("HOLIX_GATEWAY_DOCS")
-        docs_host = os.environ.get("HOLIX_DOCS_HOST", settings.docs_host)
-        docs_port = int(os.environ.get("HOLIX_DOCS_PORT", str(settings.docs_port)))
-        start_gateway_daemon(
-            host,
-            port,
-            profile=profile,
-            with_docs=with_docs,
-            docs_host=docs_host,
-            docs_port=docs_port,
-        )
+        _start_gateway_from_env(profile)
         return
 
     host, port, profile, reload = state.host, state.port, state.profile, state.reload
@@ -352,7 +407,7 @@ def reload_gateway_daemon(profile: str = "default") -> None:
     )
     docs_host = state.docs_host or os.environ.get("HOLIX_DOCS_HOST", "127.0.0.1")
     docs_port = state.docs_port or int(os.environ.get("HOLIX_DOCS_PORT", "8080"))
-    print_info(f"Reloading gateway for profile '{profile}' (stop → start)…")
+    print_info(f"Restarting gateway for profile '{profile}' (stop → start)…")
     stop_gateway_daemon(profile)
     start_gateway_daemon(
         host,

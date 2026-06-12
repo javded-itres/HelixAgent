@@ -9,6 +9,7 @@ import typer
 from cli.services.gateway_daemon import (
     gateway_status,
     reload_gateway_daemon,
+    restart_gateway_daemon,
     start_gateway_daemon,
     stop_gateway_daemon,
 )
@@ -112,8 +113,14 @@ def gateway_status_cmd(ctx: typer.Context) -> None:
 
 @app.command("reload")
 def gateway_reload(ctx: typer.Context) -> None:
-    """Restart gateway with the same host, port, and profile."""
+    """Reload profile configuration (agent, companions, docs) without stopping gateway."""
     reload_gateway_daemon(_profile(ctx))
+
+
+@app.command("restart")
+def gateway_restart(ctx: typer.Context) -> None:
+    """Fully restart gateway and all companion processes (stop → start)."""
+    restart_gateway_daemon(_profile(ctx))
 
 
 @app.command("show")

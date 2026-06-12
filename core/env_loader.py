@@ -289,7 +289,8 @@ def format_env_context_block(*, profile_name: str | None = None) -> str:
             "To change API keys, gateway bind, Telegram, or feature flags, edit the "
             f"profile env file `{prof_env}` and/or profile YAML — not application source. "
             "Web search: `search:` block in profile YAML or `holix search configure`. "
-            "After env changes with gateway/Telegram running: `holix gateway reload`.",
+            "After env changes with gateway/Telegram running: `holix gateway reload` "
+            "(config only) or `holix gateway restart` (full process restart).",
         ]
     )
     return "\n".join(lines)

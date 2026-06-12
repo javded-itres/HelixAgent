@@ -92,10 +92,19 @@ def test_profiles_list_and_create(holix_home: Path, holix_client: TestClient, ga
     assert detail.json()["protected"] is True
 
 
-def test_profile_reload(holix_home: Path, holix_client: TestClient, gateway_auth_headers: dict) -> None:
+def test_profile_reload(
+    holix_home: Path,
+    holix_client: TestClient,
+    gateway_auth_headers: dict,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     from cli.core import ProfileManager
 
     ProfileManager().create_profile("reload-me")
+    monkeypatch.setattr(
+        "cli.services.gateway_companions.reload_os_companions",
+        lambda _profile: {"docs": "not_configured", "telegram_subprocess": "in_process"},
+    )
 
     response = holix_client.post(
         "/api/holix/profiles/reload-me/reload",
@@ -105,6 +114,7 @@ def test_profile_reload(holix_home: Path, holix_client: TestClient, gateway_auth
     body = response.json()
     assert body["status"] == "reloaded"
     assert body["profile"] == "reload-me"
+    assert body["os_companions"]["telegram_subprocess"] == "in_process"
 
 
 def test_profile_key_init(holix_home: Path, holix_client: TestClient, gateway_auth_headers: dict) -> None:

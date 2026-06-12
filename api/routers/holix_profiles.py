@@ -161,16 +161,25 @@ async def reload_profile(
     if not manager.profile_exists(profile_id):
         raise HTTPException(status_code=404, detail="Profile not found")
 
+    from core.env_loader import bootstrap_profile_env
+
+    bootstrap_profile_env(profile_id, force=True)
+
     await state.companions.stop_cron(profile_id)
     await state.companions.stop_telegram(profile_id)
     agent_result = await state.registry.reload(profile_id)
     companion_result = await state.companions.reload(profile_id)
+
+    from cli.services.gateway_companions import reload_os_companions
+
+    os_companion_result = reload_os_companions(profile_id)
 
     return ReloadResponse(
         profile=profile_id,
         status="reloaded",
         agent=agent_result.get("status", "reloaded"),
         companions=companion_result,
+        os_companions=os_companion_result,
         reload_required=False,
     )
 
