@@ -158,8 +158,9 @@ async def test_api_key_manager_opens_resolved_db(tmp_path, monkeypatch) -> None:
     repo.mkdir(parents=True)
     monkeypatch.chdir(repo)
 
-    from config import settings
     from core.security.auth import APIKeyManager
+
+    from config import settings
 
     updated = settings.model_copy(update={"api_key_pepper": "test-pepper"})
     monkeypatch.setattr("config.settings", updated)
