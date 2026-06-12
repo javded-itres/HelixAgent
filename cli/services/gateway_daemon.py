@@ -79,7 +79,11 @@ def _is_holix_health(state: GatewayState) -> bool:
         if resp.status_code != 200:
             return False
         data = resp.json()
-        return data.get("status") == "healthy" or "agent_ready" in data
+        status = data.get("status")
+        # /health returns {"status":"ok"} (Hermes); /health?detailed=true adds agent_ready.
+        if status in {"healthy", "ok"}:
+            return True
+        return "agent_ready" in data
     except Exception:
         return False
 

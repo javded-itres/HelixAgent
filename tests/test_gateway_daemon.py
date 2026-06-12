@@ -138,3 +138,44 @@ def test_health_url_normalizes_wildcard() -> None:
         log_file="/tmp/log",
     )
     assert gs.health_url(state) == "http://127.0.0.1:8000/health"
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ({"status": "ok"}, True),
+        ({"status": "healthy"}, True),
+        ({"status": "ok", "agent_ready": False}, True),
+        ({"status": "degraded"}, False),
+        ({}, False),
+    ],
+)
+def test_is_holix_health_accepts_gateway_status(
+    payload: dict,
+    expected: bool,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from cli.services.gateway_daemon import _is_holix_health
+
+    state = gs.GatewayState(
+        pid=1,
+        host="127.0.0.1",
+        port=8000,
+        profile="default",
+        reload=False,
+        started_at="now",
+        log_file="/tmp/log",
+    )
+
+    class _Resp:
+        status_code = 200
+
+        @staticmethod
+        def json() -> dict:
+            return payload
+
+    monkeypatch.setattr(
+        "cli.services.gateway_daemon.httpx.get",
+        lambda *_args, **_kwargs: _Resp(),
+    )
+    assert _is_holix_health(state) is expected
