@@ -9,8 +9,9 @@ from cli.utils.ports import wait_for_port_available
 
 def reload_os_companions(profile: str) -> dict[str, Any]:
     """Restart docs/Telegram subprocess companions without stopping gateway."""
-    from cli.services.gateway_state import load_state
     from core.platform_compat import is_process_alive, terminate_process
+
+    from cli.services.gateway_state import load_state
 
     state = load_state(profile)
     if state is None:
