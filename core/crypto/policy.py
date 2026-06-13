@@ -58,10 +58,14 @@ def resolve_encryption_mode() -> EncryptionMode:
     return parse_encryption_mode(raw or EncryptionMode.LINUX_PRODUCTION.value)
 
 
+def is_linux_encryption_host() -> bool:
+    """Linux server/desktop host (encryption is not used on macOS/Windows)."""
+    return IS_LINUX or sys.platform.startswith("linux")
+
+
 def is_linux_production_host() -> bool:
-    if not IS_LINUX and not sys.platform.startswith("linux"):
-        return False
-    return os.getenv("HOLIX_ENV", "development").strip().lower() == "production"
+    """Backward-compatible alias for :func:`is_linux_encryption_host`."""
+    return is_linux_encryption_host()
 
 
 def is_encryption_runtime_active() -> bool:
@@ -71,7 +75,7 @@ def is_encryption_runtime_active() -> bool:
         return False
     if mode is EncryptionMode.ON:
         return True
-    return is_linux_production_host()
+    return is_linux_encryption_host()
 
 
 def profile_has_crypto_metadata(profile: str) -> bool:
@@ -89,7 +93,7 @@ def encryption_policy_label() -> str:
     mode = resolve_encryption_mode()
     active = is_encryption_runtime_active()
     state = "active" if active else "inactive"
-    host = "linux+production" if is_linux_production_host() else "other"
+    host = "linux" if is_linux_encryption_host() else "other"
     return f"{mode.value} ({state}, host={host})"
 
 
@@ -100,12 +104,11 @@ def require_encryption_enable_allowed() -> None:
         raise ProfileCryptoError(
             "Profile encryption is disabled (HOLIX_ENCRYPTION_MODE=off)."
         )
-    if mode is EncryptionMode.LINUX_PRODUCTION and not is_linux_production_host():
+    if mode is EncryptionMode.LINUX_PRODUCTION and not is_linux_encryption_host():
         raise ProfileCryptoError(
-            "Profile encryption is limited to Linux production hosts "
+            "Profile encryption is limited to Linux hosts "
             "(HOLIX_ENCRYPTION_MODE=linux-production). "
-            f"Current: platform={sys.platform}, "
-            f"HOLIX_ENV={os.getenv('HOLIX_ENV', 'development')!r}. "
+            f"Current platform: {sys.platform}. "
             "Use HOLIX_ENCRYPTION_MODE=on to force enable on this machine."
         )
 
@@ -115,7 +118,7 @@ def encryption_policy_status() -> dict[str, object]:
     return {
         "mode": mode.value,
         "runtime_active": is_encryption_runtime_active(),
-        "linux_production_host": is_linux_production_host(),
+        "linux_host": is_linux_encryption_host(),
         "platform": sys.platform,
         "holix_env": os.getenv("HOLIX_ENV", "development"),
     }

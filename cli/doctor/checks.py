@@ -73,8 +73,8 @@ def _check_encryption_policy(profile: str, manager: ProfileManager) -> list[Doct
                         f"Profiles with crypto.json: {sample}"
                     ),
                     recommendation=(
-                        "On Linux production set HOLIX_ENV=production and "
-                        "HOLIX_ENCRYPTION_MODE=linux-production, or use mode=on for local decrypt."
+                        "Run on Linux with HOLIX_ENCRYPTION_MODE=linux-production, "
+                        "or use mode=on for local decrypt on macOS/Windows."
                     ),
                 )
             )

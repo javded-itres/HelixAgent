@@ -44,9 +44,9 @@ def test_runtime_inactive_on_mac_dev(holix_home, monkeypatch) -> None:
     assert is_profile_encryption_enabled("alice") is False
 
 
-def test_runtime_active_on_linux_production(holix_home, monkeypatch) -> None:
+def test_runtime_active_on_linux(holix_home, monkeypatch) -> None:
     monkeypatch.setenv("HOLIX_ENCRYPTION_MODE", "linux-production")
-    monkeypatch.setenv("HOLIX_ENV", "production")
+    monkeypatch.setenv("HOLIX_ENV", "development")
     monkeypatch.setattr("core.crypto.policy.IS_LINUX", True)
     monkeypatch.setattr("core.crypto.policy.sys.platform", "linux")
     manager = ProfileManager()
@@ -95,13 +95,13 @@ def test_enable_blocked_non_linux_production(holix_home, monkeypatch) -> None:
     manager = ProfileManager()
     manager.create_profile("frank", inherit_global=False)
 
-    with pytest.raises(ProfileCryptoError, match="Linux production"):
+    with pytest.raises(ProfileCryptoError, match="Linux hosts"):
         require_encryption_enable_allowed()
 
 
-def test_enable_allowed_linux_production(holix_home, monkeypatch) -> None:
+def test_enable_allowed_on_linux(holix_home, monkeypatch) -> None:
     monkeypatch.setenv("HOLIX_ENCRYPTION_MODE", "linux-production")
-    monkeypatch.setenv("HOLIX_ENV", "production")
+    monkeypatch.setenv("HOLIX_ENV", "development")
     monkeypatch.setattr("core.crypto.policy.IS_LINUX", True)
     monkeypatch.setattr("core.crypto.policy.sys.platform", "linux")
     manager = ProfileManager()
