@@ -489,7 +489,7 @@ def crypto_enable(
             raise typer.Exit(1)
 
     try:
-        workspace = enable_profile_encryption(
+        result = enable_profile_encryption(
             manager,
             profile,
             key,
@@ -500,9 +500,102 @@ def crypto_enable(
         raise typer.Exit(1) from exc
 
     print_success(f"Encryption enabled for profile '{profile}'")
-    print_info(f"Workspace: {workspace}")
+    print_info(f"Workspace: {result.workspace}")
+    if result.files_encrypted:
+        print_info(f"Encrypted {result.files_encrypted} existing file(s)")
     print_warning("Save your unlock key — data cannot be recovered without it")
     print_info(f"Unlock session: holix -p {profile} --unlock-key <key> chat")
+
+
+@crypto_app.command("migrate")
+def crypto_migrate(
+    ctx: typer.Context,
+    all_profiles: bool = typer.Option(
+        False,
+        "--all",
+        help="Migrate every profile that is not encrypted yet",
+    ),
+    unlock_key: str | None = typer.Option(
+        None,
+        "--unlock-key",
+        help="User encryption key (same key wraps each profile DEK)",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="List profiles that would be migrated without changing anything",
+    ),
+    skip_existing: bool = typer.Option(
+        False,
+        "--skip-existing",
+        help="Enable encryption but do not encrypt files already in workspace",
+    ),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
+) -> None:
+    """Enable encryption for existing unencrypted profiles (bulk migration)."""
+    from core.crypto.bootstrap import list_unencrypted_profiles, migrate_profiles_encryption
+    from core.crypto.profile_crypto import is_profile_encryption_enabled
+
+    manager = get_profile_manager()
+    active = _profile(ctx)
+
+    if all_profiles:
+        targets = list_unencrypted_profiles(manager)
+    else:
+        if is_profile_encryption_enabled(active):
+            print_info(f"Profile '{active}' is already encrypted")
+            raise typer.Exit(0)
+        targets = [active]
+
+    if not targets:
+        print_info("All profiles are already encrypted")
+        raise typer.Exit(0)
+
+    print_info(f"Profiles to migrate ({len(targets)}): {', '.join(targets)}")
+    if dry_run:
+        raise typer.Exit(0)
+
+    if not yes:
+        confirmed = typer.confirm("Enable encryption for these profiles?", default=False)
+        if not confirmed:
+            print_info("Migration cancelled")
+            raise typer.Exit(0)
+
+    key = (unlock_key or "").strip()
+    if not key:
+        key = typer.prompt("Encryption unlock key", hide_input=True)
+        confirm = typer.prompt("Confirm unlock key", hide_input=True)
+        if key != confirm:
+            print_error("Unlock keys do not match")
+            raise typer.Exit(1)
+
+    summary = migrate_profiles_encryption(
+        manager,
+        key,
+        profiles=targets,
+        encrypt_existing=not skip_existing,
+    )
+
+    for result in summary.migrated:
+        files_note = (
+            f", {result.files_encrypted} file(s) encrypted"
+            if result.files_encrypted
+            else ""
+        )
+        print_success(f"Migrated '{result.profile}' ({result.workspace}{files_note})")
+
+    for name in summary.skipped:
+        print_info(f"Skipped '{name}' (already encrypted)")
+
+    for name, error in summary.failed:
+        print_error(f"Failed '{name}': {error}")
+
+    if summary.failed:
+        raise typer.Exit(1)
+
+    print_warning("Save your unlock key — data cannot be recovered without it")
+    if len(summary.migrated) > 1:
+        print_info("Use the same unlock key for all migrated profiles")
 
 
 @crypto_app.command("status")
