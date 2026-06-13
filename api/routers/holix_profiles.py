@@ -191,6 +191,14 @@ async def reload_profile(
 
     os_companion_result = reload_os_companions(profile_id)
 
+    companion_result = dict(companion_result)
+    import api.state as api_state
+
+    if profile_id == api_state.host_profile:
+        from integrations.max.gateway_routes import reload_max_webhook
+
+        companion_result.update(await reload_max_webhook(profile_id))
+
     return ReloadResponse(
         profile=profile_id,
         status="reloaded",

@@ -23,6 +23,7 @@ from api.services.max_ops import (
     sync_max_menu,
 )
 from api.services.profile_access import require_admin_access
+import api.state
 
 router = APIRouter(prefix="/api/holix/profiles/{profile_id}/max", tags=["holix-max"])
 
@@ -59,13 +60,20 @@ async def max_setup(
     profile_access(profile_id, key_info, x_holix_profile, x_holix_profile_key)
     _require_profile(profile_id)
     try:
-        return await setup_max(
+        result = await setup_max(
             profile_id,
             body.access_token,
             also_project_env=body.also_project_env,
         )
     except MaxOpError as exc:
         raise _map_op_error(exc) from exc
+
+    if profile_id == api.state.host_profile:
+        from integrations.max.gateway_routes import reload_max_webhook
+
+        result["companions"] = await reload_max_webhook(profile_id)
+        result["reload_required"] = False
+    return result
 
 
 @router.get("/requests")

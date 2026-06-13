@@ -80,14 +80,40 @@ Gateway registers the webhook with MAX (`POST /subscriptions`) and serves `POST 
 
 Token is sent in the `Authorization` header — query-string tokens are **not** supported by MAX API.
 
+## Multi-user access
+
+One MAX bot can serve multiple Holix profiles. Credentials are stored per profile at `profiles/{profile}/max.env` (encrypted when profile crypto is enabled).
+
+| Flow | Description |
+|------|-------------|
+| **Access requests** | New users send `/start`; admin approves via `helix max requests` |
+| **User map** | Bind `user_id → holix_profile` with `helix max map` |
+| **Admin** | One MAX admin (`helix max admin`, or `--set-admin` on approve) gets `/message`, `/init`, MCP install |
+| **Profile auth** | Approved users unlock their profile with an access key |
+
+```bash
+helix max requests list
+helix max requests approve 12345 --create-profile alice
+helix max map set 12345 alice
+helix max admin show
+```
+
+Gateway management API mirrors Telegram: `GET /api/holix/profiles/{id}/max/status`, `…/requests`, `…/map`, `…/admin`.
+
+After env or map changes with gateway running: `holix gateway reload` (re-subscribes MAX webhook on the host profile).
+
 ## CLI commands
 
 | Command | Description |
 |---------|-------------|
-| `helix max setup` | Wizard: token, allowlist, mode, save to `~/.helix/max.env` |
+| `helix max setup` | Wizard: token, allowlist, mode, save to `profiles/{p}/max.env` |
 | `helix max` | Start bot (Long Polling — dev/test only) |
-| `helix max status` | `GET /me`, webhook subscriptions |
+| `helix max status` | Token, admin, user map, pending requests, subscriptions |
+| `helix max map` | List/set/remove user → profile bindings |
+| `helix max requests` | List/approve/reject access requests |
+| `helix max admin` | Show/clear MAX administrator |
 | `helix gateway start` | Start gateway + MAX webhook companion |
+| `helix gateway status` | Gateway health + MAX env/admin/map summary |
 
 See [CLI.md](CLI.md#helix-max).
 
@@ -154,7 +180,8 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) and [SECURITY.md](SECURITY.md).
 | `401` from MAX API | Check `MAX_ACCESS_TOKEN`; re-run `helix max setup` |
 | No webhook events | Verify HTTPS URL, `POST /subscriptions`, gateway logs |
 | Polling stops after webhook | Only one mode active — remove webhook subscription first |
-| User ignored | Add their `user_id` to `HELIX_MAX_ALLOWED_USERS` |
+| User ignored | Approve via `helix max requests approve`, or add `user_id` to allowlist |
+| Agent cannot send files | Ensure `uv sync --extra max`; agent uses `send_chat_files` in MAX chat |
 | `429` errors | Reduce send rate; Helix client enforces ≤30 rps |
 
 Run `helix doctor` to validate token, webhook, and allowlist.

@@ -194,26 +194,61 @@ async def _fetch_subscription_lines(token: str) -> list[str]:
     return out
 
 
-def show_max_status(profile: str = "default") -> None:
+def max_status_lines(profile: str = "default", *, include_subscriptions: bool = True) -> list[str]:
+    """Compact MAX status lines for CLI panels (gateway status, helix max status)."""
     load_max_env_files(profile)
+    from integrations.max.access_requests import list_pending_requests
+    from integrations.max.admin import load_admin_holix_profile, load_admin_user_id
     from integrations.max.config import load_max_settings
     from integrations.max.env_store import max_env_path
+    from integrations.max.user_profiles import load_user_profiles, max_users_path
 
     settings = load_max_settings(profile)
-    path = max_env_path(profile) if max_env_path(profile).is_file() else None
-    console.print()
     if not settings.access_token.strip():
-        print_warning("MAX не настроен. Запустите: helix max setup")
-        return
+        return ["[yellow]MAX not configured[/yellow] — run: helix max setup"]
+
+    path = max_env_path(profile) if max_env_path(profile).is_file() else None
+    admin_id = load_admin_user_id(profile)
+    admin_line = (
+        f"{admin_id} → {load_admin_holix_profile(profile)}"
+        if admin_id is not None
+        else "(not assigned — approve with --set-admin)"
+    )
+    mapping = load_user_profiles(profile)
+    map_lines = (
+        ", ".join(f"{uid}→{name}" for uid, name in sorted(mapping.items()))
+        if mapping
+        else "(none)"
+    )
+    pending = list_pending_requests(profile)
+    pending_line = str(len(pending)) if pending else "0"
 
     lines = [
-        f"[cyan]Токен:[/cyan] {mask_token(settings.access_token)}",
-        f"[cyan]Allowlist:[/cyan] {settings.allowed_user_ids or '(пусто — не рекомендуется)'}",
-        f"[cyan]Профиль:[/cyan] {settings.profile}",
-        f"[cyan]Режим:[/cyan] {settings.mode}",
-        f"[cyan]Poll timeout:[/cyan] {settings.poll_timeout_s}s",
-        f"[cyan]Webhook URL:[/cyan] {settings.webhook_url or '(не задан)'}",
-        f"[cyan]Конфиг:[/cyan] {path or 'только env'}",
+        f"[cyan]Token:[/cyan] {mask_token(settings.access_token)}",
+        f"[cyan]Access requests:[/cyan] {'on' if settings.access_requests else 'off'}",
+        f"[cyan]Pending approvals:[/cyan] {pending_line}",
+        f"[cyan]Allowlist:[/cyan] {settings.allowed_user_ids or '(empty — approve via requests)'}",
+        f"[cyan]MAX admin:[/cyan] {admin_line}",
+        f"[cyan]Bot profile:[/cyan] {settings.profile}",
+        f"[cyan]User→profile map:[/cyan] {map_lines}",
+        f"[cyan]Config:[/cyan] {path or 'env only'}",
+        f"[cyan]Map file:[/cyan] {max_users_path(profile)}",
+        f"[cyan]Mode:[/cyan] {settings.mode}",
+        f"[cyan]Webhook URL:[/cyan] {settings.webhook_url or '(not set)'}",
     ]
-    lines.extend(asyncio.run(_fetch_subscription_lines(settings.access_token)))
+    if include_subscriptions:
+        lines.extend(asyncio.run(_fetch_subscription_lines(settings.access_token)))
+    return lines
+
+
+def show_max_status(profile: str = "default") -> None:
+    console.print()
+    lines = max_status_lines(profile)
+    if lines and "not configured" in lines[0]:
+        print_warning("MAX не настроен. Запустите: helix max setup")
+        return
     console.print(Panel("\n".join(lines), title="MAX", border_style="cyan"))
+    from integrations.max.access_requests import list_pending_requests
+
+    if list_pending_requests(profile):
+        print_info(f"Approve: helix -p {profile} max requests list")

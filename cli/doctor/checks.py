@@ -829,9 +829,11 @@ def _check_max(profile: str) -> list[DoctorFinding]:
         from integrations.max.env_store import token_looks_valid
         from integrations.max.config import load_max_settings, max_files_extra_available
 
-        load_max_env_files()
+        load_max_env_files(profile)
     except Exception:
         return out
+
+    from integrations.max.env_store import max_env_path
 
     settings = load_max_settings(profile)
     token = settings.access_token.strip()
@@ -841,7 +843,7 @@ def _check_max(profile: str) -> list[DoctorFinding]:
                 code="max.not_configured",
                 severity=Severity.INFO.value,
                 title="MAX not configured",
-                detail=f"No access token in environment or {HELIX_HOME / 'max.env'}",
+                detail=f"No access token in environment or {max_env_path(profile)}",
                 recommendation="Run: helix max setup",
             )
         )
@@ -860,18 +862,33 @@ def _check_max(profile: str) -> list[DoctorFinding]:
 
     allowed = settings.allowed_user_ids.strip()
     if not allowed and not settings.allow_all:
-        out.append(
-            DoctorFinding(
-                code="max.no_allowlist",
-                severity=Severity.ERROR.value,
-                title="MAX allowlist empty",
-                detail="Bot will deny all users until HELIX_MAX_ALLOWED_USERS is set",
-                recommendation=(
-                    "Set HELIX_MAX_ALLOWED_USERS to your numeric user id(s), "
-                    "or HELIX_MAX_ALLOW_ALL=true for local development only"
-                ),
+        if settings.access_requests:
+            out.append(
+                DoctorFinding(
+                    code="max.access_requests",
+                    severity=Severity.INFO.value,
+                    title="MAX access-request mode",
+                    detail=(
+                        "Allowlist is empty; new users must send /start and be approved "
+                        "via `helix max requests`"
+                    ),
+                    recommendation="helix max requests list",
+                )
             )
-        )
+        else:
+            out.append(
+                DoctorFinding(
+                    code="max.no_allowlist",
+                    severity=Severity.ERROR.value,
+                    title="MAX allowlist empty",
+                    detail="Bot will deny all users until HELIX_MAX_ALLOWED_USERS is set",
+                    recommendation=(
+                        "Enable HOLIX_MAX_ACCESS_REQUESTS=true (default), "
+                        "set HELIX_MAX_ALLOWED_USERS, "
+                        "or HELIX_MAX_ALLOW_ALL=true for local development only"
+                    ),
+                )
+            )
     elif settings.allow_all:
         out.append(
             DoctorFinding(

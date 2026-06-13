@@ -116,6 +116,17 @@ async def shutdown_max_webhook() -> None:
     _state = None
 
 
+async def reload_max_webhook(profile: str | None = None) -> dict[str, Any]:
+    """Re-read MAX env and re-register webhook subscription (gateway host profile)."""
+    await shutdown_max_webhook()
+    state = await init_max_webhook(profile)
+    return {
+        "max_configured": state is not None,
+        "max_webhook": bool(state and state.subscribed),
+        "max_mode": state.settings.mode if state else None,
+    }
+
+
 def register_max_routes(app: FastAPI) -> None:
     @app.post(WEBHOOK_PATH)
     async def max_webhook(request: Request) -> dict[str, bool]:

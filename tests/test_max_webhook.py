@@ -15,6 +15,7 @@ from integrations.max.gateway_routes import (
     MaxGatewayState,
     init_max_webhook,
     register_max_routes,
+    reload_max_webhook,
     shutdown_max_webhook,
 )
 from integrations.max.webhook import MaxWebhookHandler
@@ -150,6 +151,41 @@ async def test_init_max_webhook_registers_subscription(monkeypatch: pytest.Monke
     assert state is not None
     assert state.subscribed is True
     register.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_reload_max_webhook_reregisters(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("integrations.max.gateway_routes.load_max_env_files", lambda: None)
+
+    settings = _webhook_settings()
+    with patch(
+        "integrations.max.gateway_routes.load_max_settings",
+        return_value=settings,
+    ):
+        with patch(
+            "integrations.max.gateway_routes.register_webhook",
+            new_callable=AsyncMock,
+            return_value=True,
+        ):
+            with patch(
+                "integrations.max.gateway_routes.unregister_webhook",
+                new_callable=AsyncMock,
+            ):
+                with patch(
+                    "integrations.max.gateway_routes.MaxClient",
+                ) as client_cls:
+                    client = AsyncMock()
+                    client_cls.return_value = client
+                    with patch(
+                        "integrations.max.bot.create_agent",
+                        new_callable=AsyncMock,
+                        return_value=MagicMock(model="m"),
+                    ):
+                        result = await reload_max_webhook("default")
+                        await shutdown_max_webhook()
+
+    assert result["max_webhook"] is True
+    assert result["max_configured"] is True
 
 
 @pytest.mark.asyncio

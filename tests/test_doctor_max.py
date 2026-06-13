@@ -8,7 +8,10 @@ from cli.doctor.checks import _check_max
 
 
 def _block_max_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("integrations.max.env_store.load_max_env_files", lambda: None)
+    monkeypatch.setattr(
+        "integrations.max.env_store.load_max_env_files",
+        lambda *args, **kwargs: None,
+    )
 
 
 def test_max_not_configured(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -28,11 +31,30 @@ def test_max_invalid_token(monkeypatch: pytest.MonkeyPatch) -> None:
     assert any(f.code == "max.invalid_token" for f in findings)
 
 
+def _clear_max_allowlist(monkeypatch: pytest.MonkeyPatch) -> None:
+    for key in (
+        "HOLIX_MAX_ALLOWED_USERS",
+        "HELIX_MAX_ALLOWED_USERS",
+        "HOLIX_MAX_ALLOW_ALL",
+        "HELIX_MAX_ALLOW_ALL",
+    ):
+        monkeypatch.delenv(key, raising=False)
+
+
+def test_max_access_requests_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    _block_max_env(monkeypatch)
+    monkeypatch.setenv("MAX_ACCESS_TOKEN", "x" * 20)
+    _clear_max_allowlist(monkeypatch)
+
+    findings = _check_max("default")
+    assert any(f.code == "max.access_requests" for f in findings)
+
+
 def test_max_no_allowlist(monkeypatch: pytest.MonkeyPatch) -> None:
     _block_max_env(monkeypatch)
     monkeypatch.setenv("MAX_ACCESS_TOKEN", "x" * 20)
-    monkeypatch.delenv("HELIX_MAX_ALLOWED_USERS", raising=False)
-    monkeypatch.delenv("HELIX_MAX_ALLOW_ALL", raising=False)
+    monkeypatch.setenv("HOLIX_MAX_ACCESS_REQUESTS", "false")
+    _clear_max_allowlist(monkeypatch)
 
     findings = _check_max("default")
     assert any(f.code == "max.no_allowlist" for f in findings)
@@ -41,8 +63,9 @@ def test_max_no_allowlist(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_max_webhook_requires_url(monkeypatch: pytest.MonkeyPatch) -> None:
     _block_max_env(monkeypatch)
     monkeypatch.setenv("MAX_ACCESS_TOKEN", "x" * 20)
-    monkeypatch.setenv("HELIX_MAX_ALLOWED_USERS", "42")
-    monkeypatch.setenv("HELIX_MAX_MODE", "webhook")
+    monkeypatch.setenv("HOLIX_MAX_ALLOWED_USERS", "42")
+    monkeypatch.setenv("HOLIX_MAX_MODE", "webhook")
+    monkeypatch.delenv("HOLIX_MAX_WEBHOOK_URL", raising=False)
     monkeypatch.delenv("HELIX_MAX_WEBHOOK_URL", raising=False)
 
     findings = _check_max("default")
@@ -52,8 +75,9 @@ def test_max_webhook_requires_url(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_max_webhook_https_warning(monkeypatch: pytest.MonkeyPatch) -> None:
     _block_max_env(monkeypatch)
     monkeypatch.setenv("MAX_ACCESS_TOKEN", "x" * 20)
-    monkeypatch.setenv("HELIX_MAX_ALLOWED_USERS", "42")
-    monkeypatch.setenv("HELIX_MAX_MODE", "webhook")
+    monkeypatch.setenv("HOLIX_MAX_ALLOWED_USERS", "42")
+    monkeypatch.setenv("HOLIX_MAX_MODE", "webhook")
+    monkeypatch.setenv("HOLIX_MAX_WEBHOOK_URL", "http://example.com/max/webhook")
     monkeypatch.setenv("HELIX_MAX_WEBHOOK_URL", "http://example.com/max/webhook")
 
     findings = _check_max("default")
