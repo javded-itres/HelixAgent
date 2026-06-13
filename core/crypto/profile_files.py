@@ -35,18 +35,49 @@ def _data_files_tree(profile: str) -> Path:
 
 
 def iter_plaintext_profile_secrets(profile: str) -> list[Path]:
-    """List profile secret files that still need encryption."""
+    """List confidential profile root files that still need encryption."""
     paths: list[Path] = []
     for path in profile_root_secrets(profile):
         if path.is_file() and not is_encrypted_file(path):
             paths.append(path)
+    return paths
 
-    files_root = _data_files_tree(profile)
-    if files_root.is_dir():
-        for item in files_root.rglob("*"):
-            if item.is_file() and not is_encrypted_file(item):
+
+def iter_encrypted_deliverable_files(profile: str) -> list[Path]:
+    """Encrypted workspace / data/files artifacts that should be plaintext."""
+    from core.env_loader import profile_dir_path
+
+    roots = [
+        profile_dir_path(profile) / "workspace",
+        _data_files_tree(profile),
+    ]
+    paths: list[Path] = []
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for item in root.rglob("*"):
+            if item.is_file() and is_encrypted_file(item):
                 paths.append(item)
     return paths
+
+
+def decrypt_deliverable_file(path: Path, dek: bytes) -> bool:
+    """Decrypt one workspace/data/files artifact back to plaintext."""
+    if not path.is_file() or not is_encrypted_file(path):
+        return False
+    from core.crypto.encrypted_fs import decrypt_bytes
+
+    path.write_bytes(decrypt_bytes(dek, path.read_bytes()))
+    return True
+
+
+def decrypt_deliverable_files(profile: str, dek: bytes) -> int:
+    """Decrypt agent deliverables (workspace + data/files); return count."""
+    count = 0
+    for path in iter_encrypted_deliverable_files(profile):
+        if decrypt_deliverable_file(path, dek):
+            count += 1
+    return count
 
 
 def encrypt_profile_secret_file(path: Path, dek: bytes) -> bool:

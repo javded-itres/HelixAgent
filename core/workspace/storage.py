@@ -31,9 +31,8 @@ def path_is_in_workspace(file_path: Path) -> bool:
 
 
 def should_encrypt_path(file_path: Path, profile: str) -> bool:
-    if not is_profile_encryption_enabled(profile):
-        return False
-    return path_is_in_workspace(file_path)
+    """Workspace files stay plaintext (git-friendly); profile secrets use profile_files."""
+    return False
 
 
 def read_profile_file_text(file_path: Path, *, profile: str, encoding: str = "utf-8") -> str:

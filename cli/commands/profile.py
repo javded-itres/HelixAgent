@@ -467,10 +467,10 @@ def crypto_enable(
     skip_existing: bool = typer.Option(
         False,
         "--skip-existing",
-        help="Do not encrypt files already in workspace",
+        help="Do not encrypt existing profile secrets",
     ),
 ) -> None:
-    """Enable workspace encryption for the active profile."""
+    """Enable profile encryption for the active profile."""
     from core.crypto.bootstrap import enable_profile_encryption
     from core.crypto.profile_crypto import ProfileCryptoError
 
@@ -501,10 +501,10 @@ def crypto_enable(
 
     print_success(f"Encryption enabled for profile '{profile}'")
     print_info(f"Workspace: {result.workspace}")
-    if result.files_encrypted:
-        print_info(f"Encrypted {result.files_encrypted} workspace file(s)")
     if getattr(result, "secrets_encrypted", 0):
         print_info(f"Encrypted {result.secrets_encrypted} profile secret file(s)")
+    if getattr(result, "deliverables_decrypted", 0):
+        print_info(f"Decrypted {result.deliverables_decrypted} workspace file(s) to plaintext")
     print_warning("Save your unlock key — data cannot be recovered without it")
     print_info(f"Unlock session: holix -p {profile} --unlock-key <key> chat")
 
@@ -530,7 +530,7 @@ def crypto_migrate(
     skip_existing: bool = typer.Option(
         False,
         "--skip-existing",
-        help="Enable encryption but do not encrypt files already in workspace",
+        help="Enable encryption but do not encrypt existing profile secrets",
     ),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
 ) -> None:
@@ -579,12 +579,13 @@ def crypto_migrate(
     )
 
     for result in summary.migrated:
-        files_note = (
-            f", {result.files_encrypted} file(s) encrypted"
-            if result.files_encrypted
-            else ""
-        )
-        print_success(f"Migrated '{result.profile}' ({result.workspace}{files_note})")
+        notes: list[str] = []
+        if result.secrets_encrypted:
+            notes.append(f"{result.secrets_encrypted} secret(s)")
+        if result.deliverables_decrypted:
+            notes.append(f"{result.deliverables_decrypted} workspace file(s) decrypted")
+        detail = f" ({', '.join(notes)})" if notes else ""
+        print_success(f"Migrated '{result.profile}' ({result.workspace}{detail})")
 
     for name in summary.skipped:
         print_info(f"Skipped '{name}' (already encrypted)")
@@ -656,6 +657,8 @@ def crypto_seal(
             parts.append(f"{result.secrets_encrypted} secret(s)")
         if result.memory_sealed:
             parts.append(f"{result.memory_sealed} memory store(s)")
+        if result.deliverables_decrypted:
+            parts.append(f"{result.deliverables_decrypted} workspace file(s) decrypted")
         if parts:
             print_success(f"Sealed '{result.profile}' ({', '.join(parts)})")
         else:

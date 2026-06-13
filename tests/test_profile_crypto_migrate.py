@@ -40,7 +40,7 @@ def test_list_unencrypted_profiles(holix_home, monkeypatch) -> None:
     assert list_unencrypted_profiles(manager) == ["alice"]
 
 
-def test_migrate_all_profiles_encrypts_workspace(holix_home, monkeypatch) -> None:
+def test_migrate_all_profiles_keeps_workspace_plaintext(holix_home, monkeypatch) -> None:
     monkeypatch.setenv("HOLIX_HOME", str(holix_home))
     manager = ProfileManager()
     _seed_profile(manager, "alice", plaintext_file=True)
@@ -62,8 +62,8 @@ def test_migrate_all_profiles_encrypts_workspace(holix_home, monkeypatch) -> Non
         assert config.encryption_enabled is True
         assert config.workspace_jail_enabled is True
         target = manager.get_profile_dir(name) / "workspace" / "notes.txt"
-        assert is_encrypted_file(target)
-        assert b"secret notes" not in target.read_bytes()
+        assert not is_encrypted_file(target)
+        assert b"secret notes" in target.read_bytes()
 
 
 def test_migrate_skips_already_encrypted(holix_home, monkeypatch) -> None:

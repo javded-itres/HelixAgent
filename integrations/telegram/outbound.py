@@ -35,6 +35,7 @@ class OutboundFile:
     kind: MediaKind
     size_bytes: int
     mime_type: str
+    cleanup: Any = None
 
 
 def classify_outbound_file(path: Path) -> MediaKind:
@@ -99,8 +100,13 @@ def prepare_outbound_files(paths: list[str | Path]) -> tuple[list[OutboundFile],
             errors.append(f"{label}: not a regular file")
             continue
 
-        size = path.stat().st_size
+        from core.crypto.delivery_files import materialize_file_for_delivery
+        from core.tools.execution_context import get_profile_name
+
+        send_path, cleanup = materialize_file_for_delivery(path, profile=get_profile_name())
+        size = send_path.stat().st_size
         if size > max_bytes:
+            cleanup()
             errors.append(
                 f"{label}: too large ({size // 1024 // 1024} MB, "
                 f"limit {settings.telegram_max_file_mb} MB)"
@@ -108,19 +114,30 @@ def prepare_outbound_files(paths: list[str | Path]) -> tuple[list[OutboundFile],
             continue
         if size <= 0:
             errors.append(f"{label}: empty file")
+            cleanup()
             continue
 
-        mime, _ = mimetypes.guess_type(path.name)
+        mime, _ = mimetypes.guess_type(send_path.name)
         files.append(
             OutboundFile(
-                path=path,
-                kind=classify_outbound_file(path),
+                path=send_path,
+                kind=classify_outbound_file(send_path),
                 size_bytes=size,
                 mime_type=(mime or "application/octet-stream"),
+                cleanup=cleanup,
             )
         )
 
     return files, errors
+
+
+def _cleanup_outbound_files(files: list[OutboundFile]) -> None:
+    for item in files:
+        if item.cleanup:
+            try:
+                item.cleanup()
+            except Exception:
+                pass
 
 
 def _album_batches(files: list[OutboundFile]) -> list[list[OutboundFile]]:
@@ -226,13 +243,16 @@ async def send_outbound_files(
             names = ", ".join(f.path.name for f in batch)
             errors.append(f"{names}: {exc}")
 
-    if sent == 0:
-        detail = "; ".join(errors) if errors else "send failed"
-        return f"Error: could not send files — {detail}"
+    try:
+        if sent == 0:
+            detail = "; ".join(errors) if errors else "send failed"
+            return f"Error: could not send files — {detail}"
 
-    names = ", ".join(f.path.name for f in files[:sent])
-    album_note = ""
-    if sent >= 2:
-        album_note = f" (album: {sent} files)"
-    err_note = f" Warnings: {'; '.join(errors)}" if errors else ""
-    return f"Sent {sent} file(s) to chat{album_note}: {names}.{err_note}"
+        names = ", ".join(f.path.name for f in files[:sent])
+        album_note = ""
+        if sent >= 2:
+            album_note = f" (album: {sent} files)"
+        err_note = f" Warnings: {'; '.join(errors)}" if errors else ""
+        return f"Sent {sent} file(s) to chat{album_note}: {names}.{err_note}"
+    finally:
+        _cleanup_outbound_files(files)

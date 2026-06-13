@@ -1,4 +1,4 @@
-"""Enable profile encryption and migrate existing workspace files."""
+"""Enable profile encryption (secrets + memory; workspace stays plaintext)."""
 
 from __future__ import annotations
 
@@ -14,7 +14,11 @@ from core.crypto.profile_crypto import (
     is_profile_encryption_enabled,
     unlock_profile_dek,
 )
-from core.crypto.profile_files import encrypt_profile_secrets, seal_profile_secrets
+from core.crypto.profile_files import (
+    decrypt_deliverable_files,
+    encrypt_profile_secrets,
+    seal_profile_secrets,
+)
 from core.crypto.unlock_context import get_profile_session_dek, set_profile_session_unlock
 from core.workspace.limits import ensure_profile_limits
 from core.workspace.quota import QUOTA_DIRNAME, reconcile_workspace_usage
@@ -24,9 +28,10 @@ from core.workspace.quota import QUOTA_DIRNAME, reconcile_workspace_usage
 class EncryptionEnableResult:
     profile: str
     workspace: Path
-    files_encrypted: int
+    files_encrypted: int = 0
     secrets_encrypted: int = 0
     memory_sealed: int = 0
+    deliverables_decrypted: int = 0
 
 
 @dataclass(slots=True)
@@ -91,7 +96,7 @@ def enable_profile_encryption(
     *,
     encrypt_existing: bool = True,
 ) -> EncryptionEnableResult:
-    """Enable workspace encryption for a profile (workspace jail + crypto.json)."""
+    """Enable profile encryption (crypto.json + secrets/memory; workspace stays plaintext)."""
     from core.crypto.policy import require_encryption_enable_allowed
 
     require_encryption_enable_allowed()
@@ -102,11 +107,11 @@ def enable_profile_encryption(
     create_profile_crypto(profile, user_encryption_key)
     dek = unlock_profile_dek(profile, user_encryption_key)
 
-    files_encrypted = 0
     secrets_encrypted = 0
     memory_sealed = 0
+    deliverables_decrypted = 0
     if encrypt_existing:
-        files_encrypted = encrypt_workspace_tree(workspace, dek)
+        deliverables_decrypted = decrypt_deliverable_files(profile, dek)
         secrets_encrypted = encrypt_profile_secrets(profile, dek)
         memory_sealed = encrypt_profile_memory(profile, dek)
     reconcile_workspace_usage(workspace)
@@ -118,9 +123,9 @@ def enable_profile_encryption(
     return EncryptionEnableResult(
         profile=profile,
         workspace=workspace,
-        files_encrypted=files_encrypted,
         secrets_encrypted=secrets_encrypted,
         memory_sealed=memory_sealed,
+        deliverables_decrypted=deliverables_decrypted,
     )
 
 
@@ -144,6 +149,7 @@ def seal_profiles_secrets(
         try:
             secrets_count = seal_profile_secrets(profile, user_encryption_key)
             dek = get_profile_session_dek(profile)
+            deliverables_count = decrypt_deliverable_files(profile, dek) if dek else 0
             memory_count = seal_profile_memory(profile, dek) if dek else 0
             config = manager.load_profile(profile)
             if config.workspace_root and str(config.workspace_root).strip():
@@ -154,9 +160,9 @@ def seal_profiles_secrets(
                 EncryptionEnableResult(
                     profile=profile,
                     workspace=workspace,
-                    files_encrypted=0,
                     secrets_encrypted=secrets_count,
                     memory_sealed=memory_count,
+                    deliverables_decrypted=deliverables_count,
                 )
             )
         except (ProfileCryptoError, ValueError, OSError) as exc:

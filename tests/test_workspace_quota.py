@@ -66,7 +66,7 @@ def test_ensure_profile_limits_default(holix_home, monkeypatch) -> None:
     assert load_profile_limits(profile) is not None
 
 
-def test_encrypted_write_and_read(holix_home, monkeypatch) -> None:
+def test_workspace_stays_plaintext_when_encryption_enabled(holix_home, monkeypatch) -> None:
     monkeypatch.setenv("HOLIX_HOME", str(holix_home))
     profile = "enc_ws"
     pdir = holix_home / "profiles" / profile
@@ -84,8 +84,8 @@ def test_encrypted_write_and_read(holix_home, monkeypatch) -> None:
         _reset_tool_context(ws_tokens, profile_token, unlock_tokens)
 
     assert content == "def main():\n    pass\n"
-    assert is_encrypted_file(target)
-    assert b"def main" not in target.read_bytes()
+    assert not is_encrypted_file(target)
+    assert b"def main" in target.read_bytes()
 
 
 def test_quota_blocks_large_write(holix_home, monkeypatch) -> None:
