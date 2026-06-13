@@ -383,6 +383,48 @@ SEO_PAGES: dict[str, dict[str, dict[str, str]]] = {
             "keywords": "Holix Telegram profiles, holix telegram map, profile isolation, shared bot",
         },
     },
+    "max": {
+        "ru": {
+            "title": "MAX-бот Holix — setup, webhook, мультипользовательский доступ",
+            "description": (
+                "Интеграция Holix с мессенджером MAX: helix max setup, max.env и шифрование, "
+                "webhook через gateway, access requests, inline-подтверждения и файлы."
+            ),
+            "keywords": (
+                "Holix MAX, helix max setup, MAX мессенджер бот, max.env, webhook MAX, "
+                "российский мессенджер AI, business.max.ru"
+            ),
+        },
+        "en": {
+            "title": "Holix MAX — Setup, Webhook & Multi-User Access",
+            "description": (
+                "Holix MAX messenger integration: helix max setup, encrypted max.env, "
+                "gateway webhook, access requests, inline approvals, and file attachments."
+            ),
+            "keywords": (
+                "Holix MAX, helix max setup, MAX messenger bot, max.env, MAX webhook, "
+                "Russian messenger AI, business.max.ru"
+            ),
+        },
+    },
+    "max-multi-profile": {
+        "ru": {
+            "title": "MAX Holix — один бот, несколько изолированных профилей",
+            "description": (
+                "Как настроить Holix в MAX для нескольких пользователей: отдельный бот на профиль "
+                "или один бот с helix max map — привязка user id, workspace jail и Management API."
+            ),
+            "keywords": "Holix MAX профили, helix max map, изоляция профилей MAX, общий бот MAX",
+        },
+        "en": {
+            "title": "Holix MAX — One Bot, Multiple Isolated Profiles",
+            "description": (
+                "Run Holix on MAX for multiple users: one bot per profile or a shared bot with "
+                "helix max map bindings, workspace jail, and Management API."
+            ),
+            "keywords": "Holix MAX profiles, helix max map, MAX profile isolation, shared MAX bot",
+        },
+    },
     "browser-tools": {
         "ru": {
             "title": "Браузерные инструменты Holix — Playwright автоматизация",

@@ -96,6 +96,18 @@
     "file_key": "TELEGRAM_MULTI_PROFILE"
   },
   {
+    "slug": "max",
+    "en": "MAX Messenger",
+    "ru": "MAX — мессенджер",
+    "file_key": "MAX"
+  },
+  {
+    "slug": "max-multi-profile",
+    "en": "MAX Multi-Profile",
+    "ru": "MAX: несколько профилей",
+    "file_key": "MAX_MULTI_PROFILE"
+  },
+  {
     "slug": "browser-tools",
     "en": "Browser Tools",
     "ru": "Браузер",

@@ -40,6 +40,8 @@ NAV = [
     ("GATEWAY_API", {"en": "Complete API Reference", "ru": "Полный справочник API"}),
     ("TELEGRAM", {"en": "Telegram", "ru": "Telegram"}),
     ("TELEGRAM_MULTI_PROFILE", {"en": "Telegram Multi-Profile", "ru": "Telegram: несколько профилей"}),
+    ("MAX", {"en": "MAX Messenger", "ru": "MAX — мессенджер"}),
+    ("MAX_MULTI_PROFILE", {"en": "MAX Multi-Profile", "ru": "MAX: несколько профилей"}),
     ("BROWSER_TOOLS", {"en": "Browser Tools", "ru": "Браузер"}),
     ("ARCHITECTURE", {"en": "Architecture", "ru": "Архитектура"}),
     ("SECURITY", {"en": "Security", "ru": "Безопасность"}),
