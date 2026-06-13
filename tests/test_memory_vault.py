@@ -88,6 +88,7 @@ def test_memory_round_trip_after_unlock(holix_home, monkeypatch) -> None:
 
 
 def test_locked_memory_raises(holix_home, monkeypatch) -> None:
+    monkeypatch.delenv("HOLIX_UNLOCK_KEY", raising=False)
     monkeypatch.setenv("HOLIX_HOME", str(holix_home))
     manager = ProfileManager()
     manager.create_profile("carol", inherit_global=False)

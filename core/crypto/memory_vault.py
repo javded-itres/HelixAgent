@@ -58,9 +58,13 @@ def _dek_for_profile(profile: str) -> bytes | None:
     dek = get_profile_session_dek(profile)
     if dek is not None:
         return dek
+    from core.crypto.profile_crypto import ProfileCryptoError
     from core.crypto.unlock_context import bootstrap_profile_unlock_from_env
 
-    bootstrap_profile_unlock_from_env(profile)
+    try:
+        bootstrap_profile_unlock_from_env(profile)
+    except ProfileCryptoError:
+        return None
     return get_profile_session_dek(profile)
 
 
