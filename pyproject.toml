@@ -47,6 +47,8 @@ dependencies = [
     "dishka>=1.10.1",
     "mcp>=1.2.0",
     "croniter>=2.0.0",
+    "cryptography>=48.0.0",
+    "argon2-cffi>=25.1.0",
 ]
 
 [project.optional-dependencies]

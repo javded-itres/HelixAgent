@@ -1,0 +1,70 @@
+"""In-process profile DEK unlock state (never persisted)."""
+
+from __future__ import annotations
+
+from contextvars import ContextVar
+
+from core.crypto.profile_crypto import ProfileCryptoLockedError
+
+_profile_dek: ContextVar[bytes | None] = ContextVar("holix_profile_dek", default=None)
+_unlocked_profile: ContextVar[str | None] = ContextVar("holix_unlocked_profile", default=None)
+_session_deks: dict[str, bytes] = {}
+
+
+def profile_unlock_scope(*, profile: str, dek: bytes):
+    """Return tokens for profile_unlock_scope reset."""
+    return [
+        ("dek", _profile_dek.set(dek)),
+        ("profile", _unlocked_profile.set(profile)),
+    ]
+
+
+def reset_profile_unlock_scope(tokens) -> None:
+    for key, token in reversed(tokens):
+        if key == "dek":
+            _profile_dek.reset(token)
+        elif key == "profile":
+            _unlocked_profile.reset(token)
+
+
+def get_profile_dek() -> bytes | None:
+    return _profile_dek.get()
+
+
+def is_profile_unlocked(profile: str) -> bool:
+    return _unlocked_profile.get() == profile and _profile_dek.get() is not None
+
+
+def require_profile_dek(profile: str) -> bytes:
+    dek = _profile_dek.get()
+    active = _unlocked_profile.get()
+    if dek is None or active != profile:
+        raise ProfileCryptoLockedError(
+            f"Profile '{profile}' is encrypted and locked. "
+            "Unlock with: holix -p {name} --unlock-key <key> or holix profile crypto unlock"
+        )
+    return dek
+
+
+def set_profile_session_unlock(profile: str, dek: bytes) -> None:
+    _session_deks[profile] = dek
+
+
+def get_profile_session_dek(profile: str) -> bytes | None:
+    return _session_deks.get(profile)
+
+
+def clear_profile_session_unlock(profile: str | None = None) -> None:
+    if profile:
+        _session_deks.pop(profile, None)
+    else:
+        _session_deks.clear()
+
+
+def clear_profile_unlock(profile: str | None = None) -> None:
+    _profile_dek.set(None)
+    _unlocked_profile.set(None)
+    if profile:
+        clear_profile_session_unlock(profile)
+    else:
+        clear_profile_session_unlock()

@@ -92,6 +92,9 @@ class ProfileConfig(BaseModel):
     workspace_jail_enabled: bool = False
     workspace_root: str | None = None
 
+    # At-rest encryption for workspace files (requires unlock key at runtime)
+    encryption_enabled: bool = False
+
 
 def _holix_env_name() -> str:
     return os.getenv("HOLIX_ENV", "development").strip().lower()
@@ -139,9 +142,14 @@ def enable_profile_workspace_isolation(
     profile: str,
 ) -> Path:
     """Create per-profile workspace directory and enable jail."""
+    from core.workspace.limits import ensure_profile_limits
+    from core.workspace.quota import reconcile_workspace_usage
+
     profile_dir = manager.get_profile_dir(profile)
     workspace_dir = profile_dir / "workspace"
     workspace_dir.mkdir(parents=True, exist_ok=True)
+    ensure_profile_limits(profile)
+    reconcile_workspace_usage(workspace_dir)
     config = manager.load_profile(profile)
     config.workspace_jail_enabled = True
     config.workspace_root = str(workspace_dir.resolve())
@@ -317,6 +325,10 @@ class ProfileManager:
 
         ensure_profile_env_template(profile, inherit_global=inherit_global)
         bootstrap_profile_identity(profile)
+
+        from core.workspace.limits import ensure_profile_limits
+
+        ensure_profile_limits(profile)
 
         # Set default config if not provided
         if config is None:
@@ -520,10 +532,20 @@ def unlock_profile(profile: str, profile_key: str) -> bool:
     return True
 
 
+def unlock_profile_encryption(profile: str, unlock_key: str) -> None:
+    """Derive DEK from user encryption key and cache it for this process."""
+    from core.crypto.profile_crypto import unlock_profile_dek
+    from core.crypto.unlock_context import set_profile_session_unlock
+
+    dek = unlock_profile_dek(profile, unlock_key)
+    set_profile_session_unlock(profile, dek)
+
+
 def init_profile(
     profile: str | None = None,
     *,
     profile_key: str | None = None,
+    unlock_key: str | None = None,
     prompt_key: bool = True,
 ) -> ProfileConfig:
     """Initialize a profile for CLI session.
@@ -547,6 +569,13 @@ def init_profile(
     bootstrap_profile_env(profile, force=switching or _current_profile is None)
     _current_profile = profile
     _current_config = _profile_manager.load_profile(profile)
+
+    if unlock_key and unlock_key.strip():
+        from core.crypto.profile_crypto import is_profile_encryption_enabled
+
+        if is_profile_encryption_enabled(profile) or getattr(_current_config, "encryption_enabled", False):
+            unlock_profile_encryption(profile, unlock_key.strip())
+
     created_key = _profile_manager.pop_last_created_access_key()
     if created_key:
         try:

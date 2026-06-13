@@ -20,6 +20,7 @@ PROFILE_ONLY_KEYS: frozenset[str] = frozenset({
     "skills_dir",
     "workspace_jail_enabled",
     "workspace_root",
+    "encryption_enabled",
 })
 
 
