@@ -88,7 +88,7 @@ SLUG_KEYWORDS: dict[str, list[str]] = {
     "hub": ["skills", "навыки", "catalog", "каталог", "mcp"],
     "gateway": ["api", "gateway", "гейтвей", "uvicorn", "openai", "path", "путь", "restricted"],
     "gateway-api": ["api", "gateway", "chat", "completions", "sessions", "path", "admin"],
-    "troubleshooting": ["troubleshoot", "проблемы", "ошибки", "restricted", "путь", "path", "jail"],
+    "troubleshooting": ["troubleshoot", "проблемы", "ошибки", "restricted", "путь", "path", "jail", "fix"],
     "telegram": ["telegram", "телеграм", "бот", "bot", "allowlist", "whisper", "голосовые"],
     "browser-tools": ["browser", "playwright", "браузер"],
     "architecture": ["architecture", "архитектура", "runtime", "events"],
@@ -97,7 +97,6 @@ SLUG_KEYWORDS: dict[str, list[str]] = {
     "doctor": ["doctor", "диагностика", "fix", "repair"],
     "logs": ["logs", "логи", "debug", "rotation"],
     "pypi": ["pypi", "publish", "публикация", "package"],
-    "troubleshooting": ["troubleshoot", "проблемы", "ошибки", "fix"],
     "user-guide": ["guide", "руководство", "usage"],
 }
 

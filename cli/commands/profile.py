@@ -22,10 +22,14 @@ global_app = typer.Typer(help="Shared global settings inherited by profiles")
 jail_app = typer.Typer(help="Restrict agent file/terminal access to one directory")
 key_app = typer.Typer(help="Profile access keys (required to switch into protected profiles)")
 whitelist_app = typer.Typer(help="Terminal command whitelist for the active profile")
+crypto_app = typer.Typer(help="At-rest encryption for profile workspace files")
+quota_app = typer.Typer(help="Workspace storage quota (platform-managed)")
 app.add_typer(global_app, name="global")
 app.add_typer(jail_app, name="jail")
 app.add_typer(key_app, name="key")
 app.add_typer(whitelist_app, name="whitelist")
+app.add_typer(crypto_app, name="crypto")
+app.add_typer(quota_app, name="quota")
 
 
 def _profile(ctx: typer.Context) -> str:
@@ -440,3 +444,185 @@ def whitelist_enable(ctx: typer.Context) -> None:
     print_success(f"Terminal whitelist enabled for profile '{profile}'")
     print_info(f"Saved in: {profile_env_path(profile)}")
     print_info("Restart gateway/Telegram or re-run CLI for changes to apply")
+
+
+def _format_bytes(size: int) -> str:
+    if size < 1024:
+        return f"{size} B"
+    if size < 1024 * 1024:
+        return f"{size / 1024:.1f} KiB"
+    if size < 1024 * 1024 * 1024:
+        return f"{size / (1024 * 1024):.1f} MiB"
+    return f"{size / (1024 * 1024 * 1024):.2f} GiB"
+
+
+@crypto_app.command("enable")
+def crypto_enable(
+    ctx: typer.Context,
+    unlock_key: str | None = typer.Option(
+        None,
+        "--unlock-key",
+        help="User encryption key (prompted twice if omitted)",
+    ),
+    skip_existing: bool = typer.Option(
+        False,
+        "--skip-existing",
+        help="Do not encrypt files already in workspace",
+    ),
+) -> None:
+    """Enable workspace encryption for the active profile."""
+    from core.crypto.bootstrap import enable_profile_encryption
+    from core.crypto.profile_crypto import ProfileCryptoError
+
+    profile = _profile(ctx)
+    manager = get_profile_manager()
+    if not manager.profile_exists(profile):
+        print_error(f"Profile '{profile}' does not exist")
+        raise typer.Exit(1)
+
+    key = (unlock_key or "").strip()
+    if not key:
+        key = typer.prompt("Encryption unlock key", hide_input=True)
+        confirm = typer.prompt("Confirm unlock key", hide_input=True)
+        if key != confirm:
+            print_error("Unlock keys do not match")
+            raise typer.Exit(1)
+
+    try:
+        workspace = enable_profile_encryption(
+            manager,
+            profile,
+            key,
+            encrypt_existing=not skip_existing,
+        )
+    except ProfileCryptoError as exc:
+        print_error(str(exc))
+        raise typer.Exit(1) from exc
+
+    print_success(f"Encryption enabled for profile '{profile}'")
+    print_info(f"Workspace: {workspace}")
+    print_warning("Save your unlock key — data cannot be recovered without it")
+    print_info(f"Unlock session: holix -p {profile} --unlock-key <key> chat")
+
+
+@crypto_app.command("status")
+def crypto_status(ctx: typer.Context) -> None:
+    """Show encryption status for the active profile."""
+    from core.crypto.profile_crypto import is_profile_encryption_enabled, load_crypto_meta
+    from core.crypto.unlock_context import get_profile_session_dek
+
+    from cli.utils.rich_console import print_panel
+
+    profile = _profile(ctx)
+    config = get_current_config()
+    enabled = bool(getattr(config, "encryption_enabled", False)) or is_profile_encryption_enabled(profile)
+    if not enabled:
+        body = (
+            "[yellow]Disabled[/yellow]\n\n"
+            "Enable with: [cyan]holix profile crypto enable[/cyan]"
+        )
+        border = "yellow"
+    else:
+        meta = load_crypto_meta(profile)
+        locked = get_profile_session_dek(profile) is None
+        state = "[red]locked[/red]" if locked else "[green]unlocked[/green]"
+        algo = meta.algorithm if meta else "unknown"
+        body = (
+            f"[green]Enabled[/green]\n"
+            f"Session: {state}\n"
+            f"Algorithm: {algo}\n\n"
+            f"Unlock: [cyan]holix -p {profile} --unlock-key <key> …[/cyan]\n"
+            "Lock: [cyan]holix profile crypto lock[/cyan]"
+        )
+        border = "green" if not locked else "yellow"
+
+    print_panel(body, title=f"Profile encryption — {profile}", border_style=border)
+
+
+@crypto_app.command("unlock")
+def crypto_unlock(
+    ctx: typer.Context,
+    unlock_key: str = typer.Option(
+        ...,
+        "--unlock-key",
+        prompt=True,
+        hide_input=True,
+        help="User encryption key",
+    ),
+) -> None:
+    """Unlock encrypted profile data for this CLI process."""
+    from core.crypto.profile_crypto import ProfileCryptoError, is_profile_encryption_enabled
+
+    from cli.core import unlock_profile_encryption
+
+    profile = _profile(ctx)
+    if not is_profile_encryption_enabled(profile):
+        print_error(f"Profile '{profile}' is not encrypted")
+        raise typer.Exit(1)
+    try:
+        unlock_profile_encryption(profile, unlock_key)
+    except ProfileCryptoError as exc:
+        print_error(str(exc))
+        raise typer.Exit(1) from exc
+    print_success(f"Profile '{profile}' unlocked for this process")
+
+
+@crypto_app.command("lock")
+def crypto_lock(ctx: typer.Context) -> None:
+    """Clear in-process encryption unlock state."""
+    from core.crypto.unlock_context import clear_profile_unlock
+
+    profile = _profile(ctx)
+    clear_profile_unlock(profile)
+    print_success(f"Profile '{profile}' locked in this process")
+
+
+@quota_app.command("status")
+def quota_status_cmd(ctx: typer.Context) -> None:
+    """Show workspace quota usage for the active profile."""
+    from core.workspace.quota import quota_status
+
+    from cli.utils.rich_console import print_panel
+
+    profile = _profile(ctx)
+    config = get_current_config()
+    if not config.workspace_root:
+        print_error("Workspace jail is not configured for this profile")
+        raise typer.Exit(1)
+
+    limits, usage = quota_status(profile, Path(config.workspace_root))
+    pct = (usage.used_bytes / limits.workspace_max_bytes * 100) if limits.workspace_max_bytes else 0
+    body = (
+        f"[cyan]Tariff:[/cyan] {limits.tariff_id}\n"
+        f"[cyan]Used:[/cyan] {_format_bytes(usage.used_bytes)} / "
+        f"{_format_bytes(limits.workspace_max_bytes)} ({pct:.1f}%)\n"
+        f"[cyan]Files:[/cyan] {usage.file_count} / {limits.workspace_max_files}\n"
+        f"[cyan]Workspace:[/cyan] {config.workspace_root}"
+    )
+    print_panel(body, title=f"Workspace quota — {profile}", border_style="cyan")
+
+
+@quota_app.command("set")
+def quota_set(
+    ctx: typer.Context,
+    tariff: str = typer.Option(..., "--tariff", help="Tariff id (free, basic, pro)"),
+    admin: bool = typer.Option(
+        False,
+        "--admin",
+        help="Allow changing platform-managed limits (admin only)",
+    ),
+) -> None:
+    """Set workspace quota tariff (admin only)."""
+    from core.workspace.limits import set_profile_tariff
+
+    if not admin:
+        print_error("Quota limits are platform-managed. Use --admin to override.")
+        raise typer.Exit(1)
+
+    profile = _profile(ctx)
+    limits = set_profile_tariff(profile, tariff, updated_by="cli-admin")
+    print_success(f"Tariff set to '{limits.tariff_id}' for profile '{profile}'")
+    print_info(
+        f"Limits: {_format_bytes(limits.workspace_max_bytes)}, "
+        f"{limits.workspace_max_files} files"
+    )

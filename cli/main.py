@@ -115,6 +115,12 @@ def _app_callback(
         envvar="HOLIX_PROFILE_KEY",
         help="Access key for a protected profile",
     ),
+    unlock_key: str | None = typer.Option(
+        None,
+        "--unlock-key",
+        envvar="HOLIX_UNLOCK_KEY",
+        help="Encryption unlock key for an encrypted profile",
+    ),
     verbose: bool = typer.Option(
         False,
         "--verbose", "-v",
@@ -126,17 +132,25 @@ def _app_callback(
     A powerful, self-improving AI agent with memory, skills, and tool-calling capabilities.
     """
     # Initialize profile
+    from core.crypto.profile_crypto import ProfileCryptoError
     from core.profile_keys import ProfileKeyError
 
     from cli.utils.rich_console import print_error
 
     try:
         resolved_profile = resolve_active_profile_name(profile)
-        config = init_profile(resolved_profile, profile_key=profile_key)
+        config = init_profile(
+            resolved_profile,
+            profile_key=profile_key,
+            unlock_key=unlock_key,
+        )
     except ProfileNotFoundError as exc:
         print_error(str(exc))
         raise typer.Exit(1) from exc
     except ProfileKeyError as exc:
+        print_error(str(exc))
+        raise typer.Exit(1) from exc
+    except ProfileCryptoError as exc:
         print_error(str(exc))
         raise typer.Exit(1) from exc
 
@@ -146,6 +160,7 @@ def _app_callback(
         "config": config,
         "verbose": verbose,
         "profile_key": profile_key,
+        "unlock_key": unlock_key,
     }
 
     if verbose:

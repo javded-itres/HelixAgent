@@ -80,6 +80,7 @@ class HolixAgent:
         self.tools = ToolRegistry(
             workspace_root=self.config.workspace_root,
             workspace_jail_enabled=self.config.workspace_jail_enabled,
+            profile_name=self.config.profile_name,
         )
         self.loop = AgentLoop(self)
 

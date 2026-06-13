@@ -13,6 +13,7 @@ _memory_facade: ContextVar[Any] = ContextVar("holix_memory_facade", default=None
 _workspace_root: ContextVar[str | None] = ContextVar("holix_workspace_root", default=None)
 _workspace_jail_enabled: ContextVar[bool] = ContextVar("holix_workspace_jail_enabled", default=False)
 _full_paths_visible: ContextVar[bool] = ContextVar("holix_full_paths_visible", default=True)
+_profile_name: ContextVar[str] = ContextVar("holix_profile_name", default="default")
 
 
 def get_conversation_id() -> str:
@@ -45,6 +46,19 @@ def is_workspace_jail_enabled() -> bool:
 
 def is_full_paths_visible() -> bool:
     return _full_paths_visible.get()
+
+
+def get_profile_name() -> str:
+    return _profile_name.get()
+
+
+def profile_scope(profile_name: str):
+    """Return token from ContextVar.set for use with reset_profile_scope."""
+    return _profile_name.set(profile_name)
+
+
+def reset_profile_scope(token) -> None:
+    _profile_name.reset(token)
 
 
 def paths_visibility_scope(*, full_paths_visible: bool):

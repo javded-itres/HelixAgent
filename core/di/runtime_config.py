@@ -101,6 +101,7 @@ class HolixRuntimeConfig:
     # Workspace jail (optional per-profile directory isolation)
     workspace_jail_enabled: bool = False
     workspace_root: str | None = None
+    encryption_enabled: bool = False
 
     @classmethod
     def from_settings(cls, source: Settings | None = None) -> Self:
@@ -157,6 +158,7 @@ class HolixRuntimeConfig:
             local_skills_dir=None,
             workspace_jail_enabled=False,
             workspace_root=None,
+            encryption_enabled=False,
         )
 
     @classmethod
@@ -216,6 +218,8 @@ class HolixRuntimeConfig:
             overrides["workspace_jail_enabled"] = profile.workspace_jail_enabled
         if getattr(profile, "workspace_root", None):
             overrides["workspace_root"] = profile.workspace_root
+        if getattr(profile, "encryption_enabled", False):
+            overrides["encryption_enabled"] = profile.encryption_enabled
 
         if profile.default_provider and profile.providers:
             pdata = profile.providers.get(profile.default_provider) or {}
