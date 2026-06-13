@@ -25,7 +25,12 @@ def _blocked_profile_path_access(command: str) -> tuple[bool, str]:
     normalized = command.replace("\\", "/")
     if _PROFILE_PATH_RE.search(normalized):
         return True, "Direct access to Holix profile directories is disabled for encrypted profiles."
-    if ".holix/memory-cache" in normalized or "/memory-cache/" in normalized:
+    if (
+        ".holix/memory-cache" in normalized
+        or "/memory-cache/" in normalized
+        or ".runtime-cache" in normalized
+        or "/.runtime-cache/" in normalized
+    ):
         return True, "Direct access to decrypted memory cache is disabled for encrypted profiles."
     if ".holix/profiles" in normalized or "/profiles/" in normalized and ".env" in normalized:
         return True, "Direct access to profile secrets is disabled for encrypted profiles."

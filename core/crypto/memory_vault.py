@@ -11,12 +11,17 @@ from pathlib import Path
 
 from core.crypto.encrypted_fs import decrypt_bytes, encrypt_bytes, is_encrypted_file
 from core.crypto.profile_crypto import ProfileCryptoLockedError, is_profile_encryption_enabled
+from core.crypto.runtime_cache import (
+    harden_cache_tree,
+    profile_runtime_cache_dir,
+    wipe_legacy_profile_cache,
+    wipe_profile_runtime_cache,
+)
 from core.crypto.unlock_context import get_profile_session_dek, require_profile_dek
 from core.env_loader import profile_dir_path
 
 logger = logging.getLogger(__name__)
 
-MEMORY_CACHE_DIRNAME = ".holix/memory-cache"
 VECTOR_SEALED_FILENAME = "vector_db.sealed"
 SQLITE_MEMORY_FILENAMES = frozenset({"memory.db", "ltm.db", "checkpoints.db"})
 
@@ -43,7 +48,7 @@ def profile_data_dir(profile: str) -> Path:
 
 
 def memory_cache_root(profile: str) -> Path:
-    return profile_data_dir(profile) / MEMORY_CACHE_DIRNAME
+    return profile_runtime_cache_dir(profile)
 
 
 def vector_sealed_path(vector_dir: Path) -> Path:
@@ -89,7 +94,10 @@ def _materialize_sqlite(vault_path: Path, profile: str, dek: bytes) -> Path:
     data_dir = profile_data_dir(profile)
     rel_key = _sqlite_rel_key(vault_path, data_dir)
     cache_key = (profile, rel_key)
-    cache_path = memory_cache_root(profile) / rel_key
+    cache_root = memory_cache_root(profile)
+    cache_root.mkdir(parents=True, exist_ok=True)
+    harden_cache_tree(cache_root)
+    cache_path = cache_root / rel_key
     cache_path.parent.mkdir(parents=True, exist_ok=True)
 
     if cache_key in _materialized_sqlite and _materialized_sqlite[cache_key].exists():
@@ -106,10 +114,7 @@ def _materialize_sqlite(vault_path: Path, profile: str, dek: bytes) -> Path:
         conn.execute("PRAGMA user_version")
         conn.close()
 
-    try:
-        cache_path.chmod(0o600)
-    except OSError:
-        pass
+    harden_cache_tree(cache_root)
     _materialized_sqlite[cache_key] = cache_path
     return cache_path
 
@@ -123,7 +128,10 @@ def _materialize_vector(vector_dir: Path, profile: str, dek: bytes) -> Path:
         rel = vector_dir.resolve().relative_to(data_dir)
     except ValueError:
         rel = Path("memory/vector_db")
-    cache_dir = memory_cache_root(profile) / rel
+    cache_root = memory_cache_root(profile)
+    cache_root.mkdir(parents=True, exist_ok=True)
+    harden_cache_tree(cache_root)
+    cache_dir = cache_root / rel
     sealed = vector_sealed_path(vector_dir)
 
     if cache_dir.is_dir() and any(cache_dir.iterdir()):
@@ -135,6 +143,7 @@ def _materialize_vector(vector_dir: Path, profile: str, dek: bytes) -> Path:
         cache_dir.mkdir(parents=True, exist_ok=True)
         with tarfile.open(fileobj=io.BytesIO(payload), mode="r:gz") as archive:
             archive.extractall(path=cache_dir)
+        harden_cache_tree(cache_root)
         _materialized_vector[profile] = cache_dir
         return cache_dir
 
@@ -143,6 +152,7 @@ def _materialize_vector(vector_dir: Path, profile: str, dek: bytes) -> Path:
         return vector_dir
 
     cache_dir.mkdir(parents=True, exist_ok=True)
+    harden_cache_tree(cache_root)
     _materialized_vector[profile] = cache_dir
     return cache_dir
 
@@ -195,6 +205,7 @@ def seal_sqlite_vault(vault_path: Path, dek: bytes, *, profile: str) -> bool:
     if working != vault_path and working.exists():
         working.unlink()
     _materialized_sqlite.pop(cache_key, None)
+    _cleanup_profile_cache_if_idle(profile)
     return True
 
 
@@ -227,6 +238,7 @@ def seal_vector_vault(vector_dir: Path, dek: bytes, *, profile: str) -> bool:
     if vector_dir.is_dir():
         shutil.rmtree(vector_dir, ignore_errors=True)
     _materialized_vector.pop(profile, None)
+    _cleanup_profile_cache_if_idle(profile)
     return True
 
 
@@ -260,6 +272,7 @@ def seal_profile_memory(profile: str, dek: bytes) -> int:
     for vector_dir in iter_profile_vector_dirs(profile):
         if seal_vector_vault(vector_dir, dek, profile=profile):
             count += 1
+    _cleanup_profile_cache_if_idle(profile)
     return count
 
 
@@ -289,6 +302,33 @@ def encrypt_profile_memory(profile: str, dek: bytes) -> int:
         if seal_vector_vault(vector_dir, dek, profile=profile):
             count += 1
     return count
+
+
+def _profile_has_materialized_cache(profile: str) -> bool:
+    if profile in _materialized_vector:
+        return True
+    return any(key[0] == profile for key in _materialized_sqlite)
+
+
+def _cleanup_profile_cache_if_idle(profile: str) -> None:
+    if _profile_has_materialized_cache(profile):
+        return
+    wipe_profile_runtime_cache(profile)
+    wipe_legacy_profile_cache(profile)
+
+
+def purge_profile_memory_cache(profile: str) -> int:
+    """Remove on-disk runtime and legacy caches for a profile; return paths removed."""
+    removed = 0
+    if wipe_profile_runtime_cache(profile):
+        removed += 1
+    if wipe_legacy_profile_cache(profile):
+        removed += 1
+    keys = [key for key in _materialized_sqlite if key[0] == profile]
+    for key in keys:
+        _materialized_sqlite.pop(key, None)
+    _materialized_vector.pop(profile, None)
+    return removed
 
 
 def clear_profile_memory_cache(profile: str) -> None:

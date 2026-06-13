@@ -63,7 +63,7 @@ async def test_terminal_blocks_profile_memory_cache(
     token = profile_scope("alice")
     try:
         tool = TerminalTool()
-        out = await tool.execute("cat data/.holix/memory-cache/memory/memory.db")
+        out = await tool.execute("cat .runtime-cache/alice/memory/memory.db")
         assert "blocked" in out.lower()
         assert "memory cache" in out.lower()
     finally:

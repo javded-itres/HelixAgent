@@ -29,6 +29,9 @@ def main(argv: list[str] | None = None) -> int:
 
     configure_holix_logging()
     args = _parse_args(argv)
+    from core.crypto.runtime_cache import recover_stale_runtime_caches
+
+    recover_stale_runtime_caches()
     from core.env_loader import bootstrap_profile_env
 
     bootstrap_profile_env(args.profile)

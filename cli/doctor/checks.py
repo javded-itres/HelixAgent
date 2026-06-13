@@ -40,9 +40,32 @@ async def run_all_checks(profile: str, *, skip_llm_check: bool = False) -> list[
     findings.extend(_check_telegram(profile))
     findings.extend(_check_env_file())
     findings.extend(_check_security_settings())
+    findings.extend(_check_crypto_runtime_cache())
     findings.extend(_check_stray_project_data(profile, manager))
 
     return findings
+
+
+def _check_crypto_runtime_cache() -> list[DoctorFinding]:
+    from core.crypto.runtime_cache import iter_world_readable_runtime_caches
+
+    out: list[DoctorFinding] = []
+    weak = iter_world_readable_runtime_caches()
+    if weak:
+        paths = ", ".join(str(item) for item in weak[:3])
+        out.append(
+            DoctorFinding(
+                code="crypto.runtime_cache_permissions",
+                severity=Severity.WARNING.value,
+                title="Runtime memory cache is world-readable",
+                detail=f"Insecure cache paths: {paths}",
+                recommendation=(
+                    "Run as the holix system user and execute: "
+                    "holix profile crypto purge-cache --all"
+                ),
+            )
+        )
+    return out
 
 
 def _check_security_settings() -> list[DoctorFinding]:

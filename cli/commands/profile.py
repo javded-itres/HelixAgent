@@ -675,6 +675,11 @@ def crypto_seal(
 def crypto_status(ctx: typer.Context) -> None:
     """Show encryption status for the active profile."""
     from core.crypto.profile_crypto import is_profile_encryption_enabled, load_crypto_meta
+    from core.crypto.runtime_cache import (
+        iter_world_readable_runtime_caches,
+        legacy_profile_cache_dir,
+        profile_runtime_cache_dir,
+    )
     from core.crypto.unlock_context import get_profile_session_dek
 
     from cli.utils.rich_console import print_panel
@@ -693,12 +698,25 @@ def crypto_status(ctx: typer.Context) -> None:
         locked = get_profile_session_dek(profile) is None
         state = "[red]locked[/red]" if locked else "[green]unlocked[/green]"
         algo = meta.algorithm if meta else "unknown"
+        runtime_cache = profile_runtime_cache_dir(profile)
+        legacy_cache = legacy_profile_cache_dir(profile)
+        cache_bits: list[str] = []
+        if runtime_cache.is_dir():
+            cache_bits.append(f"runtime: {runtime_cache}")
+        if legacy_cache.is_dir():
+            cache_bits.append(f"legacy: {legacy_cache}")
+        cache_line = "\n".join(cache_bits) if cache_bits else "runtime cache: none"
+        weak = iter_world_readable_runtime_caches()
+        if weak:
+            cache_line += f"\n[yellow]Warning: world-readable cache ({len(weak)})[/yellow]"
         body = (
             f"[green]Enabled[/green]\n"
             f"Session: {state}\n"
-            f"Algorithm: {algo}\n\n"
+            f"Algorithm: {algo}\n"
+            f"{cache_line}\n\n"
             f"Unlock: [cyan]holix -p {profile} --unlock-key <key> …[/cyan]\n"
-            "Lock: [cyan]holix profile crypto lock[/cyan]"
+            "Lock: [cyan]holix profile crypto lock[/cyan]\n"
+            "Purge cache: [cyan]holix profile crypto purge-cache[/cyan]"
         )
         border = "green" if not locked else "yellow"
 
@@ -731,6 +749,35 @@ def crypto_unlock(
         print_error(str(exc))
         raise typer.Exit(1) from exc
     print_success(f"Profile '{profile}' unlocked for this process")
+
+
+@crypto_app.command("purge-cache")
+def crypto_purge_cache(
+    ctx: typer.Context,
+    all_profiles: bool = typer.Option(
+        False,
+        "--all",
+        help="Purge runtime memory cache for every profile",
+    ),
+) -> None:
+    """Remove decrypted memory cache directories from disk."""
+    from core.crypto.memory_vault import purge_profile_memory_cache
+    from core.crypto.runtime_cache import recover_stale_runtime_caches
+
+    active = _profile(ctx)
+    if all_profiles:
+        stats = recover_stale_runtime_caches()
+        print_success(
+            f"Purged runtime caches ({stats['runtime_removed']} profile dir(s)); "
+            f"legacy removed: {stats['legacy_removed']}"
+        )
+        return
+
+    removed = purge_profile_memory_cache(active)
+    if removed:
+        print_success(f"Purged {removed} memory cache location(s) for '{active}'")
+    else:
+        print_info(f"No memory cache found for '{active}'")
 
 
 @crypto_app.command("lock")
