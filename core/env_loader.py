@@ -338,24 +338,27 @@ def read_profile_env_map(profile: str) -> dict[str, str]:
     if not path.is_file():
         return {}
     try:
-        from dotenv import dotenv_values
+        from core.crypto.profile_files import dotenv_values_for_path
     except ImportError:
         return {}
     return {
         key: str(value)
-        for key, value in dotenv_values(path).items()
+        for key, value in dotenv_values_for_path(path, profile=profile).items()
         if value is not None and str(value).strip()
     }
 
 
 def upsert_profile_env_var(profile: str, key: str, value: str) -> Path:
     """Set or replace a single variable in the profile ``.env`` file."""
+    from core.crypto.profile_files import read_profile_file_text, write_profile_file_text
+
     path = ensure_profile_env_template(profile)
     prefix = f"{key}="
-    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+    text = read_profile_file_text(path, profile=profile) if path.is_file() else ""
+    lines = text.splitlines()
     lines = [line for line in lines if not line.startswith(prefix)]
     lines.append(f"{prefix}{value}")
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    write_profile_file_text(path, "\n".join(lines) + "\n", profile=profile)
     os.environ[key] = value
     return path
 

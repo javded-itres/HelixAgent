@@ -92,6 +92,7 @@ def _seed_profile_env_from_bot(bot_profile: str, user_profile: str) -> None:
     from core.env_loader import holix_env_path, profile_env_path
 
     try:
+        from core.crypto.profile_files import dotenv_values_for_path
         from dotenv import dotenv_values
     except ImportError:
         return
@@ -102,7 +103,7 @@ def _seed_profile_env_from_bot(bot_profile: str, user_profile: str) -> None:
 
     bot_values = {
         key: value
-        for key, value in dotenv_values(bot_env).items()
+        for key, value in dotenv_values_for_path(bot_env, profile=bot_profile).items()
         if value is not None and str(value).strip()
     }
     if not bot_values:

@@ -39,18 +39,22 @@ def load_telegram_env_files(profile: str | None = None) -> None:
     bootstrap_profile_env(name)
 
     try:
-        from dotenv import load_dotenv
+        from core.crypto.profile_files import dotenv_values_for_path
     except ImportError:
         return
 
     path = telegram_env_path(name)
     if path.is_file():
-        load_dotenv(path, override=False)
+        for key, value in dotenv_values_for_path(path, profile=name).items():
+            if value is not None and str(value).strip() and key not in os.environ:
+                os.environ[key] = str(value)
         return
 
     legacy = legacy_telegram_env_path()
     if legacy.is_file():
-        load_dotenv(legacy, override=False)
+        for key, value in dotenv_values_for_path(legacy).items():
+            if value is not None and str(value).strip() and key not in os.environ:
+                os.environ[key] = str(value)
 
 
 def token_looks_valid(token: str) -> bool:
