@@ -502,7 +502,9 @@ def crypto_enable(
     print_success(f"Encryption enabled for profile '{profile}'")
     print_info(f"Workspace: {result.workspace}")
     if result.files_encrypted:
-        print_info(f"Encrypted {result.files_encrypted} existing file(s)")
+        print_info(f"Encrypted {result.files_encrypted} workspace file(s)")
+    if getattr(result, "secrets_encrypted", 0):
+        print_info(f"Encrypted {result.secrets_encrypted} profile secret file(s)")
     print_warning("Save your unlock key — data cannot be recovered without it")
     print_info(f"Unlock session: holix -p {profile} --unlock-key <key> chat")
 
@@ -596,6 +598,72 @@ def crypto_migrate(
     print_warning("Save your unlock key — data cannot be recovered without it")
     if len(summary.migrated) > 1:
         print_info("Use the same unlock key for all migrated profiles")
+
+
+@crypto_app.command("seal")
+def crypto_seal(
+    ctx: typer.Context,
+    all_profiles: bool = typer.Option(
+        False,
+        "--all",
+        help="Seal secrets for every encrypted profile",
+    ),
+    unlock_key: str | None = typer.Option(
+        None,
+        "--unlock-key",
+        help="User encryption key",
+    ),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
+) -> None:
+    """Encrypt plaintext .env/SOUL/USER files for profiles that already have crypto.json."""
+    from core.crypto.bootstrap import seal_profiles_secrets
+    from core.crypto.profile_crypto import is_profile_encryption_enabled
+
+    manager = get_profile_manager()
+    active = _profile(ctx)
+
+    if all_profiles:
+        targets = [
+            name
+            for name in manager.list_profiles()
+            if is_profile_encryption_enabled(name)
+        ]
+    else:
+        if not is_profile_encryption_enabled(active):
+            print_error(f"Profile '{active}' is not encrypted. Run: holix profile crypto enable")
+            raise typer.Exit(1)
+        targets = [active]
+
+    if not targets:
+        print_info("No encrypted profiles found")
+        raise typer.Exit(0)
+
+    print_info(f"Profiles to seal ({len(targets)}): {', '.join(targets)}")
+    if not yes:
+        confirmed = typer.confirm("Encrypt profile secret files on disk?", default=False)
+        if not confirmed:
+            print_info("Seal cancelled")
+            raise typer.Exit(0)
+
+    key = (unlock_key or "").strip()
+    if not key:
+        key = typer.prompt("Encryption unlock key", hide_input=True)
+
+    summary = seal_profiles_secrets(manager, key, profiles=targets)
+    for result in summary.migrated:
+        if result.secrets_encrypted:
+            print_success(f"Sealed '{result.profile}' ({result.secrets_encrypted} file(s))")
+        else:
+            print_info(f"No plaintext secrets left in '{result.profile}'")
+
+    for name in summary.skipped:
+        print_info(f"Skipped '{name}' (not encrypted)")
+
+    for name, error in summary.failed:
+        print_error(f"Failed '{name}': {error}")
+
+    if summary.failed:
+        raise typer.Exit(1)
 
 
 @crypto_app.command("status")

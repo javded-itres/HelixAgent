@@ -1,4 +1,5 @@
 import asyncio
+import re
 import shlex
 
 from config import settings
@@ -6,6 +7,27 @@ from core.platform_compat import IS_WINDOWS, subprocess_shell_kwargs
 from core.security.safety import command_whitelist
 from core.tools.base import BaseTool
 from core.workspace import sanitize_paths_in_text
+
+_PROFILE_PATH_RE = re.compile(
+    r"(?:~/?\.holix/profiles/|\.holix/profiles/|/profiles/[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}/)"
+)
+
+
+def _blocked_profile_path_access(command: str) -> tuple[bool, str]:
+    """Block shell commands that read Holix profile secrets outside workspace jail."""
+    from core.crypto.profile_crypto import is_profile_encryption_enabled
+    from core.tools.execution_context import get_profile_name
+
+    profile = get_profile_name()
+    if not is_profile_encryption_enabled(profile):
+        return False, ""
+
+    normalized = command.replace("\\", "/")
+    if _PROFILE_PATH_RE.search(normalized):
+        return True, "Direct access to Holix profile directories is disabled for encrypted profiles."
+    if ".holix/profiles" in normalized or "/profiles/" in normalized and ".env" in normalized:
+        return True, "Direct access to profile secrets is disabled for encrypted profiles."
+    return False, ""
 
 
 class TerminalTool(BaseTool):
@@ -50,6 +72,10 @@ class TerminalTool(BaseTool):
             allowed, reason = command_whitelist.is_command_allowed(command)
             if not allowed:
                 return f"Error: Command blocked by safety policy. {reason}"
+
+        blocked, reason = _blocked_profile_path_access(command)
+        if blocked:
+            return f"Error: Command blocked. {reason}"
 
         try:
             from core.workspace import get_effective_workspace_root

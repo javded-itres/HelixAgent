@@ -22,7 +22,10 @@ def _read_user_raw(profile: str | None = None) -> str:
     if not path.is_file():
         return ""
     try:
-        return path.read_text(encoding="utf-8", errors="replace").strip()
+        from core.crypto.profile_files import read_profile_file_text
+
+        name = (profile or "default").strip() or "default"
+        return read_profile_file_text(path, profile=name).strip()
     except OSError:
         return ""
 
@@ -128,7 +131,10 @@ def update_user_profile(
             merged["notes"] = note_text
 
     action = "created" if not path.is_file() else "updated"
-    path.write_text(_format_user_markdown(merged), encoding="utf-8")
+    from core.crypto.profile_files import write_profile_file_text
+
+    name = (profile or "default").strip() or "default"
+    write_profile_file_text(path, _format_user_markdown(merged), profile=name)
     return action, merged
 
 

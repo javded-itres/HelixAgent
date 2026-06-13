@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from contextvars import ContextVar
 
 from core.crypto.profile_crypto import ProfileCryptoLockedError
@@ -68,3 +69,17 @@ def clear_profile_unlock(profile: str | None = None) -> None:
         clear_profile_session_unlock(profile)
     else:
         clear_profile_session_unlock()
+
+
+def bootstrap_profile_unlock_from_env(profile: str) -> bool:
+    """Unlock encrypted profile using HOLIX_UNLOCK_KEY from the environment."""
+    key = os.getenv("HOLIX_UNLOCK_KEY", "").strip()
+    if not key:
+        return False
+    from core.crypto.profile_crypto import is_profile_encryption_enabled, unlock_profile_dek
+
+    if not is_profile_encryption_enabled(profile):
+        return False
+    dek = unlock_profile_dek(profile, key)
+    set_profile_session_unlock(profile, dek)
+    return True

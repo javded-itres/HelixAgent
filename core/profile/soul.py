@@ -54,11 +54,20 @@ def soul_path(profile: str | None = None) -> Path:
     return profile_dir_path(name) / SOUL_MD_FILENAME
 
 
+def _write_soul_text(path: Path, content: str) -> None:
+    from core.crypto.profile_files import write_profile_file_text
+
+    write_profile_file_text(path, content, profile=path.parent.name)
+
+
 def _read_raw_soul(path: Path) -> str:
     if not path.is_file():
         return ""
     try:
-        return path.read_text(encoding="utf-8", errors="replace").strip()
+        from core.crypto.profile_files import read_profile_file_text
+
+        name = path.parent.name
+        return read_profile_file_text(path, profile=name).strip()
     except OSError:
         return ""
 
@@ -89,7 +98,7 @@ def ensure_soul_file(profile: str | None = None, *, placeholder: bool = False) -
     path.parent.mkdir(parents=True, exist_ok=True)
     if not path.is_file():
         body = PLACEHOLDER_SOUL_MD if placeholder else DEFAULT_SOUL_MD
-        path.write_text(body.strip() + "\n", encoding="utf-8")
+        _write_soul_text(path, body.strip() + "\n")
     return path
 
 
@@ -121,11 +130,11 @@ def update_soul_content(
     if is_soul_empty_or_placeholder(profile):
         if not body.startswith("#"):
             body = f"# Agent Soul\n\n{body}"
-        path.write_text(body.strip() + "\n", encoding="utf-8")
+        _write_soul_text(path, body.strip() + "\n")
         return "written"
 
     existing = _read_raw_soul(path)
-    path.write_text(existing.rstrip() + "\n\n" + body.strip() + "\n", encoding="utf-8")
+    _write_soul_text(path, existing.rstrip() + "\n\n" + body.strip() + "\n")
     return "appended"
 
 

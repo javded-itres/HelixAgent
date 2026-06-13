@@ -136,16 +136,21 @@ def _apply_legacy_helix_env_aliases() -> None:
         os.environ[holix_key] = str(value)
 
 
-def _apply_env_file(path: Path, *, override_file_values: bool = False) -> None:
+def _apply_env_file(
+    path: Path,
+    *,
+    override_file_values: bool = False,
+    profile: str | None = None,
+) -> None:
     if not path.is_file():
         return
     try:
-        from dotenv import dotenv_values
+        from core.crypto.profile_files import dotenv_values_for_path
     except ImportError:
         return
 
     locked = _shell_locked_keys()
-    for key, value in dotenv_values(path).items():
+    for key, value in dotenv_values_for_path(path, profile=profile).items():
         if value is None or not str(value).strip():
             continue
         if key in locked:
@@ -222,8 +227,14 @@ def bootstrap_profile_env(profile: str, *, force: bool = False) -> None:
     bootstrap_env(force=force)
     name = (profile or "default").strip() or "default"
     os.environ["HOLIX_PROFILE"] = name
+    try:
+        from core.crypto.unlock_context import bootstrap_profile_unlock_from_env
+
+        bootstrap_profile_unlock_from_env(name)
+    except Exception:
+        pass
     _seed_profile_env(name, inherit_global=True)
-    _apply_env_file(profile_env_path(name), override_file_values=True)
+    _apply_env_file(profile_env_path(name), override_file_values=True, profile=name)
     _apply_legacy_helix_env_aliases()
     _ACTIVE_PROFILE_ENV = name
 

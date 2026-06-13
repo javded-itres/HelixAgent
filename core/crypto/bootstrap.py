@@ -12,6 +12,7 @@ from core.crypto.profile_crypto import (
     is_profile_encryption_enabled,
     unlock_profile_dek,
 )
+from core.crypto.profile_files import encrypt_profile_secrets
 from core.crypto.unlock_context import set_profile_session_unlock
 from core.workspace.limits import ensure_profile_limits
 from core.workspace.quota import QUOTA_DIRNAME, reconcile_workspace_usage
@@ -22,6 +23,7 @@ class EncryptionEnableResult:
     profile: str
     workspace: Path
     files_encrypted: int
+    secrets_encrypted: int = 0
 
 
 @dataclass(slots=True)
@@ -95,8 +97,10 @@ def enable_profile_encryption(
     dek = unlock_profile_dek(profile, user_encryption_key)
 
     files_encrypted = 0
+    secrets_encrypted = 0
     if encrypt_existing:
         files_encrypted = encrypt_workspace_tree(workspace, dek)
+        secrets_encrypted = encrypt_profile_secrets(profile, dek)
     reconcile_workspace_usage(workspace)
 
     config = manager.load_profile(profile)
@@ -107,7 +111,48 @@ def enable_profile_encryption(
         profile=profile,
         workspace=workspace,
         files_encrypted=files_encrypted,
+        secrets_encrypted=secrets_encrypted,
     )
+
+
+def seal_profiles_secrets(
+    manager,
+    user_encryption_key: str,
+    *,
+    profiles: list[str] | None = None,
+) -> MigrationSummary:
+    """Encrypt plaintext .env/SOUL/USER/etc. for profiles that already have crypto.json."""
+    from core.crypto.profile_files import seal_profile_secrets
+
+    summary = MigrationSummary()
+    targets = profiles if profiles is not None else manager.list_profiles()
+
+    for profile in targets:
+        if not manager.profile_exists(profile):
+            summary.failed.append((profile, "profile does not exist"))
+            continue
+        if not is_profile_encryption_enabled(profile):
+            summary.skipped.append(profile)
+            continue
+        try:
+            count = seal_profile_secrets(profile, user_encryption_key)
+            config = manager.load_profile(profile)
+            if config.workspace_root and str(config.workspace_root).strip():
+                workspace = Path(config.workspace_root).expanduser().resolve()
+            else:
+                workspace = manager.get_profile_dir(profile) / "workspace"
+            summary.migrated.append(
+                EncryptionEnableResult(
+                    profile=profile,
+                    workspace=workspace,
+                    files_encrypted=0,
+                    secrets_encrypted=count,
+                )
+            )
+        except (ProfileCryptoError, ValueError, OSError) as exc:
+            summary.failed.append((profile, str(exc)))
+
+    return summary
 
 
 def migrate_profiles_encryption(

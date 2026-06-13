@@ -543,15 +543,9 @@ def unlock_profile_encryption(profile: str, unlock_key: str) -> None:
 
 def bootstrap_profile_unlock_from_env(profile: str) -> bool:
     """Unlock encrypted profile using HOLIX_UNLOCK_KEY from the environment."""
-    key = os.getenv("HOLIX_UNLOCK_KEY", "").strip()
-    if not key:
-        return False
-    from core.crypto.profile_crypto import is_profile_encryption_enabled
+    from core.crypto.unlock_context import bootstrap_profile_unlock_from_env as _bootstrap
 
-    if not is_profile_encryption_enabled(profile):
-        return False
-    unlock_profile_encryption(profile, key)
-    return True
+    return _bootstrap(profile)
 
 
 def init_profile(

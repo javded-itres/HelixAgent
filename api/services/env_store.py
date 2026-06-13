@@ -9,16 +9,16 @@ from pathlib import Path
 from core.env_loader import ensure_profile_env_template, profile_env_path
 
 
-def _read_env_map(path: Path) -> dict[str, str]:
+def _read_env_map(path: Path, *, profile: str | None = None) -> dict[str, str]:
     if not path.is_file():
         return {}
     try:
-        from dotenv import dotenv_values
+        from core.crypto.profile_files import dotenv_values_for_path
     except ImportError:
         return {}
     return {
         key: str(value)
-        for key, value in dotenv_values(path).items()
+        for key, value in dotenv_values_for_path(path, profile=profile).items()
         if value is not None and str(value).strip()
     }
 
@@ -42,8 +42,17 @@ def _format_env_value(value: str) -> str:
     return value
 
 
-def patch_env_file(path: Path, variables: dict[str, str]) -> None:
-    lines = path.read_text(encoding="utf-8").splitlines() if path.is_file() else []
+def patch_env_file(path: Path, variables: dict[str, str], *, profile: str | None = None) -> None:
+    from core.crypto.profile_files import read_profile_file_text, write_profile_file_text
+
+    name = profile or (path.parent.name if path.parent.name != "profiles" else None)
+    if path.is_file() and name:
+        text = read_profile_file_text(path, profile=name)
+        lines = text.splitlines()
+    elif path.is_file():
+        lines = path.read_text(encoding="utf-8").splitlines()
+    else:
+        lines = []
     existing_keys = {line.split("=", 1)[0] for line in lines if "=" in line}
     for key, value in variables.items():
         prefix = f"{key}="
@@ -52,7 +61,11 @@ def patch_env_file(path: Path, variables: dict[str, str]) -> None:
         os.environ[key] = value
         existing_keys.add(key)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+    payload = "\n".join(lines) + ("\n" if lines else "")
+    if name:
+        write_profile_file_text(path, payload, profile=name)
+    else:
+        path.write_text(payload, encoding="utf-8")
 
 
 def patch_global_env(variables: dict[str, str]) -> Path:
@@ -66,5 +79,5 @@ def patch_global_env(variables: dict[str, str]) -> Path:
 def patch_profile_env(profile: str, variables: dict[str, str]) -> Path:
     ensure_profile_env_template(profile)
     path = profile_env_path(profile)
-    patch_env_file(path, variables)
+    patch_env_file(path, variables, profile=profile)
     return path
