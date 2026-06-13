@@ -17,6 +17,11 @@ from dishka.integrations.fastapi import setup_dishka
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
+from integrations.max.gateway_routes import (
+    init_max_webhook,
+    max_gateway_state,
+    register_max_routes,
+)
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
@@ -32,6 +37,7 @@ from api.routers import (
     hermes_v1,
     holix_config,
     holix_global,
+    holix_max,
     holix_mcp,
     holix_models,
     holix_profiles,
@@ -96,6 +102,8 @@ async def lifespan(app: FastAPI):
 
     asyncio.create_task(_warm_gateway(), name="holix-gateway-warm")
 
+    await init_max_webhook(os.getenv("HELIX_PROFILE", "default"))
+
     yield
 
     if state.companions is not None:
@@ -138,7 +146,10 @@ app.include_router(holix_mcp.router)
 app.include_router(holix_config.router)
 app.include_router(holix_global.router)
 app.include_router(holix_telegram.router)
+app.include_router(holix_max.router)
 app.include_router(docs_chat_router)
+
+register_max_routes(app)
 
 
 @app.get("/")
@@ -152,6 +163,9 @@ async def root():
         "host_profile": state.host_profile,
         "loaded_profiles": loaded,
         "require_auth": settings.effective_require_auth,
+        "max_webhook": (
+            (max_state := max_gateway_state()) is not None and max_state.subscribed
+        ),
     }
 
 

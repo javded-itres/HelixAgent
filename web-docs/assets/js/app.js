@@ -211,7 +211,7 @@ const I18N = {
     mkt_how_run: "One-shot queries and scripting",
     mkt_how_gw: "Background HTTP gateway + optional docs site",
     install_pypi: "pipx install Holix",
-    install_pypi_hint: "PyPI · CLI command: helix",
+    install_pypi_hint: "PyPI · CLI command: holix",
     install_pypi_link: "PyPI",
     cta_docs: "Read documentation",
     cta_install: "Installation guide",
@@ -299,7 +299,7 @@ const I18N = {
     mkt_how_run: "Одиночные запросы и скрипты",
     mkt_how_gw: "Фоновый HTTP gateway",
     install_pypi: "pipx install Holix",
-    install_pypi_hint: "PyPI · команда: helix",
+    install_pypi_hint: "PyPI · команда: holix",
     install_pypi_link: "PyPI",
     cta_docs: "Открыть документацию",
     cta_install: "Руководство по установке",
@@ -616,6 +616,7 @@ function renderSidebar() {
 
 function featureCardsHtml() {
   const feats = [
+    ["feat_max", "feat_max_desc", "💬"],
     ["feat_tools", "feat_tools_desc", "⚡"],
     ["feat_memory", "feat_memory_desc", "🧠"],
     ["feat_skills", "feat_skills_desc", "📚"],
@@ -673,8 +674,19 @@ function renderMarketing() {
       </div>
     </section>
 
+    <section class="max-callout">
+      <div class="max-callout-icon" aria-hidden="true">💬</div>
+      <div>
+        <span class="max-callout-badge">${t("mkt_max_badge")}</span>
+        <h2>${t("mkt_max_title")}</h2>
+        <p>${t("mkt_max_text")}</p>
+        <a href="${docHref("max")}" class="max-callout-link">${t("mkt_max_link")} →</a>
+      </div>
+    </section>
+
     <h2 class="section-title">${t("mkt_adv_title")}</h2>
     <div class="advantages-grid">
+      <article class="advantage-card"><h3>${t("mkt_adv_5_t")}</h3><p>${t("mkt_adv_5_d")}</p></article>
       <article class="advantage-card"><h3>${t("mkt_adv_1_t")}</h3><p>${t("mkt_adv_1_d")}</p></article>
       <article class="advantage-card"><h3>${t("mkt_adv_2_t")}</h3><p>${t("mkt_adv_2_d")}</p></article>
       <article class="advantage-card"><h3>${t("mkt_adv_3_t")}</h3><p>${t("mkt_adv_3_d")}</p></article>

@@ -27,6 +27,7 @@ class LiveTranscriptBuffer:
     result_posted_separately: bool = False
     max_tool_lines: int = 8
     max_answer_chars: int = 2800
+    compact_tools: bool = False
 
     def set_header(self, *, profile: str | None = None, mode: str | None = None, session: str | None = None) -> None:
         if profile is not None:
@@ -41,9 +42,10 @@ class LiveTranscriptBuffer:
 
     def add_tool_start(self, name: str, args: object) -> None:
         line = format_tool_header(name, running=True)
-        args_text = format_tool_args(args)
-        if args_text:
-            line += f"\n  {args_text}"
+        if not self.compact_tools:
+            args_text = format_tool_args(args)
+            if args_text:
+                line += f"\n  {args_text}"
         self.tool_lines.append(line)
         self._trim_tools()
 
@@ -86,7 +88,9 @@ class LiveTranscriptBuffer:
     def mark_error(self, message: str) -> None:
         self.status = "error"
         self.thinking = None
-        self.notes.append(f"Error: {message}")
+        msg = (message or "unknown error").strip()
+        self.answer = msg[: self.max_answer_chars]
+        self.notes.append(f"Error: {msg}")
 
     def _trim_tools(self) -> None:
         if len(self.tool_lines) > self.max_tool_lines:

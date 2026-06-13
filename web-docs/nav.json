@@ -90,10 +90,22 @@
     "file_key": "TELEGRAM"
   },
   {
+    "slug": "max",
+    "en": "MAX Messenger",
+    "ru": "MAX — мессенджер",
+    "file_key": "MAX"
+  },
+  {
     "slug": "telegram-multi-profile",
     "en": "Telegram Multi-Profile",
     "ru": "Telegram: несколько профилей",
     "file_key": "TELEGRAM_MULTI_PROFILE"
+  },
+  {
+    "slug": "max-multi-profile",
+    "en": "MAX Multi-Profile",
+    "ru": "MAX: несколько профилей",
+    "file_key": "MAX_MULTI_PROFILE"
   },
   {
     "slug": "browser-tools",

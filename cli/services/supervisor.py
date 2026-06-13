@@ -9,6 +9,7 @@ import sys
 from typing import NoReturn
 
 from core.platform_compat import popen_background
+from integrations.max.gateway_routes import max_enabled, max_should_webhook
 from integrations.telegram.config import load_telegram_settings, telegram_aiogram_available
 
 from cli.services.docs_site import docs_url, resolve_web_docs_dir
@@ -156,6 +157,12 @@ async def _run_supervisor_async(
         companions.append("telegram (needs: uv sync --extra telegram)")
     else:
         companions.append("telegram (disabled)")
+    if max_should_webhook(profile):
+        companions.append("max (webhook)")
+    elif max_enabled(profile):
+        companions.append("max (polling — use holix max)")
+    else:
+        companions.append("max (disabled)")
     print_info(f"Companion services: {', '.join(companions)}")
 
     os.environ["HOLIX_GATEWAY_SUPERVISOR"] = "1"
