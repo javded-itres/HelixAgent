@@ -126,6 +126,19 @@ class MaxHost:
                 logger.error("MAX _send_text failed for chunk (%d chars)", len(chunk))
             await asyncio.sleep(0.06)
 
+    async def _send_html(self, html: str) -> None:
+        chunks = split_max_html(html) or [html]
+        for chunk in chunks:
+            try:
+                await self._client.send_message(
+                    chunk,
+                    fmt="html",
+                    **self._reply_kwargs(),
+                )
+                await asyncio.sleep(0.06)
+            except Exception:
+                logger.exception("MAX _send_html failed for chunk (%d chars)", len(chunk))
+
     async def _send_plain_chunks(self, chunks: list[str]) -> None:
         for chunk in chunks:
             body = truncate_max_text(chunk)
@@ -442,6 +455,11 @@ class MaxHost:
     async def handle_user_text(self, text: str) -> None:
         message = text.strip()
         if not message:
+            return
+
+        from integrations.max.admin_broadcast import try_compose_admin_broadcast
+
+        if await try_compose_admin_broadcast(self, message):
             return
 
         if self._session.pending_plan_review_id:

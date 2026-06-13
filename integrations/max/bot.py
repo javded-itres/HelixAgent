@@ -47,6 +47,15 @@ from integrations.telegram.file_handler import SavedTelegramFile
 logger = logging.getLogger(__name__)
 
 
+def _seed_admin_profile_background() -> None:
+    try:
+        from core.profile_admin_seed import ensure_admin_profile_from_default
+
+        ensure_admin_profile_from_default()
+    except Exception:
+        pass
+
+
 def _session_key(user_id: int, chat_id: int | None) -> tuple[int, int]:
     return (chat_id or 0, user_id)
 
@@ -59,6 +68,10 @@ class HelixMaxBot:
 
     async def warmup(self) -> None:
         """Eagerly initialize shared Holix agent (memory, tools, MCP) at bot startup."""
+        asyncio.create_task(
+            asyncio.to_thread(_seed_admin_profile_background),
+            name="max-admin-profile-seed",
+        )
         if self._agent is not None:
             return
         logger.info("Initializing Holix agent (profile=%s)…", self.settings.profile)
