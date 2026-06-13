@@ -24,6 +24,23 @@ from core.prompt_builder import build_system_prompt, format_tools_description
 logger = logging.getLogger(__name__)
 
 
+def _emit_final_response(
+    agent,
+    *,
+    content: str,
+    steps_taken: int,
+    conversation_id: str,
+) -> None:
+    if agent and hasattr(agent, "emit"):
+        agent.emit(
+            FinalResponseEvent(
+                content=content,
+                steps_taken=steps_taken,
+                conversation_id=conversation_id,
+            )
+        )
+
+
 async def react_node(state: HolixGraphState, config: RunnableConfig) -> dict:
     """ReAct reasoning node: call LLM, decide next action.
 

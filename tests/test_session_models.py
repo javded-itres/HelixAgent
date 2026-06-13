@@ -6,7 +6,11 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from core.session_models import SessionModelStore, restore_session_model
+from core.session_models import (
+    SessionModelStore,
+    max_legacy_conversation_key,
+    restore_session_model,
+)
 
 
 def test_session_model_store_roundtrip(tmp_path: Path, monkeypatch):

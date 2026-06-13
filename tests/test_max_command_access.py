@@ -31,22 +31,28 @@ def holix_home(tmp_path, monkeypatch: pytest.MonkeyPatch):
     return root
 
 
-def _isolated_bot(bot_profile: str = "shared") -> None:
-    import os
-
-    os.environ.pop("HOLIX_MAX_ALLOW_ALL", None)
+def _isolated_bot(monkeypatch: pytest.MonkeyPatch, bot_profile: str = "shared") -> None:
+    for key in (
+        "HOLIX_MAX_ALLOW_ALL",
+        "HELIX_MAX_ALLOW_ALL",
+        "HOLIX_MAX_ALLOWED_USERS",
+        "HELIX_MAX_ALLOWED_USERS",
+    ):
+        monkeypatch.delenv(key, raising=False)
     save_max_env(
         {
             "MAX_ACCESS_TOKEN": "a" * 32,
             "HOLIX_MAX_ACCESS_REQUESTS": "true",
+            "HOLIX_MAX_ALLOW_ALL": "false",
+            "HELIX_MAX_ALLOW_ALL": "false",
         },
         profile=bot_profile,
     )
     set_admin_user(bot_profile, 900)
 
 
-def test_non_admin_commands_filtered(holix_home) -> None:
-    _isolated_bot()
+def test_non_admin_commands_filtered(holix_home, monkeypatch: pytest.MonkeyPatch) -> None:
+    _isolated_bot(monkeypatch)
     names = {spec.command for spec in commands_for_user("shared", 77, locale="en")}
     assert "help" in names
     assert "status" in names
@@ -55,16 +61,16 @@ def test_non_admin_commands_filtered(holix_home) -> None:
     assert ADMIN_ONLY_COMMANDS.isdisjoint(names)
 
 
-def test_admin_sees_all_commands(holix_home) -> None:
-    _isolated_bot()
+def test_admin_sees_all_commands(holix_home, monkeypatch: pytest.MonkeyPatch) -> None:
+    _isolated_bot(monkeypatch)
     names = {spec.command for spec in commands_for_user("shared", 900, locale="en")}
     assert "message" in names
     assert "cron" in names
     assert "mcp" in names
 
 
-def test_is_command_allowed_blocks_message_for_non_admin(holix_home) -> None:
-    _isolated_bot()
+def test_is_command_allowed_blocks_message_for_non_admin(holix_home, monkeypatch: pytest.MonkeyPatch) -> None:
+    _isolated_bot(monkeypatch)
     assert not is_command_allowed("message", "shared", 77)
     assert is_command_allowed("message", "shared", 900)
     assert is_command_allowed("help", "shared", 77)
@@ -80,22 +86,22 @@ def test_status_menu_hides_profile_but_shows_cron_for_non_admin() -> None:
     assert "Mode" in labels
 
 
-def test_menu_action_allows_cron_for_non_admin(holix_home) -> None:
-    _isolated_bot()
+def test_menu_action_allows_cron_for_non_admin(holix_home, monkeypatch: pytest.MonkeyPatch) -> None:
+    _isolated_bot(monkeypatch)
     assert is_menu_action_allowed("cron", "shared", 77)
     assert not is_menu_action_allowed("profile", "shared", 77)
     assert is_menu_action_allowed("profile", "shared", 900)
 
 
-def test_mcp_management_admin_only_in_isolated_mode(holix_home) -> None:
-    _isolated_bot()
+def test_mcp_management_admin_only_in_isolated_mode(holix_home, monkeypatch: pytest.MonkeyPatch) -> None:
+    _isolated_bot(monkeypatch)
     assert not is_mcp_management_allowed("shared", 77)
     assert is_mcp_management_allowed("shared", 900)
 
 
 @pytest.mark.asyncio
 async def test_interactive_allows_cron_for_non_admin(holix_home, monkeypatch: pytest.MonkeyPatch) -> None:
-    _isolated_bot()
+    _isolated_bot(monkeypatch)
     from integrations.max.interactive import MaxInteractive
 
     host = MagicMock()
@@ -121,7 +127,7 @@ async def test_interactive_allows_cron_for_non_admin(holix_home, monkeypatch: py
 
 @pytest.mark.asyncio
 async def test_mcp_menu_read_only_for_non_admin(holix_home, monkeypatch: pytest.MonkeyPatch) -> None:
-    _isolated_bot()
+    _isolated_bot(monkeypatch)
     from integrations.max.interactive import MaxInteractive
 
     host = MagicMock()
