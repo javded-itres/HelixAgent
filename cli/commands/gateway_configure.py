@@ -46,34 +46,27 @@ def _profile_env_file(profile: str):
     return profiles_dir() / profile / ".env"
 
 
+def _dotenv_from_path(path, *, profile: str | None = None) -> dict[str, str]:
+    from core.crypto.profile_files import dotenv_values_for_path
+
+    return {
+        key: str(value)
+        for key, value in dotenv_values_for_path(path, profile=profile).items()
+        if value is not None and str(value).strip()
+    }
+
+
 def _profile_env_from_files(profile: str) -> dict[str, str]:
     """Merge global + profile ``.env`` files (profile wins); no shell overrides."""
     from core.global_config import global_env_path
 
     merged: dict[str, str] = {}
-    try:
-        from dotenv import dotenv_values
-    except ImportError:
-        return merged
-
     global_path = global_env_path()
     if global_path.is_file():
-        merged.update(
-            {
-                key: str(value)
-                for key, value in dotenv_values(global_path).items()
-                if value is not None and str(value).strip()
-            }
-        )
+        merged.update(_dotenv_from_path(global_path))
     profile_path = _profile_env_file(profile)
     if profile_path.is_file():
-        merged.update(
-            {
-                key: str(value)
-                for key, value in dotenv_values(profile_path).items()
-                if value is not None and str(value).strip()
-            }
-        )
+        merged.update(_dotenv_from_path(profile_path, profile=profile))
     return merged
 
 
@@ -115,11 +108,7 @@ def _global_gateway_port_default() -> int:
     path = global_env_path()
     if not path.is_file():
         return default
-    try:
-        from dotenv import dotenv_values
-    except ImportError:
-        return default
-    return _env_int_value(dotenv_values(path).get("HOLIX_GATEWAY_PORT"), default)
+    return _env_int_value(_dotenv_from_path(path).get("HOLIX_GATEWAY_PORT"), default)
 
 
 def list_configured_gateway_ports(*, exclude_profile: str | None = None) -> dict[str, int]:
