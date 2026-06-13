@@ -289,12 +289,24 @@ class MaxHost:
         self.transcript_write(f"session name: {name.strip()}")
 
     def _get_available_profiles(self) -> list[str]:
-        from cli.core import ProfileManager
+        from integrations.max.profile_visibility import list_visible_profiles
 
         try:
-            return ProfileManager().list_profiles()
+            return list_visible_profiles(
+                self._session.bot_profile,
+                self._session.user_id,
+                current=self._session.profile,
+            )
         except Exception:
-            return ["default"]
+            return [self._session.profile or "default"]
+
+    def _mcp_management_allowed(self) -> bool:
+        from integrations.max.command_access import is_mcp_management_allowed
+
+        return is_mcp_management_allowed(
+            self._session.bot_profile,
+            self._session.user_id,
+        )
 
     async def _switch_profile(self, new_profile: str) -> None:
         from integrations.max.agent_setup import create_agent
@@ -356,6 +368,9 @@ class MaxHost:
             self.transcript_write(f"MCP list error: {e}")
 
     async def _mcp_install(self, what: str = "") -> None:
+        if not self._mcp_management_allowed():
+            await self._send_text(t("tg.mcp_read_only", host_locale(self)))
+            return
         self.transcript_write(
             "Установка MCP через MAX пока не поддерживается. Используйте: `helix mcp install` в терминале."
             + (f" (запрошено: {what})" if what else "")

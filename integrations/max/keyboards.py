@@ -223,29 +223,33 @@ def models_provider_keyboard(
     return inline_keyboard(rows)
 
 
-def status_menu_keyboard(locale: str | None = None) -> dict[str, Any]:
+def status_menu_keyboard(locale: str | None = None, *, is_admin: bool = True) -> dict[str, Any]:
     from core.i18n.messages import t
 
     loc = locale or "en"
-    return inline_keyboard(
+    row0: list[dict[str, str]] = [
+        _callback_btn(t("tg.menu.mode", loc), _cb("r", "mode")),
+    ]
+    if is_admin:
+        row0.append(_callback_btn(t("tg.menu.profile", loc), _cb("r", "profile")))
+    rows: list[list[dict[str, str]]] = [
+        row0,
         [
-            [
-                _callback_btn(t("tg.menu.mode", loc), _cb("r", "mode")),
-                _callback_btn(t("tg.menu.profile", loc), _cb("r", "profile")),
-            ],
-            [
-                _callback_btn(t("tg.menu.sessions", loc), _cb("r", "sessions")),
-                _callback_btn(t("tg.menu.streaming", loc), _cb("r", "stream")),
-            ],
-            [
-                _callback_btn(t("tg.menu.models", loc), _cb("r", "models")),
-                _callback_btn("Tools", _cb("r", "tools")),
-            ],
-            [
-                _callback_btn(t("tg.menu.compress", loc), _cb("r", "compress")),
-            ],
-        ]
-    )
+            _callback_btn(t("tg.menu.sessions", loc), _cb("r", "sessions")),
+            _callback_btn(t("tg.menu.streaming", loc), _cb("r", "stream")),
+        ],
+        [
+            _callback_btn(t("tg.menu.models", loc), _cb("r", "models")),
+            _callback_btn("Tools", _cb("r", "tools")),
+        ],
+        [
+            _callback_btn(t("tg.menu.compress", loc), _cb("r", "compress")),
+        ],
+        [
+            _callback_btn("Cron", _cb("r", "cron")),
+        ],
+    ]
+    return inline_keyboard(rows)
 
 
 def confirmation_keyboard(confirmation_id: str) -> dict[str, Any]:

@@ -4,10 +4,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from cli.shared.slash_input import is_mode_slash, is_models_slash, normalize_slash_input
+from cli.shared.slash_input import (
+    is_mode_slash,
+    is_models_slash,
+    normalize_slash_input,
+    slash_command_token,
+)
 from core.i18n import host_locale, t
+
 from integrations.max.keyboards import (
     MODE_LABELS,
+    _callback_btn,
+    _cb,
+    inline_keyboard,
     mode_picker_keyboard,
     mode_picker_text,
     models_provider_keyboard,
@@ -41,10 +50,26 @@ class MaxInteractive:
     def _session(self) -> Any:
         return self._host._session
 
+    async def _deny_menu_command(self, command_token: str) -> bool:
+        from integrations.max.command_access import is_command_allowed
+
+        if is_command_allowed(
+            command_token,
+            self._session.bot_profile,
+            self._session.user_id,
+        ):
+            return False
+        await self._host._send_text(t("tg.menu_unavailable", host_locale(self._host)))
+        return True
+
     async def handle_slash(self, command: str) -> bool:
         cmd = normalize_slash_input(command.strip())
         lower = cmd.lower()
         parts = lower.split()
+        cmd_token = slash_command_token(cmd)
+
+        if await self._deny_menu_command(cmd_token.lstrip("/").split()[0]):
+            return True
 
         if is_models_slash(cmd):
             await self.show_models()
@@ -107,6 +132,12 @@ class MaxInteractive:
             await self.show_mcp_menu(cmd)
             return True
 
+        if lower.startswith("/cron"):
+            if len(parts) > 1 and parts[1] == "add":
+                return False
+            await self.show_cron_menu()
+            return True
+
         return False
 
     async def apply_callback(self, action: str, value: str) -> str:
@@ -122,15 +153,23 @@ class MaxInteractive:
             return t("tg.streaming", host_locale(self._host), state=state)
 
         if action == "pi":
+            lang = host_locale(self._host)
             profiles = self._session.ui_profiles
             idx = int(value)
             if 0 <= idx < len(profiles):
                 name = profiles[idx]
                 if name != self._host.profile:
+                    from integrations.max.profile_visibility import is_profile_list_hidden
+
+                    if is_profile_list_hidden(
+                        self._session.bot_profile,
+                        self._session.user_id,
+                    ):
+                        return t("tg.profile_switch_by_key", lang)
                     await self._host._switch_profile(name)
-                    return t("tg.profile", host_locale(self._host), name=name)
-                return t("tg.profile_same", host_locale(self._host), name=name)
-            return t("tg.profile_invalid", host_locale(self._host))
+                    return t("tg.profile", lang, name=name)
+                return t("tg.profile_same", lang, name=name)
+            return t("tg.profile_invalid", lang)
 
         if action == "s":
             sessions = self._session.ui_sessions
@@ -200,9 +239,27 @@ class MaxInteractive:
             await self._refresh(value)
             return ""
 
+        if action == "mcp":
+            await self._handle_mcp_callback(value)
+            return ""
+
+        if action == "cr":
+            await self._handle_cron_callback(value)
+            return ""
+
         return t("tg.unknown_action", host_locale(self._host))
 
     async def _refresh(self, kind: str) -> None:
+        from integrations.max.command_access import is_menu_action_allowed
+
+        if not is_menu_action_allowed(
+            kind,
+            self._session.bot_profile,
+            self._session.user_id,
+        ):
+            await self._host._send_text(t("tg.menu_unavailable", host_locale(self._host)))
+            return
+
         if kind == "compress":
             from cli.shared.commands.context_compress import run_context_compress
 
@@ -217,6 +274,8 @@ class MaxInteractive:
             "models": self.show_models,
             "tools": self.show_tools_picker,
             "status": self.show_status,
+            "mcp": self.show_mcp_menu,
+            "cron": self.show_cron_menu,
         }
         fn = dispatch.get(kind)
         if fn:
@@ -239,17 +298,30 @@ class MaxInteractive:
         await self._host._send_text_with_keyboard(text, stream_picker_keyboard(on))
 
     async def show_profile_picker(self) -> None:
+        from integrations.max.profile_visibility import is_profile_list_hidden
+
         profiles = self._host._get_available_profiles()
         self._session.ui_profiles = profiles
+        lang = host_locale(self._host)
+        current = self._host.profile
+
+        if is_profile_list_hidden(self._session.bot_profile, self._session.user_id):
+            await self._host._send_text(
+                f"**{t('profiles_title', lang)}**\n"
+                f"{t('tg.profile_current', lang, name=current)}\n\n"
+                f"_{t('tg.profile_switch_by_key', lang)}_"
+            )
+            return
+
         lines = [
-            "**Профиль Helix**",
-            f"Сейчас: `{self._host.profile}`",
+            f"**{t('profiles_title', lang)}**",
+            t("tg.profile_current", lang, name=current),
             "",
             "_Профиль задаёт модели, память и skills. Смена создаёт новую сессию._",
         ]
         await self._host._send_text_with_keyboard(
             "\n".join(lines),
-            profile_picker_keyboard(profiles, self._host.profile),
+            profile_picker_keyboard(profiles, current),
         )
 
     async def show_sessions_picker(self, *, page: int = 0) -> None:
@@ -369,19 +441,209 @@ class MaxInteractive:
         )
 
     async def show_mcp_menu(self, command: str = "/mcp") -> None:
+        from integrations.max.command_access import is_mcp_management_allowed
+
+        host = self._host
         cmd = command.lower()
         parts = cmd.split()
+        profile = host.profile
+
+        try:
+            from cli.core import get_profile_manager
+
+            cfg = get_profile_manager().load_profile(profile)
+            servers = getattr(cfg, "mcp_servers", {}) or {}
+        except Exception:
+            servers = {}
+
+        text_lines = [f"**MCP Servers** · профиль `{profile}`"]
+        if not servers:
+            text_lines.append("\nНет настроенных MCP серверов.")
+            text_lines.append("Используй /mcp install или holix mcp install в терминале.")
+        else:
+            for name, data in list(servers.items())[:8]:
+                src = data.get("_source", "manual")
+                trans = data.get("transport", "stdio")
+                text_lines.append(f"• `{name}` ({trans}) [{src}]")
+
+        can_manage_mcp = is_mcp_management_allowed(
+            self._session.bot_profile,
+            self._session.user_id,
+        )
+        if can_manage_mcp:
+            rows: list[list[dict[str, str]]] = [
+                [
+                    _callback_btn("📋 List", _cb("mcp", "list")),
+                    _callback_btn("🛠 Install popular", _cb("mcp", "install-popular")),
+                ],
+                [
+                    _callback_btn("➕ Install from git", _cb("mcp", "install-git")),
+                    _callback_btn("🔗 Assign to agents", _cb("mcp", "assign")),
+                ],
+                [
+                    _callback_btn("🧪 Test server", _cb("mcp", "test")),
+                    _callback_btn("🗑 Remove server", _cb("mcp", "remove")),
+                ],
+                [
+                    _callback_btn("🔄 Refresh", _cb("mcp", "refresh")),
+                ],
+            ]
+        else:
+            rows = [
+                [
+                    _callback_btn("📋 List", _cb("mcp", "list")),
+                    _callback_btn("🔧 Tools", _cb("mcp", "tools")),
+                ],
+                [
+                    _callback_btn("🔄 Refresh", _cb("mcp", "refresh")),
+                ],
+            ]
+            if not servers:
+                text_lines.append(f"\n_{t('tg.mcp_read_only_empty', host_locale(host))}_")
+
         if len(parts) > 1:
             sub = parts[1]
             if sub == "list":
-                await self._host._mcp_list()
+                await host._mcp_list()
                 return
+            if sub == "tools":
+                if hasattr(host, "_mcp_list_tools"):
+                    await host._mcp_list_tools()
+                return
+            if sub in ("install", "add", "assign", "remove", "rm", "delete", "test"):
+                if not can_manage_mcp:
+                    await host._send_text(t("tg.mcp_read_only", host_locale(host)))
+                    return
             if sub in ("install", "add"):
                 arg = " ".join(parts[2:]) if len(parts) > 2 else ""
-                self._host.run_worker(self._host._mcp_install(arg))
+                host.run_worker(host._mcp_install(arg))
+                return
+            if sub in ("remove", "rm", "delete"):
+                name = parts[2] if len(parts) > 2 else ""
+                host.run_worker(host._mcp_remove(name))
                 return
 
-        await self._host._mcp_list()
+        await host._send_text_with_keyboard("\n".join(text_lines), inline_keyboard(rows))
+
+    async def _deny_mcp_management(self) -> None:
+        await self._host._send_text(t("tg.mcp_read_only", host_locale(self._host)))
+
+    async def _handle_mcp_callback(self, value: str) -> None:
+        from integrations.max.command_access import is_mcp_management_allowed
+
+        host = self._host
+        can_manage = is_mcp_management_allowed(
+            self._session.bot_profile,
+            self._session.user_id,
+        )
+        if value in ("list", "refresh"):
+            await host._mcp_list()
+            return
+        if value == "tools":
+            if hasattr(host, "_mcp_list_tools"):
+                await host._mcp_list_tools()
+            return
+        if not can_manage:
+            await self._deny_mcp_management()
+            return
+        if value == "install-popular":
+            await host._send_text(
+                "Чтобы установить popular MCP, напиши:\n"
+                "`/mcp install context7`\n\n"
+                "Или используй в терминале: `holix mcp install`"
+            )
+            return
+        if value == "install-git":
+            await host._send_text(
+                "Чтобы установить из git, напиши:\n"
+                "`/mcp install https://github.com/owner/repo`\n\n"
+                "Или используй в терминале: `holix mcp install <url>`"
+            )
+            return
+
+    async def show_cron_menu(self) -> None:
+        from cli.shared.commands.cron_commands import format_jobs_message
+        from core.cron.store import CronStore
+
+        host = self._host
+        profile = host.profile
+        store = CronStore(profile)
+        jobs = store.list_jobs()
+
+        text = format_jobs_message(profile, html=False).replace("<b>", "**").replace("</b>", "**")
+        rows: list[list[dict[str, str]]] = []
+
+        for job in jobs[:8]:
+            flag = "✓" if job.enabled else "○"
+            short = (job.name or job.task[:20]).replace("\n", " ")
+            rows.append(
+                [
+                    _callback_btn(f"{flag} {short[:18]}", _cb("cr", f"v:{job.id}")),
+                    _callback_btn("Вкл" if not job.enabled else "Выкл", _cb("cr", f"{'e' if not job.enabled else 'd'}:{job.id}")),
+                    _callback_btn("🗑", _cb("cr", f"x:{job.id}")),
+                ]
+            )
+
+        rows.append([_callback_btn("↻ Обновить", _cb("cr", "list"))])
+        rows.append([_callback_btn("Как добавить", _cb("cr", "help"))])
+        await host._send_text_with_keyboard(text, inline_keyboard(rows))
+
+    async def _handle_cron_callback(self, value: str) -> None:
+        from cli.shared.commands.cron_commands import resolve_job_id
+        from core.cron.store import CronStore
+
+        host = self._host
+        store = CronStore(host.profile)
+
+        if value in ("list", "refresh"):
+            await self.show_cron_menu()
+            return
+
+        if value == "help":
+            await host._send_text(
+                "**Добавить cron**\n"
+                "`/cron add every day at 9 :: текст задачи`\n"
+                "`/cron add 0 9 * * * :: текст задачи`\n\n"
+                "Планировщик работает в `holix gateway`."
+            )
+            return
+
+        if ":" not in value:
+            await self.show_cron_menu()
+            return
+
+        action, job_token = value.split(":", 1)
+        try:
+            job = resolve_job_id(store, job_token)
+        except Exception as e:
+            await host._send_text(f"Ошибка: `{e}`")
+            return
+
+        if action == "e":
+            store.set_enabled(job.id, True)
+            await host._send_text(f"Включено: `{job.id}`")
+            await self.show_cron_menu()
+            return
+        if action == "d":
+            store.set_enabled(job.id, False)
+            await host._send_text(f"Выключено: `{job.id}`")
+            await self.show_cron_menu()
+            return
+        if action == "x":
+            store.remove(job.id)
+            await host._send_text(f"Удалено: `{job.id}`")
+            await self.show_cron_menu()
+            return
+        if action == "v":
+            detail = (
+                f"**{job.name}**\n"
+                f"`{job.cron_expression}`\n"
+                f"Задача: {job.task[:400]}"
+            )
+            await host._send_text(detail)
+            return
+
+        await self.show_cron_menu()
 
     async def show_status(self) -> None:
         from core.session_models import ensure_session_model
@@ -416,9 +678,12 @@ class MaxInteractive:
             lines.append("**Агенты:**")
             for name, provider, mdl in rows:
                 lines.append(f"• `{name}` — {provider} / {mdl}")
+        from integrations.max.admin import is_max_admin
+
+        is_admin = is_max_admin(self._session.bot_profile, self._session.user_id)
         await self._host._send_text_with_keyboard(
             "\n".join(lines),
-            status_menu_keyboard(host_locale(self._host)),
+            status_menu_keyboard(host_locale(self._host), is_admin=is_admin),
         )
 
 
