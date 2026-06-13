@@ -174,6 +174,8 @@ class HelixMaxBot:
         session.pending_plan_review_id = None
         session.pending_confirmation_message_id = None
         session.pending_plan_message_ids.clear()
+        session.approval_callback_tokens.clear()
+        session.plan_callback_tokens.clear()
         session._recent_tool_results.clear()
         session._memory_search_query = ""
         session._memory_search_results.clear()

@@ -17,7 +17,7 @@ from integrations.max.markdown import (
     truncate_max_text,
 )
 from integrations.max.models import message_id_from_response, reply_kwargs_for_session
-from integrations.max.render import buffer_to_max_plain
+from integrations.max.render import buffer_to_max_html
 
 if TYPE_CHECKING:
     from integrations.max.client import MaxClient
@@ -93,6 +93,7 @@ class MaxLivePresenter:
     async def start(self) -> None:
         self.session.bump_live_buffer()
         self._buffer = self.session.live_buffer
+        self._buffer.publish_answer_separately = True
         self._started_at = time.monotonic()
         self._final_delivered = False
         self._final_content = None
@@ -149,11 +150,18 @@ class MaxLivePresenter:
         buf = self._buffer
         if buf is None or buf.status == "done":
             return
-        text = buffer_to_max_plain(buf)
-        if not text.strip():
+        html = buffer_to_max_html(buf)
+        if not html.strip():
             return
+        message_id = self._progress_message_id or self.session.live_message_id
+        if message_id:
+            try:
+                await self._client.edit_message(message_id, html, fmt="html")
+                return
+            except Exception:
+                logger.exception("MAX progress edit failed; sending snapshot")
         try:
-            await self._send_outbound(text)
+            await self._send_outbound(html, fmt="html")
         except Exception:
             logger.exception("MAX progress snapshot send failed")
 

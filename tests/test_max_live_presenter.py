@@ -5,7 +5,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from integrations.max.live_presenter import MaxLivePresenter
 from integrations.max.session import MaxChatSession
 
@@ -58,6 +57,40 @@ async def test_deliver_final_answer_not_marked_when_all_sends_fail() -> None:
     await presenter.deliver_final_answer("**hello** world")
 
     assert presenter.final_delivered is False
+
+
+def test_done_posts_answer_separately_not_in_live_card() -> None:
+    from core.presenters.live_buffer import LiveTranscriptBuffer
+    from integrations.max.render import buffer_to_max_html
+
+    buf = LiveTranscriptBuffer(profile="default", mode="react")
+    buf.publish_answer_separately = True
+    buf.result_posted_separately = True
+    buf.set_answer("**Secret final**")
+    buf.mark_done()
+    html = buffer_to_max_html(buf)
+    assert "<b>Secret final</b>" not in html
+    assert "отдельным сообщением" in html
+
+
+@pytest.mark.asyncio
+async def test_progress_snapshot_edits_live_message() -> None:
+    client = MagicMock()
+    client.edit_message = AsyncMock()
+    client.send_message = AsyncMock()
+    session = MaxChatSession(user_id=1, profile="default", conversation_id="max_default_1")
+    session.bump_live_buffer()
+    session.live_message_id = "live-1"
+    session.live_buffer.add_note("working")
+
+    presenter = MaxLivePresenter(client, session)
+    presenter._progress_message_id = "live-1"
+    presenter._buffer = session.live_buffer
+
+    await presenter._maybe_send_progress_snapshot()
+
+    client.edit_message.assert_awaited_once()
+    client.send_message.assert_not_awaited()
 
 
 @pytest.mark.asyncio

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from core.presenters.live_buffer import LiveTranscriptBuffer
+
 from integrations.max.markdown import (
     escape_html,
     markdown_to_max_html,
@@ -18,7 +19,14 @@ def buffer_to_max_html(buf: LiveTranscriptBuffer) -> str:
     done = buf.status == "done"
     show_tools = bool(buf.tool_lines) and not done
 
-    if done and answer and not show_tools and not buf.thinking and not buf.notes:
+    if (
+        done
+        and answer
+        and not buf.publish_answer_separately
+        and not show_tools
+        and not buf.thinking
+        and not buf.notes
+    ):
         body = markdown_to_max_html(answer)
         footer = (
             f"<i>🤖 {escape_html(buf.profile)} · {escape_html(buf.mode)} · ✓</i>"
@@ -41,7 +49,7 @@ def buffer_to_max_html(buf: LiveTranscriptBuffer) -> str:
             tool_html.append(_format_tool_line(line))
         parts.append("\n".join(tool_html))
 
-    if answer:
+    if answer and not (done and buf.publish_answer_separately):
         rendered = markdown_to_max_html(answer)
         parts.append(rendered if rendered else escape_html(answer))
 
@@ -51,10 +59,12 @@ def buffer_to_max_html(buf: LiveTranscriptBuffer) -> str:
 
     if running and not answer and not buf.tool_lines:
         parts.append("<i>⏳ Working…</i>")
-    elif done and answer:
+    elif done:
         parts.append(
             f"<i>🤖 {escape_html(buf.profile)} · {escape_html(buf.mode)} · ✓</i>"
         )
+        if buf.publish_answer_separately and buf.result_posted_separately:
+            parts.append("<i>Ответ отправлен отдельным сообщением ↓</i>")
     elif buf.status == "error":
         parts.append("<b>✗ Error</b>")
 
@@ -76,7 +86,14 @@ def buffer_to_max_text(buf: LiveTranscriptBuffer) -> str:
     done = buf.status == "done"
     show_tools = bool(buf.tool_lines) and not done
 
-    if done and answer and not show_tools and not buf.thinking and not buf.notes:
+    if (
+        done
+        and answer
+        and not buf.publish_answer_separately
+        and not show_tools
+        and not buf.thinking
+        and not buf.notes
+    ):
         footer = f"\n\n_🤖 {buf.profile} · {buf.mode} · ✓_"
         return truncate_max_text(f"{answer}{footer}")
 
@@ -87,15 +104,17 @@ def buffer_to_max_text(buf: LiveTranscriptBuffer) -> str:
         parts.append(f"_💭 {buf.thinking}_")
     if show_tools:
         parts.extend(buf.tool_lines[:12])
-    if answer:
+    if answer and not (done and buf.publish_answer_separately):
         parts.append(answer)
     for note in buf.notes[-3:]:
         if running or not done:
             parts.append(f"· {note}")
     if running and not answer and not buf.tool_lines:
         parts.append("_⏳ Working…_")
-    elif done and answer:
+    elif done:
         parts.append(f"_🤖 {buf.profile} · {buf.mode} · ✓_")
+        if buf.publish_answer_separately and buf.result_posted_separately:
+            parts.append("_Ответ отправлен отдельным сообщением ↓_")
     elif buf.status == "error":
         parts.append("**✗ Error**")
 

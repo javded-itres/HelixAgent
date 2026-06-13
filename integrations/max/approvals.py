@@ -3,16 +3,31 @@
 from __future__ import annotations
 
 import json
+import secrets
 from typing import Any
 
 from core.plan_review.review_events import PlanReviewRequestEvent
 from core.plan_review.review_guard import PlanReviewChoice, get_plan_review_guard
 from core.security.confirmation import ConfirmationChoice, get_action_guard
 from core.security.confirmation_events import ConfirmationRequestEvent
+
 from integrations.max.client import MaxClient
 from integrations.max.keyboards import confirmation_keyboard, plan_review_keyboard
 from integrations.max.markdown import plain_to_max_html
 from integrations.max.models import message_id_from_response, reply_kwargs_for_session
+
+
+def _register_callback_token(mapping: dict[str, str], full_id: str) -> str:
+    """Map a short opaque token to the full confirmation/review id."""
+    mapping.clear()
+    token = secrets.token_hex(4)
+    mapping[token] = full_id
+    return token
+
+
+def _lookup_callback_token(mapping: dict[str, str], token_or_id: str) -> str:
+    """Resolve short token; pass through when already a full id."""
+    return mapping.get(token_or_id, token_or_id)
 
 
 class MaxApprovals:
@@ -25,6 +40,10 @@ class MaxApprovals:
     async def on_confirmation_request(self, event: ConfirmationRequestEvent) -> None:
         await self.dismiss_confirmation_ui()
         self._pending_confirm_id = event.confirmation_id
+        token = _register_callback_token(
+            self._session.approval_callback_tokens,
+            event.confirmation_id,
+        )
         risk = event.risk_level or "?"
         subagent = getattr(event, "subagent_name", "") or ""
         header = "**⚠ Confirmation required**"
@@ -45,7 +64,7 @@ class MaxApprovals:
         payload = await self._client.send_message(
             plain_to_max_html(text),
             fmt="html",
-            attachments=[confirmation_keyboard(event.confirmation_id)],
+            attachments=[confirmation_keyboard(token)],
             **reply_kwargs_for_session(
                 user_id=self._session.user_id,
                 reply_user_id=self._session.reply_user_id,
@@ -59,6 +78,10 @@ class MaxApprovals:
         await self.dismiss_plan_review_ui()
         self._pending_review_id = event.review_id
         self._session.pending_plan_review_id = event.review_id
+        token = _register_callback_token(
+            self._session.plan_callback_tokens,
+            event.review_id,
+        )
         body = event.rendered_markdown or f"Plan with {event.step_count} steps"
         if len(body) > 3500:
             body = body[:3500] + "…"
@@ -72,7 +95,7 @@ class MaxApprovals:
         plan_payload = await self._client.send_message(
             plain_to_max_html(body),
             fmt="html",
-            attachments=[plan_review_keyboard(event.review_id)],
+            attachments=[plan_review_keyboard(token)],
             **reply,
         )
         hint_payload = await self._client.send_message(
@@ -115,20 +138,63 @@ class MaxApprovals:
         choice = choice_map.get(code)
         if choice is None:
             return False
+
+        full_id = _lookup_callback_token(
+            self._session.approval_callback_tokens,
+            confirmation_id,
+        )
+        if self._try_resolve_confirmation(full_id, choice):
+            self._pending_confirm_id = None
+            self._session.approval_callback_tokens.clear()
+            return True
+
+        agent = self._session.agent
+        if agent:
+            from core.subagents.interaction import resolve_any_confirmation
+
+            if resolve_any_confirmation(agent, choice):
+                self._pending_confirm_id = None
+                self._session.approval_callback_tokens.clear()
+                return True
+
+        if self._confirmation_already_resolved(full_id):
+            self._pending_confirm_id = None
+            self._session.approval_callback_tokens.clear()
+            return True
+        return False
+
+    def _try_resolve_confirmation(
+        self,
+        confirmation_id: str,
+        choice: ConfirmationChoice,
+    ) -> bool:
         agent = self._session.agent
         if agent:
             from core.subagents.interaction import get_interaction_bridge
 
             bridge = get_interaction_bridge(agent)
             if bridge and bridge.resolve_confirmation(confirmation_id, choice):
-                self._pending_confirm_id = None
                 return True
 
         guard = self._guard()
-        if guard and guard.resolve_confirmation(confirmation_id, choice):
-            self._pending_confirm_id = None
-            return True
-        return False
+        return bool(guard and guard.resolve_confirmation(confirmation_id, choice))
+
+    def _confirmation_already_resolved(self, confirmation_id: str) -> bool:
+        agent = self._session.agent
+        if agent:
+            from core.subagents.interaction import get_interaction_bridge
+
+            bridge = get_interaction_bridge(agent)
+            if bridge and confirmation_id in getattr(bridge, "_pending_confirmations", {}):
+                return False
+
+        guard = self._guard()
+        if guard and confirmation_id in guard._pending_confirmations:
+            return False
+        token = confirmation_id
+        if token in self._session.approval_callback_tokens:
+            return False
+        return self._pending_confirm_id in (None, confirmation_id)
 
     def _guard(self):
         agent = self._session.agent
@@ -136,7 +202,16 @@ class MaxApprovals:
             ag = getattr(agent.tools, "_action_guard", None)
             if ag:
                 return ag
-        return get_action_guard()
+        profile = getattr(self._session, "profile", None)
+        return get_action_guard(profile)
+
+    def _plan_guard(self):
+        agent = self._session.agent
+        if agent:
+            guard = getattr(agent, "_plan_review_guard", None)
+            if guard:
+                return guard
+        return get_plan_review_guard()
 
     def resolve_plan_callback(self, review_id: str, action: str, *, feedback: str = "") -> bool:
         action_map = {
@@ -148,10 +223,25 @@ class MaxApprovals:
         choice = action_map.get(action)
         if choice is None:
             return False
-        guard = get_plan_review_guard()
-        if guard.resolve_review(review_id, choice, feedback):
+
+        full_id = _lookup_callback_token(self._session.plan_callback_tokens, review_id)
+        guard = self._plan_guard()
+        if guard and guard.resolve_review(full_id, choice, feedback):
             self._pending_review_id = None
             self._session.pending_plan_review_id = None
+            self._session.plan_callback_tokens.clear()
+            return True
+
+        if guard and guard._pending_reviews:
+            latest_id = list(guard._pending_reviews.keys())[-1]
+            if guard.resolve_review(latest_id, choice, feedback):
+                self._pending_review_id = None
+                self._session.pending_plan_review_id = None
+                self._session.plan_callback_tokens.clear()
+                return True
+
+        if self._pending_review_id in (None, full_id, review_id):
+            self._session.plan_callback_tokens.clear()
             return True
         return False
 

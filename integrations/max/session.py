@@ -8,6 +8,7 @@ from typing import Any
 
 from cli.tui.shared.transcript_store import TranscriptStore
 from core.presenters.live_buffer import LiveTranscriptBuffer
+
 from integrations.telegram.file_handler import SavedTelegramFile
 
 
@@ -40,6 +41,8 @@ class MaxChatSession:
     pending_plan_review_id: str | None = None
     pending_confirmation_message_id: str | None = None
     pending_plan_message_ids: list[str] = field(default_factory=list)
+    approval_callback_tokens: dict[str, str] = field(default_factory=dict)
+    plan_callback_tokens: dict[str, str] = field(default_factory=dict)
     pending_admin_broadcast: Any = None
     agent: Any = None
     ui_profiles: list[str] = field(default_factory=list)

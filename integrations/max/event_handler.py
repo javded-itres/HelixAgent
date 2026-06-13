@@ -113,33 +113,33 @@ class MaxEventHandler:
                     )
 
             elif isinstance(event, AssistantDeltaEvent):
-                buf.append_answer_delta(event.content)
-                self._presenter.schedule_edit()
+                pass
 
             elif isinstance(event, FinalResponseEvent):
                 buf.set_thinking(None)
-                content = event.content or ""
-                if content.strip():
+                content = (event.content or "").strip()
+                if not content:
+                    recent = self._presenter.session._recent_tool_results
+                    if recent:
+                        content = str(recent[-1].get("full_result") or "").strip()
+                if content:
                     self._presenter.session._transcript_store.append(
                         "assistant",
                         content,
                         markdown=content,
                     )
-                preview = content if len(content) <= 500 else content[:480] + "…"
-                if len(content) > 500:
-                    buf.set_answer("✓ Done — full answer below.")
-                else:
-                    buf.set_answer(preview)
-                self._presenter.note_final_content(content)
-                buf.mark_done()
-                self._presenter.schedule_edit(force=True)
-                if content.strip():
+                    buf.result_posted_separately = True
+                    self._presenter.note_final_content(content)
                     self._presenter.enqueue_outbound(
                         self._presenter.deliver_final_answer(content)
                     )
+                buf.set_answer("")
+                buf.mark_done()
+                self._presenter.schedule_edit(force=True)
                 logger.info(
-                    "MAX FinalResponseEvent handled (%d chars, queued_final=True)",
+                    "MAX FinalResponseEvent handled (%d chars, queued_final=%s)",
                     len(content),
+                    bool(content),
                 )
 
             elif isinstance(event, ConfirmationRequestEvent):
