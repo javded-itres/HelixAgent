@@ -576,9 +576,9 @@ class MaxHost:
             mode = self._session.execution_mode
             with visibility_ctx:
                 if self._session.streaming_enabled:
-                    from core.runtime.executor import run_helix
+                    from core.runtime.executor import run_holix
 
-                    async for event in run_helix(
+                    async for event in run_holix(
                         self.agent,
                         user_input,
                         self.conversation_id,
