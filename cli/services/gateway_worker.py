@@ -32,8 +32,9 @@ def main(argv: list[str] | None = None) -> int:
     from core.crypto.runtime_cache import recover_stale_runtime_caches
 
     recover_stale_runtime_caches()
-    from cli.core import bootstrap_profile_unlock_from_env
     from core.env_loader import bootstrap_profile_env
+
+    from cli.core import bootstrap_profile_unlock_from_env
 
     bootstrap_profile_unlock_from_env(args.profile)
     bootstrap_profile_env(args.profile)

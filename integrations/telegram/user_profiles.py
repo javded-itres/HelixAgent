@@ -93,7 +93,11 @@ def save_user_profiles(bot_profile: str, mapping: dict[int, str]) -> Path:
 
 
 def _sync_env_user_profiles(bot_profile: str, mapping: dict[int, str]) -> None:
-    from integrations.telegram.env_store import read_telegram_env_values, save_telegram_env, telegram_env_path
+    from integrations.telegram.env_store import (
+        read_telegram_env_values,
+        save_telegram_env,
+        telegram_env_path,
+    )
 
     values = read_telegram_env_values(bot_profile)
     text = format_user_profiles_text(mapping)

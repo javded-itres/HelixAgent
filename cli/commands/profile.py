@@ -352,7 +352,11 @@ def profile_env(
 ) -> None:
     """Show or edit the active profile's ``.env`` file."""
     from core.crypto.profile_crypto import ProfileCryptoLockedError, is_profile_encryption_enabled
-    from core.env_loader import edit_profile_env_file, ensure_profile_env_template, read_profile_env_map
+    from core.env_loader import (
+        edit_profile_env_file,
+        ensure_profile_env_template,
+        read_profile_env_map,
+    )
 
     profile = _profile(ctx)
     path = ensure_profile_env_template(profile)
@@ -768,7 +772,7 @@ def crypto_status(ctx: typer.Context) -> None:
         is_encryption_runtime_active,
         profile_has_crypto_metadata,
     )
-    from core.crypto.profile_crypto import is_profile_encryption_enabled, load_crypto_meta
+    from core.crypto.profile_crypto import load_crypto_meta
     from core.crypto.runtime_cache import (
         iter_world_readable_runtime_caches,
         legacy_profile_cache_dir,
@@ -876,7 +880,11 @@ def crypto_decrypt_workspace(
 ) -> None:
     """Decrypt legacy encrypted workspace files to plaintext (git-friendly)."""
     from core.crypto.bootstrap import decrypt_all_profile_workspaces, list_encrypted_profiles
-    from core.crypto.profile_crypto import ProfileCryptoError, is_profile_encryption_enabled, unlock_profile_dek
+    from core.crypto.profile_crypto import (
+        ProfileCryptoError,
+        is_profile_encryption_enabled,
+        unlock_profile_dek,
+    )
     from core.crypto.profile_files import decrypt_deliverable_files
     from core.crypto.unlock_context import get_profile_session_dek, set_profile_session_unlock
 

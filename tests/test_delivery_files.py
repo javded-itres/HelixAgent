@@ -7,10 +7,13 @@ from pathlib import Path
 import pytest
 from cli.core import ProfileManager
 from core.crypto.bootstrap import enable_profile_encryption, seal_profiles_secrets
-
 from core.crypto.delivery_files import materialize_file_for_delivery
 from core.crypto.encrypted_fs import encrypt_bytes, is_encrypted_file
-from core.crypto.profile_crypto import ProfileCryptoLockedError, create_profile_crypto, unlock_profile_dek
+from core.crypto.profile_crypto import (
+    ProfileCryptoLockedError,
+    create_profile_crypto,
+    unlock_profile_dek,
+)
 from core.crypto.profile_files import decrypt_deliverable_files
 from core.crypto.unlock_context import (
     profile_unlock_scope,
