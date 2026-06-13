@@ -59,7 +59,7 @@ async def init_max_webhook(profile: str | None = None) -> MaxGatewayState | None
 
     if not settings.is_webhook_mode:
         logger.info(
-            "MAX webhook disabled (mode=%s). Use `helix max` for Long Polling.",
+            "MAX webhook disabled (mode=%s). Use `holix max` for Long Polling.",
             settings.mode,
         )
         return None

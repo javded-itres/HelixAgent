@@ -1,4 +1,4 @@
-"""Interactive ``helix max setup`` wizard."""
+"""Interactive ``holix max setup`` wizard."""
 
 from __future__ import annotations
 
@@ -162,11 +162,11 @@ async def run_max_setup(
     )
 
     if skip_start:
-        print_info("Запуск: helix max  (или helix gateway start для webhook)")
+        print_info("Запуск: holix max  (или holix gateway start для webhook)")
         return
 
     if mode == "webhook":
-        print_info("Webhook: helix gateway start")
+        print_info("Webhook: holix gateway start")
         return
 
     if Confirm.ask("Запустить бота сейчас (Long Polling)?", default=False):
@@ -195,7 +195,7 @@ async def _fetch_subscription_lines(token: str) -> list[str]:
 
 
 def max_status_lines(profile: str = "default", *, include_subscriptions: bool = True) -> list[str]:
-    """Compact MAX status lines for CLI panels (gateway status, helix max status)."""
+    """Compact MAX status lines for CLI panels (gateway status, holix max status)."""
     load_max_env_files(profile)
     from integrations.max.access_requests import list_pending_requests
     from integrations.max.admin import load_admin_holix_profile, load_admin_user_id
@@ -205,7 +205,7 @@ def max_status_lines(profile: str = "default", *, include_subscriptions: bool = 
 
     settings = load_max_settings(profile)
     if not settings.access_token.strip():
-        return ["[yellow]MAX not configured[/yellow] — run: helix max setup"]
+        return ["[yellow]MAX not configured[/yellow] — run: holix max setup"]
 
     path = max_env_path(profile) if max_env_path(profile).is_file() else None
     admin_id = load_admin_user_id(profile)
@@ -245,10 +245,10 @@ def show_max_status(profile: str = "default") -> None:
     console.print()
     lines = max_status_lines(profile)
     if lines and "not configured" in lines[0]:
-        print_warning("MAX не настроен. Запустите: helix max setup")
+        print_warning("MAX не настроен. Запустите: holix max setup")
         return
     console.print(Panel("\n".join(lines), title="MAX", border_style="cyan"))
     from integrations.max.access_requests import list_pending_requests
 
     if list_pending_requests(profile):
-        print_info(f"Approve: helix -p {profile} max requests list")
+        print_info(f"Approve: holix -p {profile} max requests list")

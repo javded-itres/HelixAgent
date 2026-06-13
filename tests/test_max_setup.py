@@ -109,4 +109,15 @@ def test_poll_timeout_clamped(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_format_env_lines() -> None:
     body = format_env_lines({"MAX_ACCESS_TOKEN": "t" * 20, "HOLIX_MAX_PROFILE": "work"})
-    assert "holix max setup" in body.lower()
+    assert "MAX_ACCESS_TOKEN" in body
+    assert "HOLIX_MAX_PROFILE=work" in body
+
+
+def test_max_cli_registered() -> None:
+    from cli.main import app
+    from typer.testing import CliRunner
+
+    result = CliRunner().invoke(app, ["max", "--help"])
+    assert result.exit_code == 0, result.stdout
+    assert "setup" in result.stdout
+    assert "requests" in result.stdout

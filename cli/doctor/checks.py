@@ -843,7 +843,7 @@ def _check_max(profile: str) -> list[DoctorFinding]:
                 severity=Severity.INFO.value,
                 title="MAX not configured",
                 detail=f"No access token in environment or {max_env_path(profile)}",
-                recommendation="Run: helix max setup",
+                recommendation="Run: holix max setup",
             )
         )
         return out
@@ -855,7 +855,7 @@ def _check_max(profile: str) -> list[DoctorFinding]:
                 severity=Severity.ERROR.value,
                 title="MAX access token looks invalid",
                 detail="Expected non-empty token (≥16 characters, no spaces)",
-                recommendation="Run: helix max setup",
+                recommendation="Run: holix max setup",
             )
         )
 
@@ -869,9 +869,9 @@ def _check_max(profile: str) -> list[DoctorFinding]:
                     title="MAX access-request mode",
                     detail=(
                         "Allowlist is empty; new users must send /start and be approved "
-                        "via `helix max requests`"
+                        "via `holix max requests`"
                     ),
-                    recommendation="helix max requests list",
+                    recommendation="holix max requests list",
                 )
             )
         else:
@@ -910,7 +910,7 @@ def _check_max(profile: str) -> list[DoctorFinding]:
                     detail="HELIX_MAX_MODE=webhook requires HELIX_MAX_WEBHOOK_URL",
                     recommendation=(
                         "Set HELIX_MAX_WEBHOOK_URL=https://your-host.example/max/webhook "
-                        "and run: helix gateway start"
+                        "and run: holix gateway start"
                     ),
                 )
             )
@@ -931,7 +931,7 @@ def _check_max(profile: str) -> list[DoctorFinding]:
                     severity=Severity.WARNING.value,
                     title="MAX webhook secret not set",
                     detail="X-Max-Bot-Api-Secret validation is disabled",
-                    recommendation="Set HELIX_MAX_WEBHOOK_SECRET in helix max setup",
+                    recommendation="Set HELIX_MAX_WEBHOOK_SECRET in holix max setup",
                 )
             )
 

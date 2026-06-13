@@ -160,7 +160,7 @@ async def _run_supervisor_async(
     if max_should_webhook(profile):
         companions.append("max (webhook)")
     elif max_enabled(profile):
-        companions.append("max (polling — use helix max)")
+        companions.append("max (polling — use holix max)")
     else:
         companions.append("max (disabled)")
     print_info(f"Companion services: {', '.join(companions)}")

@@ -53,7 +53,7 @@ async def sync_bot_menu(profile: str = "default") -> list[str]:
     settings = load_max_settings(profile)
     token = settings.access_token.strip()
     if not token:
-        raise RuntimeError("MAX_ACCESS_TOKEN is not set. Run: helix max setup")
+        raise RuntimeError("MAX_ACCESS_TOKEN is not set. Run: holix max setup")
 
     locale = LocaleStore(profile).get()
     async with MaxClient(token) as client:

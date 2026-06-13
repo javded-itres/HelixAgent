@@ -1,4 +1,4 @@
-"""Entry point: helix max."""
+"""Entry point: holix max."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ async def run_bot(profile: str = "default") -> None:
     settings = load_max_settings(profile)
     if settings.is_webhook_mode:
         raise RuntimeError(
-            "HELIX_MAX_MODE=webhook — используйте `helix gateway start` (Long Polling только для dev/test)."
+            "HELIX_MAX_MODE=webhook — используйте `holix gateway start` (Long Polling только для dev/test)."
         )
     await run_polling(settings, profile=profile)
 
