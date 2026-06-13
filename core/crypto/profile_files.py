@@ -12,7 +12,7 @@ from core.crypto.encrypted_fs import (
     read_encrypted_text,
     write_encrypted_text,
 )
-from core.crypto.profile_crypto import is_profile_encryption_enabled
+from core.crypto.profile_crypto import is_profile_encryption_enabled, profile_has_crypto_metadata
 from core.crypto.unlock_context import get_profile_session_dek, require_profile_dek
 from core.env_loader import profile_dir_path
 
@@ -156,7 +156,7 @@ def seal_profile_secrets(profile: str, user_encryption_key: str) -> int:
     """Encrypt plaintext secrets for a profile that already has crypto.json."""
     from core.crypto.profile_crypto import unlock_profile_dek
 
-    if not is_profile_encryption_enabled(profile):
+    if not profile_has_crypto_metadata(profile):
         raise ValueError(f"Profile '{profile}' is not encrypted")
     dek = unlock_profile_dek(profile, user_encryption_key)
     from core.crypto.unlock_context import set_profile_session_unlock

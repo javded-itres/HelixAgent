@@ -115,6 +115,12 @@ def save_crypto_meta(profile: str, meta: ProfileCryptoMeta) -> None:
 
 
 def is_profile_encryption_enabled(profile: str) -> bool:
+    from core.crypto.policy import is_profile_encryption_enabled as _enabled
+
+    return _enabled(profile)
+
+
+def profile_has_crypto_metadata(profile: str) -> bool:
     return load_crypto_meta(profile) is not None
 
 

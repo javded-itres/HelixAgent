@@ -41,9 +41,54 @@ async def run_all_checks(profile: str, *, skip_llm_check: bool = False) -> list[
     findings.extend(_check_env_file())
     findings.extend(_check_security_settings())
     findings.extend(_check_crypto_runtime_cache())
+    findings.extend(_check_encryption_policy(profile, manager))
     findings.extend(_check_stray_project_data(profile, manager))
 
     return findings
+
+
+def _check_encryption_policy(profile: str, manager: ProfileManager) -> list[DoctorFinding]:
+    from core.crypto.policy import (
+        encryption_policy_label,
+        is_encryption_runtime_active,
+        profile_has_crypto_metadata,
+    )
+
+    out: list[DoctorFinding] = []
+    if not is_encryption_runtime_active():
+        encrypted_profiles = [
+            name
+            for name in manager.list_profiles()
+            if profile_has_crypto_metadata(name)
+        ]
+        if encrypted_profiles:
+            sample = ", ".join(encrypted_profiles[:5])
+            out.append(
+                DoctorFinding(
+                    code="crypto.policy_runtime_inactive",
+                    severity=Severity.WARNING.value,
+                    title="Encryption policy inactive on this host",
+                    detail=(
+                        f"Policy: {encryption_policy_label()}. "
+                        f"Profiles with crypto.json: {sample}"
+                    ),
+                    recommendation=(
+                        "On Linux production set HOLIX_ENV=production and "
+                        "HOLIX_ENCRYPTION_MODE=linux-production, or use mode=on for local decrypt."
+                    ),
+                )
+            )
+        elif profile_has_crypto_metadata(profile):
+            out.append(
+                DoctorFinding(
+                    code="crypto.policy_profile_inactive",
+                    severity=Severity.WARNING.value,
+                    title="Profile encryption inactive on this host",
+                    detail=f"Policy: {encryption_policy_label()}",
+                    recommendation="Run gateway on Linux production or set HOLIX_ENCRYPTION_MODE=on",
+                )
+            )
+    return out
 
 
 def _check_crypto_runtime_cache() -> list[DoctorFinding]:

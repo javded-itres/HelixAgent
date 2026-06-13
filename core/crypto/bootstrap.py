@@ -7,6 +7,7 @@ from pathlib import Path
 
 from core.crypto.encrypted_fs import encrypt_bytes, is_encrypted_file
 from core.crypto.memory_vault import encrypt_profile_memory, seal_profile_memory
+from core.crypto.policy import profile_has_crypto_metadata
 from core.crypto.profile_crypto import (
     ProfileCryptoError,
     create_profile_crypto,
@@ -40,7 +41,7 @@ def list_unencrypted_profiles(manager) -> list[str]:
     return [
         name
         for name in manager.list_profiles()
-        if not is_profile_encryption_enabled(name)
+        if not profile_has_crypto_metadata(name)
     ]
 
 
@@ -91,7 +92,10 @@ def enable_profile_encryption(
     encrypt_existing: bool = True,
 ) -> EncryptionEnableResult:
     """Enable workspace encryption for a profile (workspace jail + crypto.json)."""
-    if is_profile_encryption_enabled(profile):
+    from core.crypto.policy import require_encryption_enable_allowed
+
+    require_encryption_enable_allowed()
+    if is_profile_encryption_enabled(profile) or profile_has_crypto_metadata(profile):
         raise ProfileCryptoError(f"Profile '{profile}' already has encryption enabled")
 
     workspace = _prepare_workspace_for_encryption(manager, profile)
@@ -134,7 +138,7 @@ def seal_profiles_secrets(
         if not manager.profile_exists(profile):
             summary.failed.append((profile, "profile does not exist"))
             continue
-        if not is_profile_encryption_enabled(profile):
+        if not profile_has_crypto_metadata(profile):
             summary.skipped.append(profile)
             continue
         try:
@@ -176,7 +180,7 @@ def migrate_profiles_encryption(
         if not manager.profile_exists(profile):
             summary.failed.append((profile, "profile does not exist"))
             continue
-        if is_profile_encryption_enabled(profile):
+        if profile_has_crypto_metadata(profile):
             summary.skipped.append(profile)
             continue
         try:

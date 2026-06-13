@@ -10,7 +10,11 @@ import tarfile
 from pathlib import Path
 
 from core.crypto.encrypted_fs import decrypt_bytes, encrypt_bytes, is_encrypted_file
-from core.crypto.profile_crypto import ProfileCryptoLockedError, is_profile_encryption_enabled
+from core.crypto.profile_crypto import (
+    ProfileCryptoLockedError,
+    is_profile_encryption_enabled,
+    profile_has_crypto_metadata,
+)
 from core.crypto.runtime_cache import (
     harden_cache_tree,
     profile_runtime_cache_dir,
@@ -280,7 +284,7 @@ def seal_profile_memory_with_key(profile: str, user_encryption_key: str) -> int:
     from core.crypto.profile_crypto import unlock_profile_dek
     from core.crypto.unlock_context import set_profile_session_unlock
 
-    if not is_profile_encryption_enabled(profile):
+    if not profile_has_crypto_metadata(profile):
         raise ValueError(f"Profile '{profile}' is not encrypted")
     dek = unlock_profile_dek(profile, user_encryption_key)
     set_profile_session_unlock(profile, dek)

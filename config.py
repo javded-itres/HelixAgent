@@ -10,6 +10,14 @@ class Settings(BaseSettings):
 
     # Environment
     holix_env: str = Field(default="development", description="development | production")
+    encryption_mode: str = Field(
+        default="linux-production",
+        validation_alias=AliasChoices(
+            "HOLIX_ENCRYPTION_MODE",
+            "HOLIX_ENCRYPTION_POLICY",
+        ),
+        description="off | linux-production | on",
+    )
 
     # LLM Configuration
     model: str = "qwen2.5-coder:32b"

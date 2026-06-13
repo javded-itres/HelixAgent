@@ -674,6 +674,12 @@ def crypto_seal(
 @crypto_app.command("status")
 def crypto_status(ctx: typer.Context) -> None:
     """Show encryption status for the active profile."""
+    from core.crypto.policy import (
+        encryption_policy_label,
+        encryption_policy_status,
+        is_encryption_runtime_active,
+        profile_has_crypto_metadata,
+    )
     from core.crypto.profile_crypto import is_profile_encryption_enabled, load_crypto_meta
     from core.crypto.runtime_cache import (
         iter_world_readable_runtime_caches,
@@ -686,11 +692,24 @@ def crypto_status(ctx: typer.Context) -> None:
 
     profile = _profile(ctx)
     config = get_current_config()
-    enabled = bool(getattr(config, "encryption_enabled", False)) or is_profile_encryption_enabled(profile)
+    has_meta = profile_has_crypto_metadata(profile)
+    runtime = is_encryption_runtime_active()
+    enabled = bool(getattr(config, "encryption_enabled", False)) or has_meta
+    policy = encryption_policy_status()
     if not enabled:
         body = (
             "[yellow]Disabled[/yellow]\n\n"
+            f"Policy: {encryption_policy_label()}\n\n"
             "Enable with: [cyan]holix profile crypto enable[/cyan]"
+        )
+        border = "yellow"
+    elif has_meta and not runtime:
+        body = (
+            "[yellow]Metadata present, runtime inactive[/yellow]\n"
+            f"Policy: {encryption_policy_label()}\n"
+            f"Platform: {policy['platform']}, HOLIX_ENV={policy['holix_env']}\n\n"
+            "Encrypted files stay sealed on this host. "
+            "Use Linux production or HOLIX_ENCRYPTION_MODE=on."
         )
         border = "yellow"
     else:

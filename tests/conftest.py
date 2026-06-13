@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import re
 import shutil
 import tempfile
@@ -146,3 +147,12 @@ def gateway_client(gateway_auth_headers, monkeypatch: pytest.MonkeyPatch):
     client = TestClient(api.gateway.app)
     yield client
     api.gateway.app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def _encryption_mode_for_crypto_tests(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest):
+    """Default tests to HOLIX_ENCRYPTION_MODE=on; policy tests control their own mode."""
+    if request.node.path.name == "test_encryption_policy.py":
+        return
+    if "HOLIX_ENCRYPTION_MODE" not in os.environ:
+        monkeypatch.setenv("HOLIX_ENCRYPTION_MODE", "on")

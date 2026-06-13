@@ -8,6 +8,11 @@ from core.crypto.encrypted_fs import (
     read_encrypted_text,
     write_encrypted_text,
 )
+from core.crypto.policy import (
+    encryption_policy_status,
+    is_encryption_runtime_active,
+    resolve_encryption_mode,
+)
 from core.crypto.profile_crypto import (
     ProfileCryptoError,
     ProfileCryptoLockedError,
@@ -16,6 +21,7 @@ from core.crypto.profile_crypto import (
     crypto_meta_path,
     is_profile_encryption_enabled,
     load_crypto_meta,
+    profile_has_crypto_metadata,
     unlock_profile_dek,
 )
 from core.crypto.unlock_context import (
@@ -43,9 +49,13 @@ __all__ = [
     "encrypt_bytes",
     "get_profile_dek",
     "get_profile_session_dek",
+    "encryption_policy_status",
     "is_encrypted_file",
+    "is_encryption_runtime_active",
     "is_profile_encryption_enabled",
     "is_profile_unlocked",
+    "profile_has_crypto_metadata",
+    "resolve_encryption_mode",
     "load_crypto_meta",
     "profile_unlock_scope",
     "read_encrypted_text",
