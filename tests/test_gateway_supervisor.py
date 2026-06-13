@@ -9,17 +9,17 @@ from integrations.telegram.config import load_telegram_settings, telegram_aiogra
 
 
 def _block_telegram_env_files(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Avoid loading the developer's real ~/.helix/telegram.env during tests."""
+    """Avoid loading the developer's real ~/.holix/telegram.env during tests."""
     monkeypatch.setattr(
         "integrations.telegram.env_store.load_telegram_env_files",
-        lambda: None,
+        lambda profile=None: None,
     )
 
 
 def test_telegram_enabled_without_token(monkeypatch: pytest.MonkeyPatch) -> None:
     _block_telegram_env_files(monkeypatch)
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
-    monkeypatch.delenv("HELIX_TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("HOLIX_TELEGRAM_BOT_TOKEN", raising=False)
     assert telegram_enabled() is False
 
 
@@ -44,31 +44,5 @@ def test_docs_should_start_in_repo() -> None:
 
 def test_load_telegram_settings_profile(monkeypatch: pytest.MonkeyPatch) -> None:
     _block_telegram_env_files(monkeypatch)
-    monkeypatch.setenv("HELIX_TELEGRAM_PROFILE", "work")
-    settings = load_telegram_settings("default")
+    settings = load_telegram_settings("work")
     assert settings.profile == "work"
-
-
-def _block_max_env_files(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(
-        "integrations.max.env_store.load_max_env_files",
-        lambda: None,
-    )
-
-
-def test_max_enabled_without_token(monkeypatch: pytest.MonkeyPatch) -> None:
-    _block_max_env_files(monkeypatch)
-    monkeypatch.delenv("MAX_ACCESS_TOKEN", raising=False)
-    monkeypatch.delenv("HELIX_MAX_ACCESS_TOKEN", raising=False)
-    assert max_enabled() is False
-
-
-def test_max_should_webhook_requires_mode_and_token(monkeypatch: pytest.MonkeyPatch) -> None:
-    _block_max_env_files(monkeypatch)
-    monkeypatch.setenv("MAX_ACCESS_TOKEN", "test-token-1234567890")
-    monkeypatch.setenv("HELIX_MAX_MODE", "polling")
-    assert max_enabled() is True
-    assert max_should_webhook() is False
-
-    monkeypatch.setenv("HELIX_MAX_MODE", "webhook")
-    assert max_should_webhook() is True

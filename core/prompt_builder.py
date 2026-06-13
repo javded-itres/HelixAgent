@@ -1,11 +1,22 @@
-from typing import List, Dict, Any
+from typing import Any
 
-from core.project.helix_md import HELIX_MD_REL_PATH, task_context_note
+from core.project.holix_md import HOLIX_MD_REL_PATH, task_context_note
+
+
+def language_instruction_block(*, locale: str | None = None, profile_name: str | None = None) -> str:
+    """Locale-aware language rule for system prompts (/lang en | /lang ru)."""
+    from core.i18n.locale import LocaleStore, normalize_locale
+    from core.i18n.messages import t
+
+    ui_locale = normalize_locale(locale)
+    if profile_name and locale is None:
+        ui_locale = LocaleStore(profile_name).get()
+    return t("prompt.lang_block", ui_locale)
 
 
 def build_system_prompt(
     tools_description: str,
-    active_skills: List[Dict[str, Any]],
+    active_skills: list[dict[str, Any]],
     skills_formatted: str = "",
     relevant_memories: str = "",
     *,
@@ -22,7 +33,7 @@ def build_system_prompt(
     Returns:
         Complete system prompt
     """
-    prompt = """You are Helix, an autonomous AI agent with the ability to:
+    prompt = """You are Holix, an autonomous AI agent with the ability to:
 - Use tools to interact with the system
 - Learn from successful tasks and create reusable skills
 - Remember context across conversations
@@ -66,7 +77,7 @@ Types: researcher, coder, analyst, reviewer, writer, web_researcher.
 
 {memories}
 
-## Project handbook ({helix_path})
+## Project handbook ({holix_path})
 
 {project_note}
 
@@ -84,31 +95,36 @@ Remember: You are a helpful, capable agent that learns and improves with each ta
 """
 
     from core.env_loader import format_env_context_block
-    from core.i18n.locale import LocaleStore, normalize_locale
-    from core.i18n.messages import t
 
-    ui_locale = normalize_locale(locale)
-    if profile_name and locale is None:
-        ui_locale = LocaleStore(profile_name).get()
-
-    lang_block = t("prompt.lang_block", ui_locale)
+    lang_block = language_instruction_block(locale=locale, profile_name=profile_name)
 
     # Format the prompt
     formatted_prompt = prompt.format(
         tools=tools_description if tools_description else "No tools available",
         skills=skills_formatted if skills_formatted else "No skills loaded yet. You will learn and create skills as you complete tasks.",
         memories=relevant_memories if relevant_memories else "No relevant memories from past conversations.",
-        helix_path=HELIX_MD_REL_PATH,
+        holix_path=HOLIX_MD_REL_PATH,
         project_note=task_context_note(),
         env_paths=format_env_context_block(profile_name=profile_name),
     )
 
-    from core.project.helix_md import append_helix_project_context
+    from core.profile.soul import format_identity_instructions, format_soul_block
+    from core.profile.user_profile import format_user_block
+    from core.project.holix_md import append_holix_project_context
 
-    return append_helix_project_context(f"{formatted_prompt}\n\n{lang_block}")
+    blocks = [formatted_prompt.rstrip()]
+    identity = format_identity_instructions(profile_name)
+    if identity:
+        blocks.append(identity)
+    user_block = format_user_block(profile_name)
+    if user_block:
+        blocks.append(user_block)
+    blocks.append(format_soul_block(profile_name))
+    blocks.append(lang_block)
+    return append_holix_project_context("\n\n".join(blocks))
 
 
-def format_tools_description(tools_schemas: List[Dict[str, Any]]) -> str:
+def format_tools_description(tools_schemas: list[dict[str, Any]]) -> str:
     """Format tool schemas for the system prompt.
 
     Args:

@@ -1,5 +1,5 @@
 """
-Context compression module for Helix.
+Context compression module for Holix.
 
 Uses the LLM to intelligently summarize conversation history,
 preserving key facts, decisions, artifacts, and goals while
@@ -8,13 +8,12 @@ dramatically reducing token usage.
 
 from __future__ import annotations
 
-import json
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 from openai import AsyncOpenAI
 
 from core.context.token_counter import TokenCounter
-
+from core.profile.soul import is_soul_message
 
 # System prompt for the compression LLM call
 _COMPRESSION_PROMPT = """You are a conversation summarizer. Your task is to create a concise but complete summary of a conversation history.
@@ -55,7 +54,7 @@ class ContextCompressor:
         self,
         client: AsyncOpenAI,
         model: str,
-        token_counter: Optional[TokenCounter] = None,
+        token_counter: TokenCounter | None = None,
     ):
         self.client = client
         self.model = model
@@ -63,9 +62,9 @@ class ContextCompressor:
 
     async def compress(
         self,
-        messages: List[Dict[str, Any]],
+        messages: list[dict[str, Any]],
         keep_recent: int = 10,
-    ) -> tuple[List[Dict[str, Any]], str]:
+    ) -> tuple[list[dict[str, Any]], str]:
         """Compress conversation history by summarizing older messages.
 
         Args:
@@ -77,13 +76,14 @@ class ContextCompressor:
             compressed_messages format:
                 [system_msg_with_summary] + messages[-keep_recent:]
         """
-        if len(messages) <= keep_recent:
-            # Nothing to compress
+        from core.profile.soul import strip_soul_messages
+
+        soul_safe = strip_soul_messages(messages)
+        if len(soul_safe) <= keep_recent:
             return messages, ""
 
-        # Split messages
-        older_messages = messages[:-keep_recent]
-        recent_messages = messages[-keep_recent:]
+        older_messages = soul_safe[:-keep_recent]
+        recent_messages = soul_safe[-keep_recent:]
 
         # Build text representation of older messages for summarization
         conversation_text = self._format_messages_for_summary(older_messages)
@@ -145,7 +145,7 @@ class ContextCompressor:
             f"Key conversation excerpts:\n{truncated}..."
         )
 
-    def _format_messages_for_summary(self, messages: List[Dict[str, Any]]) -> str:
+    def _format_messages_for_summary(self, messages: list[dict[str, Any]]) -> str:
         """Format messages into a text representation suitable for summarization.
 
         Args:
@@ -181,6 +181,9 @@ class ContextCompressor:
                 truncated = content[:500] + "..." if len(content) > 500 else content
                 parts.append(f"{prefix}{truncated}")
             elif role == "system":
-                parts.append(f"SYSTEM: {content}")
+                if is_soul_message(msg):
+                    parts.append(f"AGENT_SOUL (pinned identity): {content[:1500]}")
+                else:
+                    parts.append(f"SYSTEM: {content}")
 
         return "\n\n".join(parts)

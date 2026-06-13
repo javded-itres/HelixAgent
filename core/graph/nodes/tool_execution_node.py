@@ -2,18 +2,18 @@
 Tool Execution Node — executes tool calls from the graph state.
 """
 
-import time
 import logging
-from typing import Any, Dict
+import time
 
-from core.graph.state import HelixGraphState, get_agent_from_config
-from core.agent_events import ToolCallResultEvent, ToolCallErrorEvent
 from langchain_core.runnables import RunnableConfig
+
+from core.agent_events import ToolCallErrorEvent, ToolCallResultEvent
+from core.graph.state import HolixGraphState, get_agent_from_config
 
 logger = logging.getLogger(__name__)
 
 
-async def tool_execution_node(state: HelixGraphState, config: RunnableConfig) -> dict:
+async def tool_execution_node(state: HolixGraphState, config: RunnableConfig) -> dict:
     """Execute pending tool calls and store results.
 
     Reads tool_calls from state, executes each via the agent's
@@ -39,7 +39,7 @@ async def tool_execution_node(state: HelixGraphState, config: RunnableConfig) ->
     for tc_data in tool_calls:
         tool_name = tc_data.get("function", {}).get("name", "")
         tool_id = tc_data.get("id", "")
-        args_raw = tc_data.get("function", {}).get("arguments", "")
+        tc_data.get("function", {}).get("arguments", "")
 
         # Create a minimal tool call object compatible with ToolRegistry.execute()
         class _ToolCall:
@@ -55,7 +55,11 @@ async def tool_execution_node(state: HelixGraphState, config: RunnableConfig) ->
 
         start = time.time()
         try:
-            result = await agent.tools.execute(tool_call_obj)
+            result = await agent.tools.execute(
+                tool_call_obj,
+                conversation_id=conversation_id,
+                memory=getattr(agent, "memory", None),
+            )
             duration = (time.time() - start) * 1000
 
             if agent and hasattr(agent, "emit"):
@@ -94,12 +98,23 @@ async def tool_execution_node(state: HelixGraphState, config: RunnableConfig) ->
             "duration_ms": duration,
         })
 
-        # Save to memory
+        # Save to memory (truncate huge outputs — full result stays in graph state)
         if agent and hasattr(agent, "memory"):
+            from core.memory.tool_content import truncate_tool_content_for_memory
+
             await agent.memory.save_message(
-                conversation_id, "tool", result,
+                conversation_id,
+                "tool",
+                truncate_tool_content_for_memory(result),
                 metadata={"tool_name": tool_name},
             )
+
+    if agent and hasattr(agent, "context_manager") and agent.context_manager:
+        from core.runtime.context_session import compress_session_if_needed
+
+        messages, _ = await compress_session_if_needed(
+            agent, conversation_id, messages
+        )
 
     return {
         "messages": messages,

@@ -4,18 +4,18 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import typer
+from core.search.catalog import SEARCH_PROVIDERS
+from core.search.config import VALID_STRATEGIES, SearchConfig, default_search_config
+from core.search.engine import SearchEngine
 from rich.console import Console
 from rich.prompt import Confirm, Prompt
 from rich.table import Table
 
 from cli.core import get_profile_manager
 from cli.utils.rich_console import print_error, print_info, print_success
-from core.search.catalog import SEARCH_PROVIDERS, get_provider_spec
-from core.search.config import SearchConfig, VALID_STRATEGIES, default_search_config
-from core.search.engine import SearchEngine
 
 app = typer.Typer(help="Configure web search providers (DuckDuckGo, SearXNG, Firecrawl)")
 
@@ -40,14 +40,14 @@ def _save_search(profile: str, search_dict: dict[str, Any]) -> None:
     manager.save_profile(profile, cfg)
 
 
-def _maybe_store_secret(env_var: str, value: str) -> str:
-    """If user entered a raw secret, optionally persist to ~/.helix/.env."""
+def _maybe_store_secret(env_var: str, value: str, *, profile: str = "default") -> str:
+    """If user entered a raw secret, optionally persist to the profile .env."""
     if not value or value.startswith("${"):
         return value or f"${{{env_var}}}"
-    if Confirm.ask(f"Save API key to ~/.helix/.env as {env_var}?", default=True):
-        from core.env_loader import helix_env_path
+    from core.env_loader import ensure_profile_env_template
 
-        path = helix_env_path()
+    path = ensure_profile_env_template(profile)
+    if Confirm.ask(f"Save API key to {path} as {env_var}?", default=True):
         path.parent.mkdir(parents=True, exist_ok=True)
         lines: list[str] = []
         if path.is_file():
@@ -115,7 +115,7 @@ def search_configure(ctx: typer.Context) -> None:
     current = SearchConfig.from_dict(_load_search(profile))
 
     console.print("\n[bold]Web search setup[/bold]")
-    console.print("Pick one or more providers. Helix tries them in the order you set.\n")
+    console.print("Pick one or more providers. Holix tries them in the order you set.\n")
 
     table = Table()
     table.add_column("#", style="dim")
@@ -182,7 +182,7 @@ def search_configure(ctx: typer.Context) -> None:
                     if val:
                         env_name = spec.env_hints.get(field, "")
                         if env_name:
-                            block[field] = _maybe_store_secret(env_name, val)
+                            block[field] = _maybe_store_secret(env_name, val, profile=profile)
                         else:
                             block[field] = val
                     else:
@@ -213,11 +213,11 @@ def search_configure(ctx: typer.Context) -> None:
 
     _save_search(profile, result)
     print_success(f"Search configuration saved to profile '{profile}'.")
-    print_info("Run `helix gateway reload` if the agent is already running.")
+    print_info("Run `holix gateway reload` if the agent is already running.")
 
 
 @app.callback(invoke_without_command=True)
 def search_group(ctx: typer.Context) -> None:
-    """Search provider management (use `helix search configure` for interactive setup)."""
+    """Search provider management (use `holix search configure` for interactive setup)."""
     if ctx.invoked_subcommand is None:
         search_list(ctx)

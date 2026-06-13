@@ -9,12 +9,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from core.hub.clawhub import ClawHubClient
 from core.hub.claude_marketplace import ensure_marketplace_repo, materialize_plugin
+from core.hub.clawhub import ClawHubClient
+from core.hub.hermes_hub import HERMES_GIT_URL, hermes_skill_subpath
 from core.hub.lockfile import HubEntry, HubLockfile
 from core.hub.normalize import discover_skill_files, parse_skill_file, write_flat_skill
 from core.hub.slash_registry import rebuild_slash_registry
-from core.hub.hermes_hub import HERMES_GIT_URL, hermes_skill_subpath
 from core.hub.sources import git_ref_from_spec, parse_install_source, skills_sh_to_git_url
 from core.mcp.installer import clone_or_update_git
 
@@ -331,7 +331,7 @@ class SkillImporter:
         flat: bool,
         install_spec: str,
     ) -> InstallResult:
-        req = urllib.request.Request(url, headers={"User-Agent": "Helix/1.0"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Holix/1.0"})
         with urllib.request.urlopen(req, timeout=30) as resp:
             text = resp.read().decode("utf-8")
         slug = as_name or _safe_dir_name(url)

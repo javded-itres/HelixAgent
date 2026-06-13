@@ -19,6 +19,7 @@ class ChatSession:
     user_id: int
     profile: str
     conversation_id: str
+    bot_profile: str = "default"
     execution_modes: list[str] = field(
         default_factory=lambda: ["react", "plan_and_execute", "hybrid", "auto"]
     )
@@ -37,7 +38,11 @@ class ChatSession:
     pending_plan_review_id: str | None = None
     pending_confirmation_message_id: int | None = None
     pending_plan_message_ids: list[int] = field(default_factory=list)
+    # Short tokens for Telegram inline buttons (callback_data max 64 bytes).
+    approval_callback_tokens: dict[str, str] = field(default_factory=dict)
+    plan_callback_tokens: dict[str, str] = field(default_factory=dict)
     agent: Any = None
+    profile_manual_override: bool = False
     ui_profiles: list[str] = field(default_factory=list)
     ui_sessions: list[dict] = field(default_factory=list)
     ui_sessions_page: int = 0
@@ -46,10 +51,13 @@ class ChatSession:
     ui_providers_page: int = 0
     ui_models_provider_idx: int | None = None
     ui_models_page: int = 0
+    ui_skills: list[str] = field(default_factory=list)
+    ui_skills_page: int = 0
     active_model_slot: str = "main"
     active_model_label: str = ""
     _model_synced_for: str | None = None
     pending_files: list[SavedTelegramFile] = field(default_factory=list)
+    pending_admin_broadcast: Any = None
 
     @property
     def execution_mode(self) -> str:

@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import aiosqlite
 
-from core.di.runtime_config import HelixRuntimeConfig
+from core.di.runtime_config import HolixRuntimeConfig
 from core.memory.episodic import EpisodicMemoryStore
 from core.memory.procedural import ProceduralMemoryStore
 from core.memory.semantic import SemanticMemoryStore
 from core.memory.strategic import StrategicMemoryStore
 from core.memory.vector import VectorMemoryStore
+from core.paths import prepare_sqlite_db_file
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +21,10 @@ logger = logging.getLogger(__name__)
 class LongTermMemoryStore:
     """Typed long-term memory backed by SQLite + shared ChromaDB collections."""
 
-    def __init__(self, config: HelixRuntimeConfig | None = None):
-        cfg = config or HelixRuntimeConfig.from_settings()
+    def __init__(self, config: HolixRuntimeConfig | None = None):
+        cfg = config or HolixRuntimeConfig.from_settings()
         self.config = cfg
-        self._ltm_db_path = Path(cfg.ltm_db_path)
-        self._ltm_db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._ltm_db_path = prepare_sqlite_db_file(cfg.ltm_db_path)
 
         self._vector_store = VectorMemoryStore(vector_db_path=cfg.vector_db_path)
 
@@ -47,7 +46,7 @@ class LongTermMemoryStore:
         )
 
     async def initialize_db(self) -> None:
-        async with aiosqlite.connect(self._ltm_db_path) as db:
+        async with aiosqlite.connect(str(self._ltm_db_path)) as db:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS ltm_entries (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,14 +77,14 @@ class LongTermMemoryStore:
         key: str,
         content: str,
         source: str = "",
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> int:
         return await self.semantic.store_fact(key, content, source, metadata)
 
-    async def get_fact(self, key: str) -> Optional[Dict[str, Any]]:
+    async def get_fact(self, key: str) -> dict[str, Any] | None:
         return await self.semantic.get_fact(key)
 
-    async def search_episodes(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    async def search_episodes(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
         return await self.episodic.search(query, top_k)
 
     async def store_strategy(
@@ -94,20 +93,20 @@ class LongTermMemoryStore:
         content: str,
         category: str = "general",
         source: str = "",
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> int:
         return await self.strategic.store_strategy(
             key, content, category, source, metadata
         )
 
-    async def search_strategies(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
+    async def search_strategies(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
         return await self.strategic.search(query, top_k)
 
     async def get_relevant_context(
         self,
         query: str,
         top_k: int = 5,
-    ) -> Dict[str, List[Dict[str, Any]]]:
+    ) -> dict[str, list[dict[str, Any]]]:
         import asyncio
 
         episodic, semantic, strategic = await asyncio.gather(
@@ -124,5 +123,5 @@ class LongTermMemoryStore:
     def set_skills_manager(self, skills_manager: Any) -> None:
         self.procedural.set_skills_manager(skills_manager)
 
-    def get_memory_stats(self) -> Dict[str, Any]:
+    def get_memory_stats(self) -> dict[str, Any]:
         return {"vector_store": self._vector_store.get_stats()}

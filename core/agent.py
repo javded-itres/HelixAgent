@@ -1,26 +1,31 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from core.models.manager import ModelConfig
+
 from openai import AsyncOpenAI
 
-from core.models.client_factory import create_openai_client
-from typing import Any, Callable, Dict, List, Optional
-
-from core.di.runtime_config import HelixRuntimeConfig
-from core.memory.facade import MemoryFacade
-from core.skills.manager import SkillsManager
-from core.tools.registry import ToolRegistry
-from core.loop import AgentLoop
 from core.agent_events import (
-    AgentEventBus,
     AgentEvent,
+    AgentEventBus,
     EventContext,
     EventHandler,
     ThinkingEvent,
     wire_default_monitoring,
 )
-from core.context import ContextManager, TokenCounter, ContextCompressor, DEFAULT_CONTEXT_WINDOW
+from core.context import DEFAULT_CONTEXT_WINDOW, ContextCompressor, ContextManager, TokenCounter
+from core.di.runtime_config import HolixRuntimeConfig
+from core.loop import AgentLoop
+from core.memory.facade import MemoryFacade
+from core.models.client_factory import create_openai_client
+from core.skills.manager import SkillsManager
+from core.tools.registry import ToolRegistry
 
 
-class HelixAgent:
-    """Main Helix Agent - A self-improving AI agent with memory and skills.
+class HolixAgent:
+    """Main Holix Agent - A self-improving AI agent with memory and skills.
 
     The agent is now event-aware. You can subscribe to rich structured events
     (tool calls, deltas, self-improvement, errors, etc.) instead of relying on
@@ -32,21 +37,21 @@ class HelixAgent:
 
     def __init__(
         self,
-        config: HelixRuntimeConfig | None = None,
-        event_bus: Optional[AgentEventBus] = None,
-        event_listeners: Optional[List[EventHandler]] = None,
+        config: HolixRuntimeConfig | None = None,
+        event_bus: AgentEventBus | None = None,
+        event_listeners: list[EventHandler] | None = None,
         *,
-        client: Optional[AsyncOpenAI] = None,
+        client: AsyncOpenAI | None = None,
         # Legacy overrides (merged into config when config is omitted)
-        model: Optional[str] = None,
-        base_url: Optional[str] = None,
-        api_key: Optional[str] = None,
-        temperature: Optional[float] = None,
-        max_steps: Optional[int] = None,
+        model: str | None = None,
+        base_url: str | None = None,
+        api_key: str | None = None,
+        temperature: float | None = None,
+        max_steps: int | None = None,
         enable_monitoring: bool = True,
     ):
-        """Initialize the Helix agent."""
-        base_config = config or HelixRuntimeConfig.from_settings()
+        """Initialize the Holix agent."""
+        base_config = config or HolixRuntimeConfig.from_settings()
         self.config = base_config.with_overrides(
             model=model,
             base_url=base_url,
@@ -62,7 +67,7 @@ class HelixAgent:
             metadata=self.config.provider_metadata or None,
         )
 
-        self.events = event_bus or AgentEventBus(name="HelixAgentAi")
+        self.events = event_bus or AgentEventBus(name="Holix")
         if event_listeners:
             for listener in event_listeners:
                 self.events.subscribe(listener)
@@ -72,7 +77,11 @@ class HelixAgent:
 
         self.memory = MemoryFacade(self.config)
         self.skills = SkillsManager(self.config)
-        self.tools = ToolRegistry()
+        self.tools = ToolRegistry(
+            workspace_root=self.config.workspace_root,
+            workspace_jail_enabled=self.config.workspace_jail_enabled,
+            profile_name=self.config.profile_name,
+        )
         self.loop = AgentLoop(self)
 
         context_window = self._resolve_context_window(self.config.context_window)
@@ -96,15 +105,32 @@ class HelixAgent:
         self._initialized = False
         self._event_context: EventContext | None = None
         self.agent_slot: str = "main"
+        self._model_manager = None
+
+    @property
+    def model_manager(self):
+        """Lazy ModelManager for provider routing and fallbacks."""
+        if self._model_manager is None:
+            from cli.core import ProfileManager
+
+            from core.models.manager import ModelManager
+
+            profile_name = getattr(self.config, "profile_name", "default") or "default"
+            self._model_manager = ModelManager(ProfileManager().load_profile(profile_name))
+        return self._model_manager
+
+    def invalidate_model_manager(self) -> None:
+        """Drop cached profile routing (after config reload)."""
+        self._model_manager = None
 
     @property
     def graph(self):
         """Lazy-compiled LangGraph execution graph."""
         if self._graph is None:
-            from core.graph.builder import build_helix_graph
+            from core.graph.builder import build_holix_graph
 
             mode = self._execution_mode_last or self.config.execution_mode
-            self._graph = build_helix_graph(
+            self._graph = build_holix_graph(
                 agent=self,
                 execution_mode=mode,
             )
@@ -127,7 +153,7 @@ class HelixAgent:
 
     def set_active_model_config(
         self,
-        model_config: "ModelConfig",
+        model_config: ModelConfig,
         *,
         model_slot_id: str | None = None,
     ) -> None:
@@ -203,15 +229,17 @@ class HelixAgent:
 
     def emit(self, event: AgentEvent) -> None:
         """Convenience method to emit an event through the agent's bus."""
+        from core.workspace import sanitize_agent_event
+
         self.stamp_event(event)
-        self.events.emit(event)
+        self.events.emit(sanitize_agent_event(event))
 
     async def initialize(self):
         """Initialize the agent (async setup)."""
         if self._initialized:
             return
 
-        self.emit(ThinkingEvent(message="Initializing Helix Agent..."))
+        self.emit(ThinkingEvent(message="Initializing Holix Agent..."))
 
         await self.memory.initialize_db()
 
@@ -257,7 +285,7 @@ class HelixAgent:
         if enabled:
             self.emit(ThinkingEvent(message=f"Search providers: {', '.join(enabled)}"))
 
-        from core.security.confirmation import init_action_guard, RiskLevel
+        from core.security.confirmation import RiskLevel, init_action_guard
 
         auto_allow_threshold = RiskLevel(self.config.auto_allow_threshold)
         interactive = not self.config.non_interactive
@@ -266,19 +294,21 @@ class HelixAgent:
             auto_allow_threshold=auto_allow_threshold,
             interactive=interactive,
             confirmation_timeout=self.config.confirmation_timeout,
+            data_dir=self.config.data_dir,
+            profile_name=self.config.profile_name,
         )
         self.tools.set_action_guard(guard)
 
         from core.plan_review import init_plan_review_guard
 
-        init_plan_review_guard(
+        self._plan_review_guard = init_plan_review_guard(
             event_bus=self.events,
             interactive=interactive,
             review_timeout=self.config.plan_review_timeout,
         )
 
         self._initialized = True
-        self.emit(ThinkingEvent(message="Helix Agent ready!"))
+        self.emit(ThinkingEvent(message="Holix Agent ready!"))
 
     async def close(self) -> None:
         """Cleanup (MCP sessions etc.). Safe to call multiple times."""
@@ -290,8 +320,8 @@ class HelixAgent:
 
     async def reload_mcp(
         self,
-        mcp_servers: Optional[Dict[str, Any]] = None,
-        mcp_assignments: Optional[Dict[str, List[str]]] = None,
+        mcp_servers: dict[str, Any] | None = None,
+        mcp_assignments: dict[str, list[str]] | None = None,
     ) -> int:
         """Hot-reload MCP servers and their tools without full agent restart.
 
@@ -370,11 +400,11 @@ class HelixAgent:
         execution_mode: str = "react",
     ) -> str:
         """Run the agent using the LangGraph execution graph."""
-        from core.runtime.executor import run_helix
-        from core.agent_events import FinalResponseEvent, ErrorEvent
+        from core.agent_events import ErrorEvent, FinalResponseEvent
+        from core.runtime.executor import run_holix
 
         final_response = ""
-        async for event in run_helix(
+        async for event in run_holix(
             self,
             user_input,
             conversation_id,
@@ -387,7 +417,11 @@ class HelixAgent:
             elif isinstance(event, ErrorEvent):
                 final_response = event.error
 
-        return final_response or "Agent completed without producing a final response."
+        from core.workspace import sanitize_paths_in_text
+
+        return sanitize_paths_in_text(
+            final_response or "Agent completed without producing a final response."
+        )
 
     async def get_conversation_history(
         self,
@@ -396,8 +430,31 @@ class HelixAgent:
     ) -> list:
         return await self.memory.get_conversation(conversation_id, limit)
 
-    async def search_memory(self, query: str, top_k: int = 5) -> list:
-        return await self.memory.search(query, top_k)
+    async def search_memory(
+        self,
+        query: str,
+        top_k: int = 5,
+        *,
+        conversation_id: str | None = None,
+    ) -> list:
+        return await self.memory.search(query, top_k, conversation_id=conversation_id)
+
+    def format_memory_results(
+        self,
+        results: list,
+        *,
+        conversation_id: str | None = None,
+        include_current: bool = True,
+        content_limit: int = 300,
+    ) -> str:
+        from core.memory.session_search import format_memory_search_results
+
+        return format_memory_search_results(
+            results,
+            current_conversation_id=conversation_id,
+            include_current=include_current,
+            content_limit=content_limit,
+        )
 
     def get_skills(self) -> dict:
         return self.skills.all_skills

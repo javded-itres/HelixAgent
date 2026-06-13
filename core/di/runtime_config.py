@@ -1,23 +1,24 @@
-"""Immutable runtime configuration for Helix (replaces global settings mutation)."""
+"""Immutable runtime configuration for Holix (replaces global settings mutation)."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
-from config import Settings, settings as default_settings
+from config import Settings
+from config import settings as default_settings
 
 try:
     from typing import Self
 except ImportError:  # py < 3.11
-    from typing_extensions import Self  # type: ignore[assignment]
+    from typing import Self  # type: ignore[assignment]
 
 if TYPE_CHECKING:
     from cli.core import ProfileConfig
 
 
 @dataclass(frozen=True, slots=True)
-class HelixRuntimeConfig:
+class HolixRuntimeConfig:
     """Resolved configuration for a single agent / session."""
 
     # LLM
@@ -81,24 +82,29 @@ class HelixRuntimeConfig:
 
     # Profile metadata (optional)
     profile_name: str = "default"
-    provider_metadata: Dict[str, Any] = field(default_factory=dict)
+    provider_metadata: dict[str, Any] = field(default_factory=dict)
 
     # MCP servers (defs + assignments). Only additive from profile; local .helix may supplement at load time.
-    mcp_servers: Dict[str, Any] = field(default_factory=dict)
-    mcp_assignments: Dict[str, List[str]] = field(default_factory=dict)
+    mcp_servers: dict[str, Any] = field(default_factory=dict)
+    mcp_assignments: dict[str, list[str]] = field(default_factory=dict)
     mcp_enabled: bool = True
 
-    skill_assignments: Dict[str, List[str]] = field(default_factory=dict)
+    skill_assignments: dict[str, list[str]] = field(default_factory=dict)
 
     # Web search (DuckDuckGo / SearXNG / Firecrawl)
-    search: Dict[str, Any] = field(default_factory=dict)
+    search: dict[str, Any] = field(default_factory=dict)
 
-    # Local project supplement dir (CWD/.helix) — used for skills, plans, extra mcp; NEVER for model/system keys.
-    local_project_dir: str = ".helix"
-    local_skills_dir: Optional[str] = None  # resolved at use site if None
+    # Local project supplement dir (CWD/.holix) — used for skills, plans, extra mcp; NEVER for model/system keys.
+    local_project_dir: str = ".holix"
+    local_skills_dir: str | None = None  # resolved at use site if None
+
+    # Workspace jail (optional per-profile directory isolation)
+    workspace_jail_enabled: bool = False
+    workspace_root: str | None = None
+    encryption_enabled: bool = False
 
     @classmethod
-    def from_settings(cls, source: Optional[Settings] = None) -> Self:
+    def from_settings(cls, source: Settings | None = None) -> Self:
         """Build config from pydantic Settings (env / .env)."""
         s = source or default_settings
         return cls(
@@ -148,8 +154,11 @@ class HelixRuntimeConfig:
             mcp_enabled=True,
             skill_assignments={},
             search={},
-            local_project_dir=".helix",
+            local_project_dir=".holix",
             local_skills_dir=None,
+            workspace_jail_enabled=False,
+            workspace_root=None,
+            encryption_enabled=False,
         )
 
     @classmethod
@@ -157,7 +166,7 @@ class HelixRuntimeConfig:
         cls,
         profile: ProfileConfig,
         *,
-        base: Optional[Self] = None,
+        base: Self | None = None,
     ) -> Self:
         """Merge CLI profile overrides onto a base config."""
         cfg = base or cls.from_settings()
@@ -184,6 +193,8 @@ class HelixRuntimeConfig:
         overrides["data_dir"] = profile.data_dir
         overrides["memory_db_path"] = profile.memory_db_path
         overrides["vector_db_path"] = profile.vector_db_path
+        overrides["ltm_db_path"] = profile.ltm_db_path
+        overrides["langgraph_checkpoint_db_path"] = profile.langgraph_checkpoint_db_path
         if profile.context_window is not None:
             overrides["context_window"] = profile.context_window
 
@@ -203,6 +214,12 @@ class HelixRuntimeConfig:
             overrides["subagent_max_concurrent"] = profile.subagent_max_concurrent
         if getattr(profile, "search", None):
             overrides["search"] = profile.search
+        if getattr(profile, "workspace_jail_enabled", False):
+            overrides["workspace_jail_enabled"] = profile.workspace_jail_enabled
+        if getattr(profile, "workspace_root", None):
+            overrides["workspace_root"] = profile.workspace_root
+        if getattr(profile, "encryption_enabled", False):
+            overrides["encryption_enabled"] = profile.encryption_enabled
 
         if profile.default_provider and profile.providers:
             pdata = profile.providers.get(profile.default_provider) or {}

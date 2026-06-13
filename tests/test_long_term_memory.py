@@ -2,18 +2,10 @@
 Tests for Long-term Memory system (Episodic, Semantic, Procedural, Strategic).
 """
 
-import pytest
-import asyncio
-import tempfile
 import shutil
-from pathlib import Path
+import tempfile
 
-from core.memory.manager import LongTermMemoryManager
-from core.memory.episodic import EpisodicMemoryStore
-from core.memory.semantic import SemanticMemoryStore
-from core.memory.procedural import ProceduralMemoryStore
-from core.memory.strategic import StrategicMemoryStore
-from core.memory.vector import VectorMemoryStore
+import pytest
 
 
 @pytest.fixture
@@ -27,10 +19,10 @@ async def ltm_temp_dir():
 @pytest.fixture
 async def ltm(ltm_temp_dir):
     """Create a MemoryFacade with temp databases."""
-    from core.di.runtime_config import HelixRuntimeConfig
+    from core.di.runtime_config import HolixRuntimeConfig
     from core.memory.facade import MemoryFacade
 
-    cfg = HelixRuntimeConfig.from_settings().with_overrides(
+    cfg = HolixRuntimeConfig.from_settings().with_overrides(
         memory_db_path=f"{ltm_temp_dir}/memory.db",
         vector_db_path=f"{ltm_temp_dir}/vector_db",
         ltm_db_path=f"{ltm_temp_dir}/ltm.db",

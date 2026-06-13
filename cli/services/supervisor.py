@@ -9,13 +9,12 @@ import sys
 from typing import NoReturn
 
 from core.platform_compat import popen_background
+from integrations.telegram.config import load_telegram_settings, telegram_aiogram_available
 
 from cli.services.docs_site import docs_url, resolve_web_docs_dir
 from cli.services.gateway_state import update_docs_info, update_telegram_pid
 from cli.utils.ports import resolve_listen_port
 from cli.utils.rich_console import print_info, print_success, print_warning
-from integrations.max.gateway_routes import max_enabled, max_should_webhook
-from integrations.telegram.config import load_telegram_settings, telegram_aiogram_available
 
 
 def telegram_enabled(profile: str = "default") -> bool:
@@ -40,7 +39,7 @@ def docs_should_start() -> bool:
 async def _run_telegram(profile: str) -> None:
     if not telegram_enabled(profile):
         print_warning(
-            "Telegram bot skipped (set TELEGRAM_BOT_TOKEN or HELIX_TELEGRAM_BOT_TOKEN to enable)"
+            "Telegram bot skipped (set TELEGRAM_BOT_TOKEN or HOLIX_TELEGRAM_BOT_TOKEN to enable)"
         )
         return
 
@@ -50,14 +49,14 @@ async def _run_telegram(profile: str) -> None:
         return
 
     try:
-        from integrations.telegram.bot import HelixTelegramBot
+        from integrations.telegram.bot import HolixTelegramBot
     except ImportError as e:
         print_warning(f"Telegram bot skipped: {e}")
         print_info("Install: uv sync --extra telegram")
         return
 
     print_success(f"Telegram bot starting (profile={profile})")
-    bot = HelixTelegramBot(profile=profile)
+    bot = HolixTelegramBot(profile=profile)
     try:
         await bot.run_polling()
     except ImportError as e:
@@ -98,22 +97,43 @@ def _terminate_proc(proc: subprocess.Popen[bytes] | None) -> None:
         proc.kill()
 
 
-def _docs_subprocess(host: str, port: int) -> subprocess.Popen[bytes] | None:
+def _docs_subprocess(
+    host: str,
+    port: int,
+    profile: str,
+    *,
+    gateway_host: str,
+    gateway_port: int,
+) -> subprocess.Popen[bytes] | None:
     if not docs_should_start():
         print_warning("Documentation site skipped (web-docs/ not found)")
         return None
 
-    listen_port = resolve_listen_port(host, port)
+    listen_port = resolve_listen_port(host, port, wait_timeout=8.0)
     if listen_port != port:
         print_warning(f"Docs port {port} is in use; using {listen_port} instead")
         port = listen_port
 
     print_success(f"Documentation site starting on {docs_url(host, port)}")
+    docs_env = os.environ.copy()
+    docs_env["HOLIX_GATEWAY_HOST"] = gateway_host
+    docs_env["HOLIX_GATEWAY_PORT"] = str(gateway_port)
     proc = popen_background(
-        [sys.executable, "-m", "cli.services.docs_worker", "--host", host, "--port", str(port)],
+        [
+            sys.executable,
+            "-m",
+            "cli.services.docs_worker",
+            "--host",
+            host,
+            "--port",
+            str(port),
+            "--profile",
+            profile,
+        ],
+        env=docs_env,
     )
     if proc.pid:
-        update_docs_info(pid=proc.pid, host=host, port=port)
+        update_docs_info(pid=proc.pid, host=host, port=port, profile=profile)
     return proc
 
 
@@ -126,7 +146,7 @@ async def _run_supervisor_async(
     docs_host: str = "127.0.0.1",
     docs_port: int = 8080,
 ) -> None:
-    print_info(f"Starting Helix API Gateway on {host}:{port}")
+    print_info(f"Starting Holix API Gateway on {host}:{port}")
     companions = ["cron"]
     if with_docs:
         companions.append("docs" if docs_should_start() else "docs (unavailable)")
@@ -144,7 +164,19 @@ async def _run_supervisor_async(
         companions.append("max (disabled)")
     print_info(f"Companion services: {', '.join(companions)}")
 
-    docs_proc = _docs_subprocess(docs_host, docs_port) if with_docs else None
+    os.environ["HOLIX_GATEWAY_SUPERVISOR"] = "1"
+
+    docs_proc = (
+        _docs_subprocess(
+            docs_host,
+            docs_port,
+            profile,
+            gateway_host=host,
+            gateway_port=port,
+        )
+        if with_docs
+        else None
+    )
     gateway_task = asyncio.create_task(_run_gateway_uvicorn(host, port), name="gateway")
     telegram_task = asyncio.create_task(_run_telegram(profile), name="telegram")
     cron_task = asyncio.create_task(_run_cron_scheduler(profile), name="cron")
@@ -168,7 +200,7 @@ async def _run_supervisor_async(
 
 def _cron_subprocess(profile: str) -> subprocess.Popen[bytes] | None:
     env = os.environ.copy()
-    env["HELIX_PROFILE"] = profile
+    env["HOLIX_PROFILE"] = profile
     print_success(f"Cron scheduler starting in subprocess (profile={profile})")
     return popen_background(
         [sys.executable, "-m", "cli.services.cron_worker", "--profile", profile],
@@ -179,7 +211,7 @@ def _cron_subprocess(profile: str) -> subprocess.Popen[bytes] | None:
 def _telegram_subprocess(profile: str) -> subprocess.Popen[bytes] | None:
     if not telegram_enabled(profile):
         print_warning(
-            "Telegram bot skipped (set TELEGRAM_BOT_TOKEN or HELIX_TELEGRAM_BOT_TOKEN to enable)"
+            "Telegram bot skipped (set TELEGRAM_BOT_TOKEN or HOLIX_TELEGRAM_BOT_TOKEN to enable)"
         )
         return None
 
@@ -189,14 +221,13 @@ def _telegram_subprocess(profile: str) -> subprocess.Popen[bytes] | None:
         return None
 
     env = os.environ.copy()
-    env["HELIX_TELEGRAM_PROFILE"] = profile
     print_success(f"Telegram bot starting in subprocess (profile={profile})")
     proc = popen_background(
         [sys.executable, "-m", "integrations.telegram.main"],
         env=env,
     )
     if proc.pid:
-        update_telegram_pid(proc.pid)
+        update_telegram_pid(proc.pid, profile=profile)
     return proc
 
 
@@ -212,12 +243,22 @@ def _start_with_reload(
     """Gateway with uvicorn reload; companions run in sibling OS processes."""
     import uvicorn
 
-    print_info(f"Starting Helix API Gateway on {host}:{port}")
+    print_info(f"Starting Holix API Gateway on {host}:{port}")
     print_info("Auto-reload enabled (companions run in separate processes)")
 
     tg_proc = _telegram_subprocess(profile)
     cron_proc = _cron_subprocess(profile)
-    docs_proc = _docs_subprocess(docs_host, docs_port) if with_docs else None
+    docs_proc = (
+        _docs_subprocess(
+            docs_host,
+            docs_port,
+            profile,
+            gateway_host=host,
+            gateway_port=port,
+        )
+        if with_docs
+        else None
+    )
 
     try:
         uvicorn.run(
@@ -245,7 +286,12 @@ def run_gateway_supervisor(
     docs_port: int = 8080,
 ) -> None:
     """Start gateway and all companion services (Telegram, docs, …)."""
-    os.environ["HELIX_PROFILE"] = profile
+    from core.env_loader import bootstrap_profile_env
+
+    bootstrap_profile_env(profile)
+    from cli.core import bootstrap_profile_unlock_from_env
+
+    bootstrap_profile_unlock_from_env(profile)
     if reload:
         _start_with_reload(
             host,

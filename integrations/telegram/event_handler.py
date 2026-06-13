@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import TYPE_CHECKING
 
 from core.agent_events import (
@@ -23,6 +24,9 @@ from core.agent_events import (
 from core.plan_review.review_events import PlanReviewRequestEvent
 from core.security.confirmation_events import ConfirmationRequestEvent
 from core.subagents.interaction_events import SubAgentQuestionEvent
+
+logger = logging.getLogger(__name__)
+
 if TYPE_CHECKING:
     from integrations.telegram.approvals import TelegramApprovals
     from integrations.telegram.live_presenter import TelegramLivePresenter
@@ -36,6 +40,14 @@ class TelegramEventHandler:
     ) -> None:
         self._presenter = presenter
         self._approvals = approvals
+
+    @staticmethod
+    def _schedule_task(coro) -> None:
+        """Schedule a coroutine; requires a running loop (Telegram polling)."""
+        try:
+            asyncio.get_running_loop().create_task(coro)
+        except RuntimeError:
+            logger.warning("Telegram handler: no event loop; skipped async delivery")
 
     def handle(self, event: AgentEvent) -> None:
         buf = self._presenter.buffer
@@ -62,6 +74,8 @@ class TelegramEventHandler:
                 body = getattr(event, "result", "") or ""
                 buf.add_tool_result(event.tool_name, body, duration_s=duration_s)
                 self._store_tool(self._presenter.session, event.tool_name, body, duration_s)
+                if (event.tool_name or "") == "send_chat_files" and body.startswith("Sent "):
+                    buf.add_note(f"📎 {body[:240]}")
                 self._presenter.schedule_edit()
 
             elif isinstance(event, ToolCallErrorEvent):
@@ -77,39 +91,25 @@ class TelegramEventHandler:
                 self._presenter.schedule_edit()
 
             elif isinstance(event, AssistantDeltaEvent):
-                buf.append_answer_delta(event.content)
-                self._presenter.schedule_edit()
+                # Final text is always delivered in a separate chat message.
+                pass
 
             elif isinstance(event, FinalResponseEvent):
                 buf.set_thinking(None)
-                content = event.content or ""
-                if content.strip():
+                content = (event.content or "").strip()
+                if not content:
+                    recent = self._presenter.session._recent_tool_results
+                    if recent:
+                        content = str(recent[-1].get("full_result") or "").strip()
+                if content:
                     self._presenter.session._transcript_store.append(
                         "assistant",
                         content,
                         markdown=content,
                     )
-                # For very long final answers, send the full content split across
-                # multiple Telegram messages (point 3), and keep the live status
-                # message short so it doesn't hit the size limit or duplicate.
-                from integrations.telegram.markdown import markdown_to_telegram_html
-
-                html_len = (
-                    len(markdown_to_telegram_html(content))
-                    if content.strip()
-                    else 0
-                )
-                if len(content) > 2200 or html_len > 3600:
-                    buf.set_answer("📄 Полный ответ — в следующих сообщениях.")
-                    try:
-                        asyncio.create_task(
-                            self._presenter.send_final_answer_split(content)
-                        )
-                    except Exception:
-                        # fallback to (capped) answer in the status msg
-                        buf.set_answer(content[:2000] + "…")
-                else:
-                    buf.set_answer(content)
+                    buf.result_posted_separately = True
+                    self._schedule_task(self._presenter.deliver_result(content))
+                buf.set_answer("")
                 buf.mark_done()
                 self._presenter.schedule_edit(force=True)
 
@@ -166,7 +166,11 @@ class TelegramEventHandler:
                 self._presenter.schedule_edit()
 
             elif isinstance(event, ErrorEvent):
-                buf.mark_error(str(event.error or "unknown"))
+                err = str(event.error or "unknown")
+                buf.mark_error(err)
+                self._schedule_task(
+                    self._presenter.deliver_result(f"✗ **Ошибка:** {err}")
+                )
                 self._presenter.schedule_edit(force=True)
 
         except Exception as exc:

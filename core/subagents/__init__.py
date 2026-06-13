@@ -1,8 +1,8 @@
 """
-Helix Subagents System — types, base classes, and data structures.
+Holix Subagents System — types, base classes, and data structures.
 """
 
-from core.subagents.base import SubAgentConfig, SubAgentResult, SubAgentHandle
+from core.subagents.base import SubAgentConfig, SubAgentHandle, SubAgentResult
 
 __all__ = [
     "SubAgentConfig",

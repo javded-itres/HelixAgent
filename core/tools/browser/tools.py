@@ -1,11 +1,11 @@
-"""Playwright browser tools for Helix agent."""
+"""Playwright browser tools for Holix agent."""
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from config import settings
+from core.paths import resolve_profile_data_dir
 from core.tools.base import BaseTool
 from core.tools.browser.policy import parse_allowed_hosts_csv, validate_browser_url
 from core.tools.browser.session import get_browser_session_manager
@@ -97,7 +97,7 @@ class BrowserSnapshotTool(BaseTool):
 
             extra = ""
             if screenshot:
-                out_dir = Path(settings.data_dir) / "browser_screenshots"
+                out_dir = resolve_profile_data_dir() / "browser_screenshots"
                 out_dir.mkdir(parents=True, exist_ok=True)
                 path = out_dir / f"{cid.replace('/', '_')}.png"
                 await session.page.screenshot(path=str(path), full_page=False)

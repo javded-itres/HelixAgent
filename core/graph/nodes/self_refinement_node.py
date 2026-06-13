@@ -7,17 +7,17 @@ iterations are exhausted.
 """
 
 import logging
-from typing import Any, Dict
 
-from core.graph.state import HelixGraphState, get_agent_from_config
-from core.self_refinement.loop import SelfRefinementLoop
-from core.meta_agent import MetaAgent
 from langchain_core.runnables import RunnableConfig
+
+from core.graph.state import HolixGraphState, get_agent_from_config
+from core.meta_agent import MetaAgent
+from core.self_refinement.loop import SelfRefinementLoop
 
 logger = logging.getLogger(__name__)
 
 
-async def self_refinement_node(state: HelixGraphState, config: RunnableConfig) -> dict:
+async def self_refinement_node(state: HolixGraphState, config: RunnableConfig) -> dict:
     """Run the self-refinement loop if the meta-agent flagged it.
 
     This node is activated when needs_refinement=True in state.

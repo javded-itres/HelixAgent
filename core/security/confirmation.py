@@ -1,5 +1,5 @@
 """
-Confirmation System — dangerous action confirmation for Helix tools.
+Confirmation System — dangerous action confirmation for Holix tools.
 
 Provides risk classification, permission management, and interactive
 confirmation prompts before executing high-risk tool calls.
@@ -20,19 +20,20 @@ import json
 import logging
 import re
 import threading
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 # ─── Risk Levels ──────────────────────────────────────────────────────────
 
-class RiskLevel(str, Enum):
+class RiskLevel(StrEnum):
     """Risk classification for tool calls."""
     NO = "no"          # Safe: read-only, no side effects
     LOW = "low"        # Minor side effects: network reads
@@ -50,8 +51,8 @@ class RiskAssessment:
     risk_level: RiskLevel = RiskLevel.MEDIUM
     reason: str = ""
     tool_name: str = ""
-    arguments: Dict[str, Any] = field(default_factory=dict)
-    pattern_matched: Optional[str] = None  # Which escalation pattern triggered, if any
+    arguments: dict[str, Any] = field(default_factory=dict)
+    pattern_matched: str | None = None  # Which escalation pattern triggered, if any
 
 
 # ─── Risk Classifier ──────────────────────────────────────────────────────
@@ -88,7 +89,7 @@ class RiskClassifier:
         # SQL mutation keywords that escalate sql_query to HIGH
         self._sql_mutation_keywords = {"INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE", "TRUNCATE"}
 
-    def classify(self, tool_name: str, tool_instance: Any, arguments: Dict[str, Any]) -> RiskAssessment:
+    def classify(self, tool_name: str, tool_instance: Any, arguments: dict[str, Any]) -> RiskAssessment:
         """Classify a tool call by risk level.
 
         Args:
@@ -120,7 +121,7 @@ class RiskClassifier:
         )
 
     def _analyze_arguments(
-        self, tool_name: str, arguments: Dict[str, Any], baseline: RiskLevel
+        self, tool_name: str, arguments: dict[str, Any], baseline: RiskLevel
     ) -> tuple:
         """Analyze tool arguments for risk escalation patterns.
 
@@ -198,7 +199,7 @@ class RiskClassifier:
 
 # ─── Permission Management ────────────────────────────────────────────────
 
-class PermissionScope(str, Enum):
+class PermissionScope(StrEnum):
     """How long a permission grant lasts."""
     ONCE = "once"          # Only this invocation (not stored)
     SESSION = "session"    # Until the agent process exits
@@ -211,7 +212,7 @@ class PermissionGrant:
     tool_name: str
     scope: PermissionScope
     risk_level: RiskLevel
-    argument_pattern: Optional[str] = None
+    argument_pattern: str | None = None
     granted_at: str = ""
 
 
@@ -222,16 +223,45 @@ class PermissionManager:
     a JSON file. Thread-safe via a lock.
     """
 
-    PERMISSIONS_FILE = Path("data/security/permissions.json")
-
-    def __init__(self):
-        self._session_grants: Dict[str, PermissionGrant] = {}
-        self._always_grants: Dict[str, PermissionGrant] = {}
+    def __init__(self, data_dir: str | Path | None = None):
+        self._data_dir: Path | None = (
+            Path(data_dir).expanduser().resolve() if data_dir is not None else None
+        )
+        self._permissions_file_override: Path | None = None
+        self._session_grants: dict[str, PermissionGrant] = {}
+        self._always_grants: dict[str, PermissionGrant] = {}
         self._lock = threading.Lock()
         self._loaded = False
 
+    def set_data_dir(self, data_dir: str | Path) -> None:
+        """Point storage at the active profile data directory."""
+        self._data_dir = Path(data_dir).expanduser().resolve()
+        self._permissions_file_override = None
+
+    @property
+    def data_dir(self) -> Path:
+        if self._data_dir is not None:
+            return self._data_dir
+        from core.paths import resolve_profile_data_dir
+
+        return resolve_profile_data_dir()
+
+    @property
+    def PERMISSIONS_FILE(self) -> Path:
+        if self._permissions_file_override is not None:
+            return self._permissions_file_override
+        return self.data_dir / "security" / "permissions.json"
+
+    @PERMISSIONS_FILE.setter
+    def PERMISSIONS_FILE(self, value: Path) -> None:
+        self._permissions_file_override = Path(value)
+
+    @property
+    def audit_log_path(self) -> Path:
+        return self.data_dir / "security" / "confirmation_audit.jsonl"
+
     @staticmethod
-    def _grant_key(tool_name: str, risk_level: RiskLevel, argument_pattern: Optional[str] = None) -> str:
+    def _grant_key(tool_name: str, risk_level: RiskLevel, argument_pattern: str | None = None) -> str:
         """Create a unique key for a permission grant."""
         if argument_pattern:
             return f"{tool_name}:{risk_level.value}:{argument_pattern}"
@@ -274,7 +304,7 @@ class PermissionManager:
         }
         self.PERMISSIONS_FILE.write_text(json.dumps(data, indent=2))
 
-    def is_allowed(self, tool_name: str, risk_level: RiskLevel, argument_pattern: Optional[str] = None) -> bool:
+    def is_allowed(self, tool_name: str, risk_level: RiskLevel, argument_pattern: str | None = None) -> bool:
         """Check if a tool call is pre-authorized by a session or persistent grant.
 
         For ALWAYS grants, also matches if the granted level is >= the requested level
@@ -298,7 +328,7 @@ class PermissionManager:
             return False
 
     def grant(self, tool_name: str, scope: PermissionScope, risk_level: RiskLevel,
-              argument_pattern: Optional[str] = None) -> None:
+              argument_pattern: str | None = None) -> None:
         """Record a permission grant."""
         self._ensure_loaded()
         grant = PermissionGrant(
@@ -318,7 +348,7 @@ class PermissionManager:
             # ONCE is not stored — it only applies to the current invocation
 
     def revoke(self, tool_name: str, scope: PermissionScope, risk_level: RiskLevel,
-               argument_pattern: Optional[str] = None) -> None:
+               argument_pattern: str | None = None) -> None:
         """Revoke a permission grant."""
         self._ensure_loaded()
         key = self._grant_key(tool_name, risk_level, argument_pattern)
@@ -334,7 +364,7 @@ class PermissionManager:
         with self._lock:
             self._session_grants.clear()
 
-    def list_grants(self) -> Dict[str, Any]:
+    def list_grants(self) -> dict[str, Any]:
         """List all active grants for display in UI."""
         self._ensure_loaded()
         with self._lock:
@@ -360,12 +390,22 @@ permission_manager = PermissionManager()
 
 # ─── Confirmation Choice ──────────────────────────────────────────────────
 
-class ConfirmationChoice(str, Enum):
+class ConfirmationChoice(StrEnum):
     """User choices for a confirmation request."""
     ALLOW_ONCE = "allow_once"        # Allow this one invocation only
     ALLOW_SESSION = "allow_session"  # Allow for the rest of this session
     ALLOW_ALWAYS = "allow_always"    # Persist permission
     DENY = "deny"                    # Block this tool call
+
+
+def normalize_confirmation_timeout(value: int | float | None, *, default: int = 0) -> int:
+    """Seconds to wait for user approval. 0 or negative = no timeout."""
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 # ─── Action Guard ──────────────────────────────────────────────────────────
@@ -384,26 +424,33 @@ class ActionGuard:
 
     def __init__(
         self,
-        event_bus: Optional[Any] = None,
-        permission_manager: Optional[PermissionManager] = None,
-        risk_classifier: Optional[RiskClassifier] = None,
+        event_bus: Any | None = None,
+        permission_manager: PermissionManager | None = None,
+        risk_classifier: RiskClassifier | None = None,
         auto_allow_threshold: RiskLevel = RiskLevel.LOW,
         interactive: bool = True,
-        confirmation_timeout: int = 300,
+        confirmation_timeout: int = 0,
+        data_dir: str | Path | None = None,
     ):
         self._event_bus = event_bus
-        self._permission_manager = permission_manager or PermissionManager()
+        self._permission_manager = permission_manager or PermissionManager(
+            data_dir=data_dir
+        )
         self._risk_classifier = risk_classifier or RiskClassifier()
+        if data_dir is not None:
+            self._audit_log_path = Path(data_dir).expanduser().resolve() / "security" / "confirmation_audit.jsonl"
+        else:
+            self._audit_log_path = self._permission_manager.audit_log_path
         self._auto_allow_threshold = auto_allow_threshold
         self._interactive = interactive
         self._confirmation_timeout = confirmation_timeout
 
         # Map from confirmation_id -> asyncio.Future[ConfirmationChoice]
-        self._pending_confirmations: Dict[str, asyncio.Future] = {}
+        self._pending_confirmations: dict[str, asyncio.Future] = {}
         self._confirmation_counter = 0
 
         # Audit logging callback
-        self._audit_logger: Optional[Callable] = None
+        self._audit_logger: Callable | None = None
 
         # When True, all tool calls are auto-approved without confirmation.
         # Set when a confirmed plan is being executed, so tools within
@@ -429,7 +476,7 @@ class ActionGuard:
         self,
         tool_name: str,
         tool_instance: Any,
-        arguments: Dict[str, Any],
+        arguments: dict[str, Any],
         execute_fn: Callable,
         conversation_id: str = "default",
     ) -> str:
@@ -546,7 +593,7 @@ class ActionGuard:
             logger.info(f"ActionGuard: awaiting confirmation (timeout={timeout}s)")
             return await asyncio.wait_for(future, timeout=timeout)
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             # Timeout = deny
             self._log_audit("timeout", assessment, "confirmation_timeout")
             return ConfirmationChoice.DENY
@@ -578,7 +625,7 @@ class ActionGuard:
 
         return True
 
-    def _log_audit(self, action: str, assessment: RiskAssessment, detail: Optional[str]) -> None:
+    def _log_audit(self, action: str, assessment: RiskAssessment, detail: str | None) -> None:
         """Log an audit record to file and optional callback."""
         record = {
             "timestamp": datetime.now().isoformat(),
@@ -593,7 +640,7 @@ class ActionGuard:
 
         # Write to audit log file
         try:
-            audit_log = Path("data/security/confirmation_audit.jsonl")
+            audit_log = self._audit_log_path
             audit_log.parent.mkdir(parents=True, exist_ok=True)
             with open(audit_log, "a") as f:
                 f.write(json.dumps(record) + "\n")
@@ -606,30 +653,69 @@ class ActionGuard:
 
 # ─── Global instance and init ──────────────────────────────────────────────
 
-_action_guard: Optional[ActionGuard] = None
+_action_guard: ActionGuard | None = None
+_profile_action_guards: dict[str, ActionGuard] = {}
+_profile_permission_managers: dict[str, PermissionManager] = {}
+
+
+def configure_security_storage(data_dir: str | Path) -> None:
+    """Bind global permission storage to the active profile data directory."""
+    permission_manager.set_data_dir(data_dir)
 
 
 def init_action_guard(
     event_bus: Any,
     auto_allow_threshold: RiskLevel = RiskLevel.LOW,
     interactive: bool = True,
-    confirmation_timeout: int = 300,
+    confirmation_timeout: int = 0,
+    data_dir: str | Path | None = None,
+    profile_name: str | None = None,
 ) -> ActionGuard:
     """Initialize the global ActionGuard instance.
 
-    Called by HelixAgent after the event bus is ready.
+    Called by HolixAgent after the event bus is ready.
     """
     global _action_guard
-    _action_guard = ActionGuard(
+    profile_key = (profile_name or "").strip() or None
+    if data_dir is not None and profile_key:
+        pm = PermissionManager(data_dir=data_dir)
+        _profile_permission_managers[profile_key] = pm
+    elif data_dir is not None:
+        configure_security_storage(data_dir)
+        pm = permission_manager
+    else:
+        pm = permission_manager
+
+    guard = ActionGuard(
         event_bus=event_bus,
-        permission_manager=permission_manager,
+        permission_manager=pm,
         auto_allow_threshold=auto_allow_threshold,
         interactive=interactive,
         confirmation_timeout=confirmation_timeout,
+        data_dir=data_dir,
     )
+    if profile_key:
+        _profile_action_guards[profile_key] = guard
+    _action_guard = guard
+    return guard
+
+
+def get_action_guard(profile_name: str | None = None) -> ActionGuard | None:
+    """Get ActionGuard for a profile, or the last-initialized global guard."""
+    profile_key = (profile_name or "").strip() or None
+    if profile_key:
+        return _profile_action_guards.get(profile_key) or _action_guard
     return _action_guard
 
 
-def get_action_guard() -> Optional[ActionGuard]:
-    """Get the global ActionGuard instance (or None if not initialized)."""
-    return _action_guard
+def get_permission_manager_for_profile(profile_name: str) -> PermissionManager:
+    """Return the permission store scoped to a profile."""
+    profile_key = (profile_name or "").strip() or "default"
+    existing = _profile_permission_managers.get(profile_key)
+    if existing is not None:
+        return existing
+    from core.paths import resolve_profile_data_dir
+
+    pm = PermissionManager(data_dir=resolve_profile_data_dir(profile_key))
+    _profile_permission_managers[profile_key] = pm
+    return pm

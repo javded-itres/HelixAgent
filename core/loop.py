@@ -1,9 +1,7 @@
-from typing import List, Dict, Any, Optional
 from openai import AsyncOpenAI
 
-from config import settings
-from core.agent_events import AgentEvent, FinalResponseEvent, ErrorEvent
-from core.runtime.executor import run_helix
+from core.agent_events import AgentEvent, ErrorEvent, FinalResponseEvent
+from core.runtime.executor import run_holix
 
 
 class AgentLoop:
@@ -32,7 +30,7 @@ class AgentLoop:
         final_response = ""
         error_msg = None
 
-        async for event in run_helix(
+        async for event in run_holix(
             self.agent,
             user_input,
             conversation_id,

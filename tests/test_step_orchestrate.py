@@ -10,11 +10,10 @@ Covers:
 - config: max_steps_per_plan_step
 """
 
+from unittest.mock import AsyncMock, MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-
-from core.graph.state import HelixGraphState
-
+from core.graph.state import HolixGraphState
 
 # ─── Step Orchestrate Node ──────────────────────────────────────────────────
 
@@ -26,7 +25,7 @@ class TestStepOrchestrateNode:
         """When no plan steps exist, signal finalization."""
         from core.graph.nodes.step_orchestrate_node import step_orchestrate_node
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             plan_steps=[],
             current_plan_step=0,
             is_step_complete=False,
@@ -42,7 +41,7 @@ class TestStepOrchestrateNode:
         """When current_plan_step >= len(plan_steps), signal finalization."""
         from core.graph.nodes.step_orchestrate_node import step_orchestrate_node
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             plan_steps=[{"step": 1, "description": "test"}],
             current_plan_step=1,  # Past the last step
             is_step_complete=False,
@@ -58,7 +57,7 @@ class TestStepOrchestrateNode:
         """When is_step_complete=True, advance to next step."""
         from core.graph.nodes.step_orchestrate_node import step_orchestrate_node
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             plan_steps=[
                 {"step": 1, "description": "Step 1", "tools_needed": ["terminal"], "expected_output": "done", "success_criteria": "ok"},
                 {"step": 2, "description": "Step 2", "tools_needed": ["write_file"], "expected_output": "done2", "success_criteria": "ok2"},
@@ -80,7 +79,7 @@ class TestStepOrchestrateNode:
         """When starting the first step, inject step context."""
         from core.graph.nodes.step_orchestrate_node import step_orchestrate_node
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             plan_steps=[
                 {"step": 1, "description": "Create project", "tools_needed": ["terminal"], "expected_output": "project created", "success_criteria": "directory exists"},
             ],
@@ -108,7 +107,7 @@ class TestRouteAfterReactPlan:
     def test_tool_calls_routes_to_tool_execution(self):
         from core.graph.nodes.step_orchestrate_node import route_after_react_plan
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             tool_calls=[{"id": "tc1", "function": {"name": "terminal", "arguments": "{}"}}],
             is_step_complete=False,
             is_final=False,
@@ -117,10 +116,24 @@ class TestRouteAfterReactPlan:
         )
         assert route_after_react_plan(state) == "tool_execution"
 
+    def test_global_max_steps_blocks_tool_calls(self):
+        from core.graph.nodes.step_orchestrate_node import route_after_react_plan
+
+        state = HolixGraphState(
+            tool_calls=[{"id": "tc1", "function": {"name": "terminal", "arguments": "{}"}}],
+            is_step_complete=False,
+            is_final=False,
+            step_count=15,
+            max_steps=15,
+            plan_steps=[{"step": 1, "description": "Step 1"}],
+            current_plan_step=0,
+        )
+        assert route_after_react_plan(state) == "finalize"
+
     def test_is_final_routes_to_finalize(self):
         from core.graph.nodes.step_orchestrate_node import route_after_react_plan
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             tool_calls=[],
             is_step_complete=False,
             is_final=True,
@@ -132,7 +145,7 @@ class TestRouteAfterReactPlan:
     def test_step_complete_routes_to_orchestrate(self):
         from core.graph.nodes.step_orchestrate_node import route_after_react_plan
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             tool_calls=[],
             is_step_complete=True,
             is_final=False,
@@ -144,7 +157,7 @@ class TestRouteAfterReactPlan:
     def test_continue_react_loop(self):
         from core.graph.nodes.step_orchestrate_node import route_after_react_plan
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             tool_calls=[],
             is_step_complete=False,
             is_final=False,
@@ -162,7 +175,7 @@ class TestRouteAfterStepOrchestrate:
     def test_has_steps_routes_to_react(self):
         from core.graph.nodes.step_orchestrate_node import route_after_step_orchestrate
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             plan_steps=[{"step": 1, "description": "test"}],
             current_plan_step=0,
             is_final=False,
@@ -172,7 +185,7 @@ class TestRouteAfterStepOrchestrate:
     def test_final_routes_to_finalize(self):
         from core.graph.nodes.step_orchestrate_node import route_after_step_orchestrate
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             plan_steps=[{"step": 1, "description": "test"}],
             current_plan_step=1,  # Past all steps
             is_final=True,
@@ -182,7 +195,7 @@ class TestRouteAfterStepOrchestrate:
     def test_no_steps_routes_to_finalize(self):
         from core.graph.nodes.step_orchestrate_node import route_after_step_orchestrate
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             plan_steps=[],
             current_plan_step=0,
             is_final=False,
@@ -260,7 +273,7 @@ class TestNewStateFields:
     """Tests for new plan orchestration state fields."""
 
     def test_step_orchestrate_fields(self):
-        state = HelixGraphState(
+        state = HolixGraphState(
             is_step_complete=True,
             current_step_start_count=5,
         )
@@ -268,7 +281,7 @@ class TestNewStateFields:
         assert state.get("current_step_start_count") == 5
 
     def test_enriched_plan_fields(self):
-        state = HelixGraphState(
+        state = HolixGraphState(
             plan_analysis={"task_summary": "test", "complexity": "medium"},
             plan_architecture={"approach": "direct"},
         )
@@ -311,7 +324,7 @@ class TestPlanNodeRetryLogic:
         """When no agent is available, create a single-step fallback plan."""
         from core.graph.nodes.plan_node import plan_node
 
-        state = HelixGraphState(user_input="test task", conversation_id="test")
+        state = HolixGraphState(user_input="test task", conversation_id="test")
         config = {"configurable": {"_agent": None}}
 
         result = await plan_node(state, config)
@@ -323,8 +336,8 @@ class TestPlanNodeRetryLogic:
     async def test_plan_node_with_mock_llm(self):
         """Plan node calls LLM and parses the response."""
         import json as _json
+
         from core.graph.nodes.plan_node import plan_node
-        from unittest.mock import AsyncMock, MagicMock
 
         # Create a mock agent
         mock_agent = MagicMock()
@@ -351,7 +364,7 @@ class TestPlanNodeRetryLogic:
         mock_agent.tools.list_tools = MagicMock(return_value=[])
         mock_agent._runtime_config = {"max_steps": 15}
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             user_input="Do the thing",
             conversation_id="test",
         )
@@ -445,7 +458,7 @@ class TestPerStepLimitEnforcement:
         """When a single step exceeds max_steps_per_plan_step, force advance."""
         from core.graph.nodes.step_orchestrate_node import route_after_react_plan
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             tool_calls=[],
             is_step_complete=False,
             is_final=False,
@@ -467,7 +480,7 @@ class TestPerStepLimitEnforcement:
         """When within per-step limit, continue react loop."""
         from core.graph.nodes.step_orchestrate_node import route_after_react_plan
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             tool_calls=[],
             is_step_complete=False,
             is_final=False,
@@ -486,7 +499,7 @@ class TestPerStepLimitEnforcement:
         """Without plan steps, use global max_steps for finalize."""
         from core.graph.nodes.step_orchestrate_node import route_after_react_plan
 
-        state = HelixGraphState(
+        state = HolixGraphState(
             tool_calls=[],
             is_step_complete=False,
             is_final=False,

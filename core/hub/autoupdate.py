@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from core.hub.importer import SkillImporter
-from core.hub.lockfile import HubLockfile
 from core.hub.updates import check_hub_updates
 
 
@@ -45,10 +44,10 @@ def _is_due(last_iso: str | None, interval_hours: float) -> bool:
     try:
         last = datetime.fromisoformat(last_iso.replace("Z", "+00:00"))
         if last.tzinfo is None:
-            last = last.replace(tzinfo=timezone.utc)
+            last = last.replace(tzinfo=UTC)
     except Exception:
         return True
-    elapsed_h = (datetime.now(timezone.utc) - last).total_seconds() / 3600.0
+    elapsed_h = (datetime.now(UTC) - last).total_seconds() / 3600.0
     return elapsed_h >= max(interval_hours, 0.25)
 
 
@@ -81,7 +80,7 @@ def run_hub_autoupdate(
         targets = [(u.entry_id, u.install_spec) for u in check_hub_updates(importer.lock)]
 
     if not targets and not full_reinstall:
-        _save_state(state_file, {"last_run_at": datetime.now(timezone.utc).isoformat()})
+        _save_state(state_file, {"last_run_at": datetime.now(UTC).isoformat()})
         return HubAutoupdateResult(True, "nothing_to_update")
 
     if dry_run:
@@ -101,7 +100,7 @@ def run_hub_autoupdate(
     _save_state(
         state_file,
         {
-            "last_run_at": datetime.now(timezone.utc).isoformat(),
+            "last_run_at": datetime.now(UTC).isoformat(),
             "last_updated": updated,
             "last_failed": failed,
         },
@@ -110,10 +109,11 @@ def run_hub_autoupdate(
 
 
 def suggested_cron_line(profile: str = "default") -> str:
-    from core.platform_compat import IS_WINDOWS, helix_home_display
+    from core.platform_compat import IS_WINDOWS, holix_home_display
 
-    log_file = str(Path(helix_home_display()) / "logs" / "hub-autoupdate.log")
-    cmd = f"helix hub autoupdate -p {profile} --force >> {log_file} 2>&1"
+    log_path = Path(holix_home_display()) / "logs" / "hub-autoupdate.log"
+    log_file = log_path.as_posix() if not IS_WINDOWS else str(log_path)
+    cmd = f"holix hub autoupdate -p {profile} --force >> {log_file} 2>&1"
     if IS_WINDOWS:
         return f"Task Scheduler (daily 04:00): {cmd}"
     return f"0 4 * * * {cmd}"

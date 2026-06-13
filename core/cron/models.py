@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
 
 def _utc_now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 class CronJob(BaseModel):
@@ -32,6 +32,8 @@ class CronJob(BaseModel):
     notify_chat_id: int | None = None  # Telegram chat ID for notifications
     session_id: str | None = None  # Session that receives run summaries (e.g. tui_default)
     last_result: str | None = None  # Truncated assistant output from the last run
+    skills: list[str] = Field(default_factory=list)
+    model_override: str | None = None
 
     def conversation_id(self) -> str:
         """Dedicated conversation for the full cron run log."""

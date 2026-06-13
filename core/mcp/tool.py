@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 from core.tools.base import BaseTool
 
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 class MCPTool(BaseTool):
-    """Adapter that turns an MCP tool definition into a Helix BaseTool.
+    """Adapter that turns an MCP tool definition into a Holix BaseTool.
 
     The actual invocation is delegated to MCPManager (which owns the live
     ClientSession(s)). This keeps the tool stateless from the registry POV.
@@ -24,8 +24,8 @@ class MCPTool(BaseTool):
         server_name: str,
         tool_name: str,
         description: str,
-        input_schema: Dict[str, Any],
-        manager: "MCPManager",
+        input_schema: dict[str, Any],
+        manager: MCPManager,
         risk_level: str = "medium",
     ) -> None:
         super().__init__()

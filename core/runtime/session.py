@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -12,41 +12,25 @@ async def prepare_session(
     agent: Any,
     user_input: str,
     conversation_id: str,
-) -> Tuple[List[Dict[str, Any]], bool]:
+) -> tuple[list[dict[str, Any]], bool]:
     """Load history, persist the user message, and apply context compression.
 
     Returns:
         (messages, was_compressed) — messages ready for the agent/graph loop.
     """
+    from core.profile.soul import inject_soul_into_messages, profile_name_from_agent
+
+    profile = profile_name_from_agent(agent)
     messages = await agent.memory.get_conversation(conversation_id)
+    messages = inject_soul_into_messages(messages, profile)
 
     messages.append({"role": "user", "content": user_input})
     await agent.memory.save_message(conversation_id, "user", user_input)
 
-    was_compressed = False
-    if hasattr(agent, "context_manager") and agent.context_manager:
-        messages, was_compressed = await agent.context_manager.auto_compress_if_needed(
-            messages
-        )
-        if was_compressed:
-            try:
-                count = await agent.memory.replace_conversation_messages(
-                    conversation_id, messages
-                )
-                logger.info(
-                    "Compressed conversation persisted: %s messages in DB", count
-                )
-            except Exception as persist_err:
-                logger.warning(
-                    "Failed to persist compressed conversation: %s", persist_err
-                )
-                if agent.context_manager.last_summary:
-                    await agent.memory.save_message(
-                        conversation_id,
-                        "system",
-                        "Context compressed. Summary of previous conversation:\n\n"
-                        f"{agent.context_manager.last_summary}",
-                        metadata={"type": "context_compression"},
-                    )
+    from core.runtime.context_session import compress_session_if_needed
+
+    messages, was_compressed = await compress_session_if_needed(
+        agent, conversation_id, messages
+    )
 
     return messages, was_compressed

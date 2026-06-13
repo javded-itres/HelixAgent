@@ -16,14 +16,13 @@ user can provide answers via the "refine" option, which triggers plan
 regeneration with the user's answers appended as refinement_feedback.
 """
 
-import json
-import logging
 import asyncio
-from typing import Any, Dict, List, Optional
+import logging
 
-from core.graph.state import HelixGraphState, get_agent_from_config
-from core.plan_review.parser import parse_detailed_plan
 from langchain_core.runnables import RunnableConfig
+
+from core.graph.state import HolixGraphState, get_agent_from_config
+from core.plan_review.parser import parse_detailed_plan
 
 # Backward-compatible re-exports for tests
 _parse_detailed_plan = parse_detailed_plan
@@ -139,6 +138,19 @@ Now create a plan for the task above. Respond with ONLY valid JSON:
     "reasoning": "..."
 }}"""
 
+SUBAGENT_PLAN_APPENDIX = """
+## Sub-agent delegation (enabled)
+When complexity is medium or complex, assign `subagent_type` on steps that specialists should run:
+- research / web search → `web_researcher` or `researcher`
+- coding / implementation → `coder`
+- data / SQL analysis → `analyst`
+- code review → `reviewer`
+- documentation → `writer`
+For complex tasks, use `parallel_group` (same integer) for independent steps that can run in parallel.
+Use `depends_on` so downstream steps wait for prerequisites.
+Leave `subagent_type` null only for steps the main agent must handle directly.
+"""
+
 FALLBACK_PLAN_PROMPT = """You are a task planner. Break down the following task into clear, ordered sub-tasks.
 
 Task: {task}
@@ -173,7 +185,7 @@ Respond with ONLY valid JSON:
 }}"""
 
 
-async def plan_node(state: HelixGraphState, config: RunnableConfig) -> dict:
+async def plan_node(state: HolixGraphState, config: RunnableConfig) -> dict:
     """Generate a comprehensive plan from the user's input.
 
     Uses the LLM to analyze the task, design architecture, assess risks,
@@ -255,13 +267,13 @@ async def plan_node(state: HelixGraphState, config: RunnableConfig) -> dict:
 
     context = "\n".join(context_parts) if context_parts else "No relevant context available."
 
-    from core.project.helix_md import format_helix_md_block, planning_context_note
+    from core.project.holix_md import format_holix_md_block, planning_context_note
 
-    project_handbook = format_helix_md_block()
+    project_handbook = format_holix_md_block()
     if not project_handbook:
         project_handbook = (
             f"{planning_context_note()} "
-            "No `.helix/HELIX.md` yet — run `/init` in this repo to generate it."
+            "No `.holix/HOLIX.md` yet — run `/init` in this repo to generate it."
         )
 
     # Build tools description
@@ -279,6 +291,9 @@ async def plan_node(state: HelixGraphState, config: RunnableConfig) -> dict:
         prompt = FALLBACK_PLAN_PROMPT.format(task=user_input)
         if project_handbook:
             prompt += f"\n\n## PROJECT HANDBOOK\n{project_handbook}\n"
+
+    if getattr(agent.config, "enable_subagents", False):
+        prompt += SUBAGENT_PLAN_APPENDIX
 
     # Append refinement feedback if the user requested changes to a previous plan
     if refinement_feedback:
@@ -300,17 +315,24 @@ async def plan_node(state: HelixGraphState, config: RunnableConfig) -> dict:
     # Call LLM with timeout + retry
     client = agent.client
     model = agent.model
+    profile_name = getattr(getattr(agent, "config", None), "profile_name", None)
+    from core.prompt_builder import language_instruction_block
+
+    plan_system = (
+        "You are a senior software architect and task planner. "
+        "Create comprehensive, detailed execution plans. "
+        "Respond with ONLY valid JSON. "
+        "Write all human-readable text fields in the plan (descriptions, analysis, questions) "
+        "in the language required below; keep JSON keys in English.\n\n"
+        f"{language_instruction_block(profile_name=profile_name)}"
+    )
 
     api_kwargs = {
         "model": model,
         "messages": [
             {
                 "role": "system",
-                "content": (
-                    "You are a senior software architect and task planner. "
-                    "Create comprehensive, detailed execution plans. "
-                    "Respond with ONLY valid JSON."
-                ),
+                "content": plan_system,
             },
             {"role": "user", "content": prompt},
         ],
@@ -345,7 +367,7 @@ async def plan_node(state: HelixGraphState, config: RunnableConfig) -> dict:
                         client.chat.completions.create(**api_kwargs),
                         timeout=plan_timeout,
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     raise  # Let outer handler catch it
             else:
                 response = await asyncio.wait_for(
@@ -365,7 +387,7 @@ async def plan_node(state: HelixGraphState, config: RunnableConfig) -> dict:
 
             logger.warning("Plan LLM returned empty response, retrying...")
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             last_error = f"Timeout after {plan_timeout}s"
             logger.warning(
                 f"Plan generation timed out on attempt {attempt + 1}/{1 + plan_retries} "

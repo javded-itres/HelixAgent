@@ -1,51 +1,64 @@
-"""Model management commands for Helix CLI."""
+"""Model management commands for Holix CLI."""
 
 import asyncio
 import sys
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Any
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 import typer
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
-from rich.prompt import Prompt, Confirm
-from rich import box
-
-from cli.core import get_current_config, get_profile_manager, get_current_profile
-from cli.utils.rich_console import console, print_error, print_success, print_info, create_spinner
 from core.models.catalog import (
     get_provider_preset,
     list_provider_presets,
     resolve_preset_base_url,
 )
 from core.models.discovery import ModelDiscovery
-from core.models.provider import ProviderConfig, ModelProvider
-from core.models.selector import AgentModelConfig
 from core.models.profile_cleanup import profile_has_llm_config, remove_provider_from_profile
+from core.models.provider import ProviderConfig
+from core.models.selector import AgentModelConfig
 from core.models.setup_helpers import (
     add_preset_to_config,
+    apply_ssl_override,
     discover_and_select_default_model,
+    probe_provider,
     prompt_host_for_preset,
-    resolve_preset_api_key_interactive,
     resolve_api_key_for_preset,
+    resolve_preset_api_key_interactive,
+    resolve_ssl_metadata_extra,
 )
+from rich import box
+from rich.panel import Panel
+from rich.prompt import Confirm, Prompt
+from rich.table import Table
+
+from cli.core import get_current_config, get_current_profile, get_profile_manager
+from cli.utils.rich_console import console, create_spinner, print_error, print_info, print_success
 
 app = typer.Typer(help="Manage model providers and configurations")
+fallback_app = typer.Typer(help="Fallback providers when the primary LLM is unavailable")
+app.add_typer(fallback_app, name="fallback")
 
 
 @app.command("setup")
 def setup_models(
-    profile: Optional[str] = typer.Option(None, "--profile", "-p", help="Profile to configure"),
+    profile: str | None = typer.Option(None, "--profile", "-p", help="Profile to configure"),
+    no_verify_ssl: bool = typer.Option(
+        False,
+        "--no-verify-ssl",
+        help="Disable TLS certificate verification for all setup actions",
+    ),
 ):
     """Interactive setup for model providers and routing."""
-    asyncio.run(_setup_models_interactive(profile))
+    asyncio.run(_setup_models_interactive(profile, no_verify_ssl=no_verify_ssl))
 
 
-async def _setup_models_interactive(profile: Optional[str] = None):
+async def _setup_models_interactive(
+    profile: str | None = None,
+    *,
+    no_verify_ssl: bool = False,
+):
     """Interactive model setup wizard."""
     if profile is None:
         profile = get_current_profile()
@@ -62,6 +75,9 @@ async def _setup_models_interactive(profile: Optional[str] = None):
     ))
     console.print("\n")
 
+    if no_verify_ssl:
+        print_info("TLS certificate verification disabled for this setup session")
+
     # Initialize providers dict if not exists
     if not config.providers:
         config.providers = {}
@@ -74,17 +90,18 @@ async def _setup_models_interactive(profile: Optional[str] = None):
         console.print("4. Remove provider")
         console.print("5. Configure agent models")
         console.print("6. View agent model assignments")
-        console.print("7. Save and exit")
-        console.print("8. Exit without saving")
+        console.print("7. Configure fallback providers")
+        console.print("8. Save and exit")
+        console.print("9. Exit without saving")
 
-        choice = Prompt.ask("\nChoose an action", choices=["1", "2", "3", "4", "5", "6", "7", "8"])
+        choice = Prompt.ask("\nChoose an action", choices=["1", "2", "3", "4", "5", "6", "7", "8", "9"])
 
         if choice == "1":
-            await _add_provider(config)
+            await _add_provider(config, no_verify_ssl=no_verify_ssl)
         elif choice == "2":
             _list_providers(config)
         elif choice == "3":
-            await _test_provider(config)
+            await _test_provider(config, no_verify_ssl=no_verify_ssl)
         elif choice == "4":
             _remove_provider(config, profile=profile, save=False)
         elif choice == "5":
@@ -92,10 +109,12 @@ async def _setup_models_interactive(profile: Optional[str] = None):
         elif choice == "6":
             _view_agent_models(config)
         elif choice == "7":
+            _configure_fallback_providers(config)
+        elif choice == "8":
             manager.save_profile(profile, config)
             print_success("✓ Configuration saved successfully!")
             break
-        elif choice == "8":
+        elif choice == "9":
             if Confirm.ask("Exit without saving changes?"):
                 print_info("Configuration not saved")
                 break
@@ -125,7 +144,7 @@ def _print_preset_catalog() -> None:
     )
 
 
-async def _add_provider(config):
+async def _add_provider(config, *, no_verify_ssl: bool = False):
     """Add a new model provider from catalog or custom URL."""
     console.print("\n[bold cyan]➕ Add Provider[/bold cyan]\n")
     _print_preset_catalog()
@@ -160,6 +179,11 @@ async def _add_provider(config):
                 host_arg = prompt_host_for_preset(preset, console=console)
                 print_info(f"Using base URL: {host_arg}")
         base_url = resolve_preset_base_url(preset, host=host_arg)
+        metadata_extra = resolve_ssl_metadata_extra(
+            base_url,
+            no_verify_ssl=no_verify_ssl,
+            console=console,
+        )
         store_key = (
             resolve_api_key_for_preset(preset, use_env_value=True)
             if preset.api_key_env in os.environ and os.environ.get(preset.api_key_env, "").strip()
@@ -176,6 +200,7 @@ async def _add_provider(config):
             api_key,
             console=console,
             interactive=True,
+            metadata_extra=metadata_extra or None,
         )
         if not probe_ok and default_model is None:
             print_error(err or "Could not reach API")
@@ -191,6 +216,7 @@ async def _add_provider(config):
                 default_model=default_model,
                 discovered_models=models if probe_ok else None,
                 skip_probe=True,
+                metadata_extra=metadata_extra or None,
             )
         if ok:
             print_success(f"✓ {msg}")
@@ -200,10 +226,10 @@ async def _add_provider(config):
             print_error(msg)
         return
 
-    await _add_provider_custom(config)
+    await _add_provider_custom(config, no_verify_ssl=no_verify_ssl)
 
 
-async def _add_provider_custom(config):
+async def _add_provider_custom(config, *, no_verify_ssl: bool = False):
     """Add provider with manual URL and API key."""
     name = Prompt.ask("Provider name (e.g., 'my-proxy')")
     if name in config.providers:
@@ -220,7 +246,10 @@ async def _add_provider_custom(config):
     metadata: dict = {"auth_type": auth_type}
     if auth_type == "openrouter":
         metadata["http_referer"] = "${OPENROUTER_HTTP_REFERER}"
-        metadata["x_title"] = "Helix"
+        metadata["x_title"] = "Holix"
+    metadata.update(
+        resolve_ssl_metadata_extra(base_url, no_verify_ssl=no_verify_ssl, console=console)
+    )
 
     console.print("\n[yellow]Testing connection...[/yellow]")
 
@@ -314,6 +343,28 @@ async def _add_provider_custom(config):
                 config.models_via_providers = True
 
 
+def _parse_fallback_list(raw: str) -> list[str]:
+    return [part.strip() for part in raw.split(",") if part.strip()]
+
+
+def _configure_fallback_providers(config) -> None:
+    """Interactive editor for profile-level fallback providers."""
+    current = ", ".join(config.fallback_providers or []) or "(none)"
+    console.print(f"\n[bold]Profile fallback providers[/bold] (after primary fails): {current}")
+    if config.providers:
+        names = ", ".join(sorted(config.providers.keys()))
+        console.print(f"[dim]Configured providers: {names}[/dim]")
+    raw = Prompt.ask(
+        "Comma-separated fallback provider ids (empty to clear)",
+        default=",".join(config.fallback_providers or []),
+    )
+    config.fallback_providers = _parse_fallback_list(raw)
+    if config.fallback_providers:
+        print_success(f"Fallback chain: {' → '.join(config.fallback_providers)}")
+    else:
+        print_info("Fallback providers cleared")
+
+
 def _list_providers(config):
     """List all configured providers."""
     if not config.providers:
@@ -326,23 +377,31 @@ def _list_providers(config):
     table.add_column("Base URL", style="green")
     table.add_column("Default Model", style="yellow")
     table.add_column("Available Models", style="blue")
+    table.add_column("Provider fallback", style="dim")
     table.add_column("Default", style="magenta")
 
     for name, provider_data in config.providers.items():
         is_default = "✓" if name == config.default_provider else ""
         model_count = len(provider_data.get("available_models", []))
+        provider_fb = ", ".join(provider_data.get("fallback_providers") or []) or "—"
         table.add_row(
             name,
             provider_data["base_url"],
             provider_data.get("default_model", "None"),
             str(model_count),
+            provider_fb,
             is_default
         )
 
     console.print(table)
+    if config.fallback_providers:
+        console.print(
+            f"[dim]Profile fallback (all agents): "
+            f"{' → '.join(config.fallback_providers)}[/dim]\n"
+        )
 
 
-async def _test_provider(config):
+async def _test_provider(config, *, no_verify_ssl: bool = False):
     """Test provider connection."""
     if not config.providers:
         print_info("No providers configured")
@@ -354,7 +413,10 @@ async def _test_provider(config):
     provider_data = config.providers[name]
     base_url = provider_data["base_url"]
     api_key = provider_data.get("api_key", "dummy")
-    metadata = provider_data.get("metadata") or {}
+    metadata = apply_ssl_override(
+        provider_data.get("metadata") or {},
+        no_verify_ssl=no_verify_ssl,
+    )
 
     console.print(f"\n[yellow]Testing {name}...[/yellow]")
 
@@ -387,7 +449,7 @@ async def _test_provider(config):
             print_error(f"✗ Error: {str(e)}")
 
 
-def _remove_provider(config, *, profile: Optional[str] = None, save: bool = False) -> bool:
+def _remove_provider(config, *, profile: str | None = None, save: bool = False) -> bool:
     """Remove a provider and clean agent_models / legacy LLM fields."""
     if not config.providers:
         print_info("No providers configured")
@@ -403,7 +465,7 @@ def _remove_provider(config, *, profile: Optional[str] = None, save: bool = Fals
         print_info(note)
 
     if not profile_has_llm_config(config):
-        print_info("No LLM configured. Run: helix models add <preset>  or  helix models setup")
+        print_info("No LLM configured. Run: holix models add <preset>  or  holix models setup")
 
     if save and profile:
         get_profile_manager().save_profile(profile, config)
@@ -496,33 +558,39 @@ def _view_agent_models(config):
 def list_presets():
     """List built-in provider presets (OpenAI, OpenRouter, DeepSeek, Kimi, Grok, …)."""
     _print_preset_catalog()
-    console.print("[dim]Add: helix models add openai[/dim]")
+    console.print("[dim]Add: holix models add openai[/dim]")
 
 
 @app.command("add")
 def add_preset(
     preset_id: str = typer.Argument(..., help="Preset id: openai, openrouter, ollama, litellm, vllm, …"),
-    profile: Optional[str] = typer.Option(None, "--profile", "-p"),
-    name: Optional[str] = typer.Option(None, "--name", help="Profile provider name (default: preset id)"),
-    host: Optional[str] = typer.Option(
+    profile: str | None = typer.Option(None, "--profile", "-p"),
+    name: str | None = typer.Option(None, "--name", help="Profile provider name (default: preset id)"),
+    host: str | None = typer.Option(
         None,
         "--host",
         help="Host for ollama/litellm/vllm: IP, host:port, or full URL (e.g. 192.168.1.10:11434)",
     ),
-    port: Optional[int] = typer.Option(None, "--port", help="Port if --host is hostname only"),
+    port: int | None = typer.Option(None, "--port", help="Port if --host is hostname only"),
     skip_test: bool = typer.Option(False, "--skip-test", help="Skip connection test"),
+    no_verify_ssl: bool = typer.Option(
+        False,
+        "--no-verify-ssl",
+        help="Disable TLS certificate verification (self-signed / internal CA)",
+    ),
 ):
     """Add a provider from the built-in catalog."""
-    asyncio.run(_add_preset_cli(preset_id, profile, name, host, port, skip_test))
+    asyncio.run(_add_preset_cli(preset_id, profile, name, host, port, skip_test, no_verify_ssl))
 
 
 async def _add_preset_cli(
     preset_id: str,
-    profile: Optional[str],
-    name: Optional[str],
-    host: Optional[str],
-    port: Optional[int],
+    profile: str | None,
+    name: str | None,
+    host: str | None,
+    port: int | None,
     skip_test: bool,
+    no_verify_ssl: bool,
 ) -> None:
     if profile:
         from cli.core import init_profile
@@ -534,7 +602,7 @@ async def _add_preset_cli(
 
     preset = get_provider_preset(preset_id)
     if not preset:
-        print_error(f"Unknown preset '{preset_id}'. Run: helix models presets")
+        print_error(f"Unknown preset '{preset_id}'. Run: holix models presets")
         raise typer.Exit(1)
 
     import os
@@ -550,6 +618,11 @@ async def _add_preset_cli(
         host_arg = prompt_host_for_preset(preset, console=console)
 
     base_url = resolve_preset_base_url(preset, host=host_arg, port=port)
+    metadata_extra = resolve_ssl_metadata_extra(
+        base_url,
+        no_verify_ssl=no_verify_ssl,
+        console=console,
+    )
     store_key = (
         resolve_api_key_for_preset(preset, use_env_value=True)
         if preset.api_key_env in os.environ and os.environ.get(preset.api_key_env, "").strip()
@@ -570,6 +643,7 @@ async def _add_preset_cli(
             api_key,
             console=console,
             interactive=sys.stdin.isatty(),
+            metadata_extra=metadata_extra or None,
         )
         if not probe_ok and default_model is None:
             print_error(err or "Could not reach API")
@@ -588,6 +662,7 @@ async def _add_preset_cli(
             skip_probe=True,
             default_model=default_model,
             discovered_models=discovered,
+            metadata_extra=metadata_extra or None,
         )
     if not ok:
         print_error(msg)
@@ -599,7 +674,7 @@ async def _add_preset_cli(
 @app.command("remove")
 def remove_provider_cmd(
     name: str = typer.Argument(..., help="Provider name to remove"),
-    profile: Optional[str] = typer.Option(None, "--profile", "-p"),
+    profile: str | None = typer.Option(None, "--profile", "-p"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation"),
 ):
     """Remove a provider and clean related agent_models assignments."""
@@ -623,12 +698,12 @@ def remove_provider_cmd(
     manager.save_profile(prof, config)
     print_success(f"Provider '{name}' removed from profile '{prof}'")
     if not profile_has_llm_config(config):
-        print_info("No LLM configured. Run: helix models add <preset>")
+        print_info("No LLM configured. Run: holix models add <preset>")
 
 
 @app.command("list")
 def list_providers(
-    profile: Optional[str] = typer.Option(None, "--profile", "-p", help="Profile to use"),
+    profile: str | None = typer.Option(None, "--profile", "-p", help="Profile to use"),
 ):
     """List all configured model providers."""
     config = get_current_config()
@@ -637,11 +712,91 @@ def list_providers(
 
 @app.command("agents")
 def list_agent_models(
-    profile: Optional[str] = typer.Option(None, "--profile", "-p", help="Profile to use"),
+    profile: str | None = typer.Option(None, "--profile", "-p", help="Profile to use"),
 ):
     """List agent model assignments."""
     config = get_current_config()
     _view_agent_models(config)
+
+
+@fallback_app.command("list")
+def fallback_list(
+    profile: str | None = typer.Option(None, "--profile", "-p", help="Profile to inspect"),
+) -> None:
+    """Show fallback provider chain for the active or named profile."""
+    from core.models.manager import ModelManager
+
+    if profile:
+        from cli.core import init_profile
+
+        config = init_profile(profile, prompt_key=False)
+    else:
+        config = get_current_config()
+
+    mm = ModelManager(config)
+    primary = mm.get_default_model_config()
+    chain = mm.iter_fallback_configs("main")
+
+    if not primary:
+        print_error("No default provider configured")
+        raise typer.Exit(1)
+
+    console.print(f"\n[bold]Primary:[/bold] {primary.provider} → {primary.model}")
+    if config.fallback_providers:
+        console.print(
+            f"[dim]Profile fallbacks:[/dim] {', '.join(config.fallback_providers)}"
+        )
+    if len(chain) > 1:
+        console.print("[bold]Effective chain:[/bold]")
+        for idx, cfg in enumerate(chain, 1):
+            console.print(f"  {idx}. {cfg.provider} → {cfg.model}")
+    else:
+        print_info("No fallback providers configured")
+
+
+@fallback_app.command("set")
+def fallback_set(
+    providers: str = typer.Argument(..., help="Comma-separated provider ids, e.g. litellm,ollama"),
+    profile: str | None = typer.Option(None, "--profile", "-p", help="Profile to update"),
+) -> None:
+    """Set profile-level fallback providers (tried when primary LLM is unavailable)."""
+    if profile:
+        from cli.core import init_profile
+
+        config = init_profile(profile, prompt_key=False)
+        profile_name = profile
+    else:
+        config = get_current_config()
+        profile_name = get_current_profile()
+
+    names = _parse_fallback_list(providers)
+    unknown = [n for n in names if n not in (config.providers or {})]
+    if unknown:
+        print_error(f"Unknown providers: {', '.join(unknown)}")
+        raise typer.Exit(1)
+
+    config.fallback_providers = names
+    get_profile_manager().save_profile(profile_name, config)
+    print_success(f"Fallback providers: {' → '.join(names) if names else '(cleared)'}")
+
+
+@fallback_app.command("clear")
+def fallback_clear(
+    profile: str | None = typer.Option(None, "--profile", "-p", help="Profile to update"),
+) -> None:
+    """Remove all profile-level fallback providers."""
+    if profile:
+        from cli.core import init_profile
+
+        config = init_profile(profile, prompt_key=False)
+        profile_name = profile
+    else:
+        config = get_current_config()
+        profile_name = get_current_profile()
+
+    config.fallback_providers = []
+    get_profile_manager().save_profile(profile_name, config)
+    print_success("Profile fallback providers cleared")
 
 
 if __name__ == "__main__":

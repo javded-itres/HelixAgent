@@ -1,12 +1,8 @@
 """Skills management commands."""
 
-import typer
 from pathlib import Path
-from typing import Optional
 
-from rich.prompt import Confirm, Prompt
-
-from cli.utils.rich_console import print_table, print_info, print_error, print_panel, print_success
+import typer
 from core.hub.normalize import discover_skill_files, parse_skill_file
 from core.skills.assignments import (
     agents_for_skill,
@@ -15,8 +11,11 @@ from core.skills.assignments import (
     unassign_skill_from_agents,
 )
 from core.skills.manager import SkillsManager
+from rich.prompt import Prompt
 
-app = typer.Typer(help="Manage Helix skills")
+from cli.utils.rich_console import print_error, print_info, print_panel, print_success, print_table
+
+app = typer.Typer(help="Manage Holix skills")
 
 
 def _get_profile_manager(ctx: typer.Context):
@@ -48,7 +47,7 @@ def _load_skill_names(skills_dir: Path) -> list[str]:
 def list_skills(
     ctx: typer.Context,
     limit: int = typer.Option(20, "--limit", "-l", help="Maximum number of skills to show"),
-    agent: Optional[str] = typer.Option(
+    agent: str | None = typer.Option(
         None,
         "--agent",
         "-a",
@@ -78,7 +77,7 @@ def list_skills(
                 f"Profile skill_assignments limits '{agent}' to {len(allowed)} skill(s). "
                 f"Hidden from this agent: {', '.join(hidden[:8])}"
                 + (" …" if len(hidden) > 8 else "")
-                + ". Use `helix skills assign` to change."
+                + ". Use `holix skills assign` to change."
             )
     rows = []
     for name in sorted(mgr.all_skills.keys())[: limit if not agent else 9999]:
@@ -104,7 +103,7 @@ def list_skills(
 def search_skills(
     ctx: typer.Context,
     query: str = typer.Argument(..., help="Search query"),
-    agent: Optional[str] = typer.Option(None, "--agent", "-a", help="Filter by agent slot"),
+    agent: str | None = typer.Option(None, "--agent", "-a", help="Filter by agent slot"),
 ):
     """Search skills by query."""
     config = ctx.obj["config"]
@@ -158,8 +157,8 @@ def show_skill(
 @app.command("assign")
 def skills_assign(
     ctx: typer.Context,
-    skill_name: Optional[str] = typer.Argument(None, help="Skill name (omit for interactive)"),
-    agents: Optional[str] = typer.Option(
+    skill_name: str | None = typer.Argument(None, help="Skill name (omit for interactive)"),
+    agents: str | None = typer.Option(
         None,
         "--agents",
         help="Comma-separated agent slots (main, coder, researcher, ...)",
@@ -170,7 +169,7 @@ def skills_assign(
     skills_dir = Path(config.skills_dir)
     known_skills = _load_skill_names(skills_dir)
     if not known_skills:
-        print_error("No skills installed. Use `helix hub install` first.")
+        print_error("No skills installed. Use `holix hub install` first.")
         raise typer.Exit(1)
 
     if not skill_name:
@@ -209,7 +208,7 @@ def skills_assign(
 def skills_unassign(
     ctx: typer.Context,
     skill_name: str = typer.Argument(..., help="Skill name"),
-    agents: Optional[str] = typer.Option(
+    agents: str | None = typer.Option(
         None,
         "--agents",
         help="Remove only from these agents (default: all)",
@@ -262,7 +261,7 @@ def skills_agents(
 
 @app.command("assign-wizard")
 def skills_assign_wizard(ctx: typer.Context):
-    """Interactively configure skill_assignments per agent (like `helix mcp assign`)."""
+    """Interactively configure skill_assignments per agent (like `holix mcp assign`)."""
     profile, config, manager = _get_profile_manager(ctx)
     skills_dir = Path(config.skills_dir)
     known_skills = _load_skill_names(skills_dir)
@@ -295,7 +294,7 @@ def skills_seed_bundled(
     ctx: typer.Context,
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite existing bundled skills"),
 ):
-    """Install packaged default skills (e.g. helix-cron) into the profile skills dir."""
+    """Install packaged default skills (e.g. holix-cron) into the profile skills dir."""
     profile, config, manager = _get_profile_manager(ctx)
     from core.skills.bundled import ensure_bundled_assigned_to_main, seed_bundled_skills
 
@@ -320,4 +319,4 @@ def skills_seed_bundled(
     if assigned:
         print_success(f"Assigned to main agent: {', '.join(assigned)}")
     print_info(f"Profile: {profile} · dir: {skills_dir}")
-    print_info("Invoke in chat: /helix-cron  or ask about scheduling — skill is auto-retrieved.")
+    print_info("Invoke in chat: /holix-cron  or ask about scheduling — skill is auto-retrieved.")

@@ -1,24 +1,38 @@
-"""Interactive chat command for Helix CLI."""
+"""Interactive chat command for Holix CLI."""
+
+from __future__ import annotations
 
 import asyncio
-from prompt_toolkit import PromptSession
-from prompt_toolkit.history import FileHistory
-from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-from prompt_toolkit.styles import Style
-from pathlib import Path
-
-from cli.core import ProfileConfig, get_profile_manager, switch_profile, HELIX_HOME
-from cli.utils.banner import show_banner, show_welcome_message
-from cli.utils.rich_console import (
-    console, print_user_message, print_assistant_message,
-    print_tool_call, print_error, print_info, print_success,
-    create_spinner, print_table, print_panel
-)
 
 # Import agent
 import sys
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from prompt_toolkit import PromptSession
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.history import FileHistory
+from prompt_toolkit.styles import Style
+
+from cli.core import HOLIX_HOME, ProfileConfig, get_profile_manager, switch_profile
+from cli.utils.banner import show_banner, show_welcome_message
+from cli.utils.rich_console import (
+    console,
+    create_spinner,
+    print_assistant_message,
+    print_error,
+    print_info,
+    print_panel,
+    print_success,
+    print_table,
+    print_tool_call,
+    print_user_message,
+)
+
 sys.path.append(str(Path(__file__).parent.parent.parent))
-from core.agent import HelixAgent
+
+if TYPE_CHECKING:
+    from core.agent import HolixAgent
 
 # Prompt style
 prompt_style = Style.from_dict({
@@ -27,7 +41,7 @@ prompt_style = Style.from_dict({
 
 
 class ChatSession:
-    """Interactive chat session with Helix."""
+    """Interactive chat session with Holix."""
 
     def __init__(self, profile: str, config: ProfileConfig):
         """Initialize chat session.
@@ -38,7 +52,7 @@ class ChatSession:
         """
         self.profile = profile
         self.config = config
-        self.agent: Optional[HelixAgent] = None
+        self.agent: HolixAgent | None = None
         self.conversation_id = f"cli_chat_{profile}"
 
         # Event history for the current session (for /debug events)
@@ -49,7 +63,7 @@ class ChatSession:
         self.streaming_enabled: bool = False
 
         # Create prompt session with history
-        history_file = HELIX_HOME / "logs" / f"history_{profile}.txt"
+        history_file = HOLIX_HOME / "logs" / f"history_{profile}.txt"
         history_file.parent.mkdir(parents=True, exist_ok=True)
 
         self.session = PromptSession(
@@ -59,10 +73,13 @@ class ChatSession:
         )
 
     async def initialize_agent(self):
-        """Initialize the Helix agent."""
-        with console.status("[bold cyan]Initializing Helix...", spinner="dots"):
+        """Initialize the Holix agent."""
+        with console.status("[bold cyan]Initializing Holix...", spinner="dots"):
+            from core.agent_events import (
+                create_compatibility_print_handler,
+                create_rich_cli_handler,
+            )
             from core.di import resolve_runtime_config
-            from core.agent_events import create_rich_cli_handler, create_compatibility_print_handler
 
             runtime_config = resolve_runtime_config(self.config)
 
@@ -90,7 +107,9 @@ class ChatSession:
             except Exception:
                 listeners = [create_compatibility_print_handler()]
 
-            self.agent = HelixAgent(
+            from core.agent import HolixAgent
+
+            self.agent = HolixAgent(
                 config=runtime_config,
                 event_listeners=listeners,
             )
@@ -117,8 +136,13 @@ class ChatSession:
     def _event_summary(self, event) -> str:
         """Create a short human-readable summary for an event."""
         from core.agent_events import (
-            ToolCallStartEvent, ToolCallResultEvent, AssistantDeltaEvent,
-            FinalResponseEvent, ThinkingEvent, ErrorEvent, SkillCreatedEvent
+            AssistantDeltaEvent,
+            ErrorEvent,
+            FinalResponseEvent,
+            SkillCreatedEvent,
+            ThinkingEvent,
+            ToolCallResultEvent,
+            ToolCallStartEvent,
         )
 
         if isinstance(event, ToolCallStartEvent):
@@ -175,24 +199,40 @@ class ChatSession:
 
         # /profile
         elif cmd_lower.startswith("/profile"):
-            parts = command.split(maxsplit=1)
-            if len(parts) == 2:
+            from core.profile_keys import ProfileKeyError, profile_has_access_key
+
+            parts = command.split(maxsplit=2)
+            if len(parts) >= 2:
                 new_profile = parts[1]
+                profile_key = parts[2] if len(parts) == 3 else None
                 manager = get_profile_manager()
                 if manager.profile_exists(new_profile):
-                    self.config = switch_profile(new_profile)
-                    self.profile = new_profile
-                    self.conversation_id = f"cli_chat_{new_profile}"
-                    print_success(f"Switched to profile: {new_profile}")
-                    print_info("Reinitializing agent...")
-                    await self.initialize_agent()
+                    try:
+                        self.config = switch_profile(new_profile, profile_key=profile_key)
+                        self.profile = new_profile
+                        self.conversation_id = f"cli_chat_{new_profile}"
+                        print_success(f"Switched to profile: {new_profile}")
+                        print_info("Reinitializing agent...")
+                        await self.initialize_agent()
+                    except ProfileKeyError as exc:
+                        print_error(str(exc))
+                        if profile_has_access_key(new_profile) and not profile_key:
+                            print_info("Usage: /profile <name> <access-key>")
                 else:
                     print_error(f"Profile '{new_profile}' does not exist")
             else:
                 manager = get_profile_manager()
                 profiles = manager.list_profiles()
-                rows = [[p, "✓" if p == self.profile else ""] for p in profiles]
-                print_table("Available Profiles", ["Profile", "Active"], rows)
+                rows = [
+                    [
+                        p,
+                        "locked" if profile_has_access_key(p) else "open",
+                        "✓" if p == self.profile else "",
+                    ]
+                    for p in profiles
+                ]
+                print_table("Available Profiles", ["Profile", "Access", "Active"], rows)
+                print_info("Switch: /profile <name> <access-key>")
             return True
 
         # /skills
@@ -217,10 +257,11 @@ class ChatSession:
                     progress.remove_task(task)
 
                 if results:
+                    from core.memory.session_search import format_memory_hit_line
+
                     console.print("\n[cyan]Memory Search Results:[/cyan]\n")
                     for i, result in enumerate(results, 1):
-                        content = result.get("content", "")[:100]
-                        console.print(f"{i}. {content}...")
+                        console.print(format_memory_hit_line(result, index=i, content_limit=200))
                     console.print()
                 else:
                     print_info("No results found")
@@ -235,14 +276,13 @@ class ChatSession:
 
         # /status
         elif cmd_lower == "/status":
-            console.print(f"\n[cyan]Current Status:[/cyan]")
+            console.print("\n[cyan]Current Status:[/cyan]")
             console.print(f"  Profile: {self.profile}")
             console.print(f"  Model: {self.config.model}")
             console.print(f"  Temperature: {self.config.temperature}")
             console.print(f"  Conversation ID: {self.conversation_id}")
             # Show context usage
             if self.agent and hasattr(self.agent, 'context_manager'):
-                from core.memory.manager import MemoryManager
                 messages = await self.agent.memory.get_conversation(self.conversation_id, limit=200)
                 usage = self.agent.context_manager.get_usage(messages)
                 level = self.agent.context_manager.get_usage_level(messages)
@@ -270,7 +310,7 @@ class ChatSession:
                 if 'avg_response_time' in summary:
                     lines.append(f"[cyan]Avg Response Time:[/cyan] {summary['avg_response_time']:.2f}s")
 
-                print_panel("\n".join(lines), title="Helix Metrics (via Event System)", border_style="magenta")
+                print_panel("\n".join(lines), title="Holix Metrics (via Event System)", border_style="magenta")
             except Exception as e:
                 print_error(f"Could not load metrics: {e}")
             return True
@@ -369,8 +409,10 @@ class ChatSession:
         def create_chat_event_handler():
             """Returns an event handler tailored for the interactive chat UX."""
             from core.agent_events import (
-                ThinkingEvent, ToolCallStartEvent, ToolCallResultEvent,
-                AssistantDeltaEvent, FinalResponseEvent
+                FinalResponseEvent,
+                ThinkingEvent,
+                ToolCallResultEvent,
+                ToolCallStartEvent,
             )
 
             def handler(event):
@@ -440,16 +482,16 @@ class ChatSession:
                 # Run agent with spinner whose description is updated live by events
                 with create_spinner() as progress:
                     self._progress = progress
-                    self._spinner_task = progress.add_task("Helix is thinking...", total=None)
+                    self._spinner_task = progress.add_task("Holix is thinking...", total=None)
 
                     try:
                         if self.streaming_enabled:
                             # Streaming path - use unified generator directly
-                            from core.runtime.executor import run_helix
                             from core.agent_events import AssistantDeltaEvent, FinalResponseEvent
+                            from core.runtime.executor import run_holix
 
                             full_response = ""
-                            async for event in run_helix(
+                            async for event in run_holix(
                                 self.agent,
                                 user_input,
                                 self.conversation_id,
@@ -496,7 +538,6 @@ class ChatSession:
             except Exception as e:
                 print_error(f"Unexpected error: {e}")
                 if self.config.__dict__.get("verbose"):
-                    import traceback
                     console.print_exception()
 
 

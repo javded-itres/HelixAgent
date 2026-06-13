@@ -1,20 +1,24 @@
-from pathlib import Path
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from pathlib import Path
+from typing import Any
 
 
 class MarkdownMemory:
     """Manages human-readable markdown-based memory."""
 
-    def __init__(self, base_dir: str = "data/memory/markdown"):
+    def __init__(self, base_dir: str | None = None):
+        if base_dir is None:
+            from core.paths import resolve_profile_data_dir
+
+            base_dir = str(resolve_profile_data_dir() / "memory" / "markdown")
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
 
     def save_to_markdown(
         self,
         conversation_id: str,
-        messages: List[Dict[str, Any]],
-        title: Optional[str] = None
+        messages: list[dict[str, Any]],
+        title: str | None = None
     ) -> Path:
         """Save conversation to a markdown file.
 
@@ -59,7 +63,7 @@ class MarkdownMemory:
         self,
         query: str = "",
         limit: int = 5
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Load relevant markdown conversation files.
 
         Args:
@@ -93,7 +97,7 @@ class MarkdownMemory:
             File content
         """
         try:
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, encoding='utf-8') as f:
                 return f.read()
         except Exception as e:
             return f"Error reading file: {e}"

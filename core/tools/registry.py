@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from core.tools.aliases import resolve_tool_name
 from core.tools.base import BaseTool
@@ -8,9 +8,18 @@ from core.tools.base import BaseTool
 class ToolRegistry:
     """Registry for managing and executing agent tools."""
 
-    def __init__(self):
-        self.tools: Dict[str, BaseTool] = {}
+    def __init__(
+        self,
+        *,
+        workspace_root: str | None = None,
+        workspace_jail_enabled: bool = False,
+        profile_name: str = "default",
+    ):
+        self.tools: dict[str, BaseTool] = {}
         self._action_guard = None  # Set by set_action_guard()
+        self._workspace_root = workspace_root
+        self._workspace_jail_enabled = workspace_jail_enabled
+        self._profile_name = profile_name
 
     def set_action_guard(self, guard) -> None:
         """Set the ActionGuard instance for pre-execution confirmation.
@@ -40,12 +49,14 @@ class ToolRegistry:
 
     def register_all(self) -> None:
         """Import and register all available tools."""
-        from core.tools.terminal import TerminalTool
-        from core.tools.file_ops import ReadFileTool, WriteFileTool, ListDirectoryTool
-        from core.tools.web_search import WebSearchTool, WebFetchTool
-        from core.tools.database import SQLQueryTool, SQLSchemaTool
-        from core.tools.code_executor import PythonExecutorTool, MathCalculatorTool
         from core.tools.ask_user import AskUserTool
+        from core.tools.code_executor import MathCalculatorTool, PythonExecutorTool
+        from core.tools.database import SQLQueryTool, SQLSchemaTool
+        from core.tools.file_ops import ReadFileTool, WriteFileTool
+        from core.tools.send_chat_files import SendChatFilesTool
+        from core.tools.session_memory import ReadSessionTool, SearchSessionsTool
+        from core.tools.terminal import TerminalTool
+        from core.tools.web_search import WebFetchTool, WebSearchTool
 
         # File operations
         self.register(ReadFileTool())
@@ -71,6 +82,17 @@ class ToolRegistry:
         # Sub-agent ↔ user bridge
         self.register(AskUserTool())
 
+        # Chat file delivery (Telegram; no-op without delivery bridge)
+        self.register(SendChatFilesTool())
+
+        # Cross-session memory
+        self.register(SearchSessionsTool())
+        self.register(ReadSessionTool())
+
+        from core.tools.profile_identity import register_profile_identity_tools
+
+        register_profile_identity_tools(self)
+
         from config import settings
 
         if settings.enable_browser_tools:
@@ -78,7 +100,7 @@ class ToolRegistry:
 
             register_browser_tools(self)
 
-    async def register_mcp(self, mcp_servers: Dict[str, Any], assignments: Optional[Dict[str, List[str]]] = None, slot: str = "main") -> int:
+    async def register_mcp(self, mcp_servers: dict[str, Any], assignments: dict[str, list[str]] | None = None, slot: str = "main") -> int:
         """Dynamically register MCP tools for this registry (called from agent init).
 
         Returns number of tools registered.
@@ -112,7 +134,7 @@ class ToolRegistry:
             print(f"Warning: MCP registration skipped: {exc}")
             return 0
 
-    def get_schemas(self) -> List[Dict[str, Any]]:
+    def get_schemas(self) -> list[dict[str, Any]]:
         """Get OpenAI-compatible schemas for all registered tools.
 
         Returns:
@@ -120,7 +142,13 @@ class ToolRegistry:
         """
         return [tool.to_openai_schema() for tool in self.tools.values()]
 
-    async def execute(self, tool_call, conversation_id: str = "default") -> str:
+    async def execute(
+        self,
+        tool_call,
+        conversation_id: str = "default",
+        *,
+        memory: Any = None,
+    ) -> str:
         """Execute a tool call from the LLM.
 
         If an ActionGuard is installed, all tool executions go through
@@ -150,9 +178,34 @@ class ToolRegistry:
         except json.JSONDecodeError as e:
             return f"Error: Invalid JSON arguments - {e}"
 
-        from core.tools.execution_context import conversation_scope, reset_conversation_scope
+        from core.crypto.unlock_context import (
+            get_profile_session_dek,
+            profile_unlock_scope,
+            reset_profile_unlock_scope,
+        )
+        from core.tools.execution_context import (
+            conversation_scope,
+            memory_facade_scope,
+            profile_scope,
+            reset_conversation_scope,
+            reset_memory_facade_scope,
+            reset_profile_scope,
+            reset_workspace_scope,
+            workspace_scope,
+        )
+        from core.workspace import sanitize_paths_in_text
 
         token = conversation_scope(conversation_id)
+        mem_token = memory_facade_scope(memory) if memory is not None else None
+        profile_token = profile_scope(self._profile_name)
+        ws_tokens = workspace_scope(
+            workspace_root=self._workspace_root,
+            workspace_jail_enabled=self._workspace_jail_enabled,
+        )
+        dek = get_profile_session_dek(self._profile_name)
+        unlock_tokens = (
+            profile_unlock_scope(profile=self._profile_name, dek=dek) if dek is not None else []
+        )
         try:
             # Gate with ActionGuard if installed
             if self._action_guard:
@@ -163,17 +216,24 @@ class ToolRegistry:
                     execute_fn=tool.execute,
                     conversation_id=conversation_id,
                 )
-                return result
+                return sanitize_paths_in_text(result) if isinstance(result, str) else result
 
             # No guard: execute directly (backward compatible)
             try:
-                return await tool.execute(**args)
+                result = await tool.execute(**args)
+                return sanitize_paths_in_text(result) if isinstance(result, str) else result
             except Exception as e:
-                return f"Error executing {tool_name}: {str(e)}"
+                return sanitize_paths_in_text(f"Error executing {tool_name}: {str(e)}")
         finally:
             reset_conversation_scope(token)
+            if mem_token is not None:
+                reset_memory_facade_scope(mem_token)
+            reset_profile_scope(profile_token)
+            reset_workspace_scope(ws_tokens)
+            if unlock_tokens:
+                reset_profile_unlock_scope(unlock_tokens)
 
-    def get_tool_names(self) -> List[str]:
+    def get_tool_names(self) -> list[str]:
         """Get names of all registered tools.
 
         Returns:

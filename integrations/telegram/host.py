@@ -8,16 +8,16 @@ from typing import Any
 from cli.shared.commands.agent_commands import AgentCommands
 from cli.shared.rich_text import content_to_plain_text
 from cli.shared.slash_input import is_slash_command, normalize_slash_input
-from integrations.telegram.live_presenter import TelegramLivePresenter
-from integrations.telegram.typing_indicator import TypingIndicator
 from core.i18n import host_locale, t
+
 from integrations.telegram.commands import help_message_html, sync_bot_menu
 from integrations.telegram.interactive import TelegramInteractive
+from integrations.telegram.live_presenter import TelegramLivePresenter
 from integrations.telegram.markdown import (
-    markdown_to_telegram_html,
     plain_to_telegram_html,
     split_telegram_html,
 )
+from integrations.telegram.typing_indicator import TypingIndicator
 
 
 class TelegramHost:
@@ -158,6 +158,19 @@ class TelegramHost:
     async def _send_html(self, html: str) -> None:
         await self._bot.send_message(self._session.chat_id, html, parse_mode="HTML")
 
+    async def _send_html_split(self, html: str) -> None:
+        """Send long HTML across multiple messages (Telegram 4096 char limit)."""
+        chunks = split_telegram_html(html)
+        for chunk in chunks:
+            if not (chunk or "").strip():
+                continue
+            await self._bot.send_message(
+                self._session.chat_id,
+                chunk,
+                parse_mode="HTML",
+            )
+            await asyncio.sleep(0.06)
+
     async def _send_html_with_keyboard(self, html: str, reply_markup: Any) -> None:
         await self._bot.send_message(
             self._session.chat_id,
@@ -248,18 +261,42 @@ class TelegramHost:
         self.transcript_write(f"session name: {name.strip()}")
 
     def _get_available_profiles(self) -> list[str]:
-        from cli.core import ProfileManager
+        from integrations.telegram.profile_visibility import list_visible_profiles
 
         try:
-            return ProfileManager().list_profiles()
+            return list_visible_profiles(
+                self._session.bot_profile,
+                self._session.user_id,
+                current=self._session.profile,
+            )
         except Exception:
-            return ["default"]
+            return [self._session.profile or "default"]
 
-    async def _switch_profile(self, new_profile: str) -> None:
+    async def _switch_profile(self, new_profile: str, *, profile_key: str | None = None) -> None:
+        from cli.core import init_profile
+        from core.profile_keys import ProfileKeyError, profile_has_access_key
+
         from integrations.telegram.agent_setup import create_agent
 
+        try:
+            init_profile(new_profile, profile_key=profile_key, prompt_key=False)
+        except ProfileKeyError as exc:
+            await self._send_html(
+                f"{exc}<br><br>"
+                "Отправьте: <code>/profile имя ключ</code>"
+                if profile_has_access_key(new_profile) and not profile_key
+                else str(exc)
+            )
+            return
+
+        self._session.profile_manual_override = True
         self._session.profile = new_profile
-        self._session.agent = await create_agent(new_profile)
+        self._session.conversation_id = f"tg_{new_profile}_{self._session.chat_id}"
+        self._session.agent = await create_agent(
+            new_profile,
+            bot_profile=self._session.bot_profile,
+            telegram_user_id=self._session.user_id,
+        )
         self._session.active_model_slot = "main"
         self._session.active_model_label = "main"
         await self._create_new_session()
@@ -275,9 +312,14 @@ class TelegramHost:
         if not results:
             self.transcript_write("no memory hits")
             return
-        for i, mem in enumerate(results, 1):
-            content = (mem.get("content") or "")[:300]
-            self.transcript_write(f"{i}. {content}")
+        text = self.agent.format_memory_results(
+            results,
+            conversation_id=self.conversation_id,
+            include_current=True,
+        )
+        for line in text.split("\n"):
+            if line.strip():
+                self.transcript_write(line)
 
     def _show_full_tool_result(self, index_from_end: int = 0) -> None:
         if not self._recent_tool_results:
@@ -297,6 +339,14 @@ class TelegramHost:
             preview = (e["full_result"] or "").split("\n")[0][:60]
             self.transcript_write(f"{i}. {e['name']} — {preview}")
 
+    def _mcp_management_allowed(self) -> bool:
+        from integrations.telegram.command_access import is_mcp_management_allowed
+
+        return is_mcp_management_allowed(
+            self._session.bot_profile,
+            self._session.user_id,
+        )
+
     async def _mcp_list(self) -> None:
         """List MCP servers from current profile config."""
         try:
@@ -306,7 +356,7 @@ class TelegramHost:
             servers = getattr(cfg, "mcp_servers", {}) or {}
             assignments = getattr(cfg, "mcp_assignments", {}) or {}
             if not servers:
-                self.transcript_write("No MCP servers in this profile.\nUse /mcp install or `helix mcp install` in terminal.")
+                self.transcript_write("No MCP servers in this profile.\nUse /mcp install or `holix mcp install` in terminal.")
                 return
             lines = ["MCP servers:"]
             for name, data in servers.items():
@@ -320,11 +370,13 @@ class TelegramHost:
 
     async def _mcp_install(self, what: str = "") -> None:
         """Install popular or from git. For interactive use Telegram menus or CLI."""
+        if not self._mcp_management_allowed():
+            await self._send_html(t("tg.mcp_read_only", host_locale(self)))
+            return
         if not what:
             self.transcript_write("Usage: /mcp install <popular-key|git-url>\nPopular: context7, filesystem, github, ... \nOr use the /mcp menu buttons.")
             return
         try:
-            from cli.commands.mcp import _save_mcp_server  # reuse? better direct
             # Direct logic to avoid heavy CLI import side effects
             from cli.core import get_profile_manager
             manager = get_profile_manager()
@@ -401,6 +453,9 @@ class TelegramHost:
 
     async def _mcp_assign(self, rest: str = "") -> None:
         """Basic assign: /mcp assign server main,researcher"""
+        if not self._mcp_management_allowed():
+            await self._send_html(t("tg.mcp_read_only", host_locale(self)))
+            return
         if not rest:
             self.transcript_write("Usage: /mcp assign <server-name> <role1,role2>\nExample: /mcp assign context7 main")
             return
@@ -434,6 +489,9 @@ class TelegramHost:
             self.transcript_write(f"Assign error: {e}")
 
     async def _mcp_test(self, name: str = "") -> None:
+        if not self._mcp_management_allowed():
+            await self._send_html(t("tg.mcp_read_only", host_locale(self)))
+            return
         if not name:
             self.transcript_write("Usage: /mcp test <server-name>")
             return
@@ -463,13 +521,16 @@ class TelegramHost:
                 return
             mcp_tools = [n for n in agent.tools.get_tool_names() if str(n).startswith("mcp_")]
             if not mcp_tools:
-                self.transcript_write("No MCP tools registered yet. Assign servers with /mcp assign or helix mcp assign.")
+                self.transcript_write("No MCP tools registered yet. Assign servers with /mcp assign or holix mcp assign.")
             else:
                 self.transcript_write("MCP tools:\n" + "\n".join(f"  • {t}" for t in mcp_tools))
         except Exception as e:
             self.transcript_write(f"Error listing MCP tools: {e}")
 
     async def _mcp_remove(self, name: str = "") -> None:
+        if not self._mcp_management_allowed():
+            await self._send_html(t("tg.mcp_read_only", host_locale(self)))
+            return
         if not name:
             self.transcript_write("Usage: /mcp remove <server-name>")
             return
@@ -549,6 +610,11 @@ class TelegramHost:
         if not message:
             return
 
+        from integrations.telegram.admin_broadcast import try_compose_admin_broadcast
+
+        if await try_compose_admin_broadcast(self, message):
+            return
+
         if self._session.pending_plan_review_id:
             from integrations.telegram.approvals import TelegramApprovals
 
@@ -592,6 +658,10 @@ class TelegramHost:
         if not self.agent:
             await self._send_plain("agent not ready")
             return
+        async with self._session.run_lock:
+            await self._run_agent_locked(user_input)
+
+    async def _run_agent_locked(self, user_input: str) -> None:
         from core.session_models import ensure_session_model
 
         ensure_session_model(self)
@@ -612,28 +682,46 @@ class TelegramHost:
 
         self.agent.events.subscribe(on_event)
 
+        from core.tools.execution_context import (
+            chat_delivery_scope,
+            reset_chat_delivery_scope,
+        )
+        from core.workspace import agent_path_visibility_context
+
+        from integrations.telegram.access_approval import is_telegram_admin
+        from integrations.telegram.delivery_bridge import TelegramDeliveryBridge
+
+        delivery_bridge = TelegramDeliveryBridge(self._bot, self._session.chat_id)
+        delivery_token = chat_delivery_scope(delivery_bridge)
+        agent_cfg = getattr(self.agent, "config", None)
+        visibility_ctx = agent_path_visibility_context(
+            is_admin=is_telegram_admin(self._session.bot_profile, self._session.user_id),
+            workspace_jail_enabled=bool(getattr(agent_cfg, "workspace_jail_enabled", False)),
+        )
+
         async with TypingIndicator(self._bot, self._session.chat_id):
             await presenter.start()
 
             mode = self._session.execution_mode
             try:
-                if self._session.streaming_enabled:
-                    from core.runtime.executor import run_helix
+                with visibility_ctx:
+                    if self._session.streaming_enabled:
+                        from core.runtime.executor import run_holix
 
-                    async for event in run_helix(
-                        self.agent,
-                        user_input,
-                        self.conversation_id,
-                        stream=True,
-                        execution_mode=mode,
-                    ):
-                        self.agent.emit(event)
-                else:
-                    await self.agent.run(
-                        user_input=user_input,
-                        conversation_id=self.conversation_id,
-                        execution_mode=mode,
-                    )
+                        async for event in run_holix(
+                            self.agent,
+                            user_input,
+                            self.conversation_id,
+                            stream=True,
+                            execution_mode=mode,
+                        ):
+                            self.agent.emit(event)
+                    else:
+                        await self.agent.run(
+                            user_input=user_input,
+                            conversation_id=self.conversation_id,
+                            execution_mode=mode,
+                        )
             except asyncio.CancelledError:
                 buf = self._session.live_buffer
                 if buf:
@@ -647,3 +735,4 @@ class TelegramHost:
             finally:
                 self.agent.events.unsubscribe(on_event)
                 await presenter._do_edit()
+                reset_chat_delivery_scope(delivery_token)

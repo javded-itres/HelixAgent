@@ -64,7 +64,7 @@ def format_skills_message(
             "",
         ]
         if not all_names:
-            lines.append("<i>No skills on disk. Use /hub or <code>helix hub install</code>.</i>")
+            lines.append("<i>No skills on disk. Use /hub or <code>holix hub install</code>.</i>")
             return "\n".join(lines)
 
         for name in allowed_names[:limit]:
@@ -84,13 +84,13 @@ def format_skills_message(
             lines.append(
                 f"<i>Profile allowlist for '{escape_html(slot)}': "
                 f"{len(assigns[slot])} skill(s). "
-                f"<code>helix skills assign</code> to change.</i>"
+                f"<code>holix skills assign</code> to change.</i>"
             )
         elif slot == "main":
             lines.append("")
             lines.append(
                 "<i>Main agent uses all profile skills. "
-                "Sub-agents: <code>helix skills assign</code>.</i>"
+                "Sub-agents: <code>holix skills assign</code>.</i>"
             )
 
         return "\n".join(lines)
@@ -101,7 +101,7 @@ def format_skills_message(
         "",
     ]
     if not all_names:
-        lines.append("[dim]No skills found. Try /hub or `helix hub install`.[/dim]")
+        lines.append("[dim]No skills found. Try /hub or `holix hub install`.[/dim]")
         return "\n".join(lines)
 
     for name in allowed_names[:limit]:
@@ -121,15 +121,30 @@ def format_skills_message(
     if slot != "main" and assigns.get(slot):
         lines.append(
             f"[dim]Allowlist for '{slot}': {len(assigns[slot])} skill(s). "
-            f"`helix skills assign` to change.[/dim]"
+            f"`holix skills assign` to change.[/dim]"
         )
     elif slot == "main":
         lines.append(
             "[dim]Main agent: all profile skills. "
-            "Sub-agents: `helix skills assign`.[/dim]"
+            "Sub-agents: `holix skills assign`.[/dim]"
         )
 
     return "\n".join(lines)
+
+
+async def _send_telegram_skills_html(host: Any, html: str) -> None:
+    """Deliver skills HTML to Telegram, splitting when over message size limit."""
+    if hasattr(host, "_send_html_split"):
+        await host._send_html_split(html)
+        return
+    if hasattr(host, "_send_html"):
+        from integrations.telegram.markdown import split_telegram_html
+
+        chunks = split_telegram_html(html)
+        for chunk in chunks:
+            await host._send_html(chunk)
+        return
+    host.transcript_write(html)
 
 
 async def run_skills_command(host: Any, command: str = "/skills") -> None:
@@ -137,9 +152,18 @@ async def run_skills_command(host: Any, command: str = "/skills") -> None:
     parts = command.strip().split(maxsplit=1)
     slot_arg = parts[1].strip() if len(parts) > 1 else None
 
-    if hasattr(host, "_send_html") and not slot_arg:
-        html = format_skills_message(host, html=True)
-        await host._send_html(html)
+    if hasattr(host, "_interactive") and not slot_arg:
+        await host._interactive.show_skills_picker()
+        return
+
+    if hasattr(host, "_send_html"):
+        html = format_skills_message(
+            host,
+            agent_slot=slot_arg,
+            html=True,
+            limit=20,
+        )
+        await _send_telegram_skills_html(host, html)
         return
 
     text = format_skills_message(host, agent_slot=slot_arg, html=False)

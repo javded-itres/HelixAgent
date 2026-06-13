@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
-from core.security.confirmation_events import ConfirmationRequestEvent
-from integrations.telegram.approvals import TelegramApprovals, _format_confirmation_args
+from core.security.confirmation import ConfirmationChoice, init_action_guard
+from integrations.telegram.approvals import (
+    TelegramApprovals,
+    _callback_data,
+    _register_callback_token,
+)
 from integrations.telegram.session import ChatSession
 
 
@@ -59,43 +63,53 @@ async def test_dismiss_confirmation_ignores_delete_errors(
     assert session.pending_confirmation_message_id is None
 
 
-def test_format_confirmation_args_terminal_shows_command() -> None:
-    html = _format_confirmation_args(
-        "run_terminal_command",
-        {"command": "rm -rf /tmp/test"},
-    )
-    assert "Команда:" in html
-    assert "rm -rf" in html
+def test_callback_data_stays_within_telegram_limit() -> None:
+    token = _register_callback_token({}, "confirm_99_" + "x" * 80)
+    assert len(_callback_data("cfm", token, "1").encode("utf-8")) <= 64
 
 
-def test_format_confirmation_args_write_file_shows_path() -> None:
-    html = _format_confirmation_args(
-        "write_file",
-        {"path": "/etc/hosts", "content": "hello"},
-    )
-    assert "/etc/hosts" in html
-
-
-@pytest.mark.asyncio
-async def test_on_confirmation_request_includes_command_and_keyboard(
-    approvals: TelegramApprovals,
+def test_resolve_confirmation_via_short_token(
+    approvals: TelegramApprovals, session: ChatSession
 ) -> None:
-    event = ConfirmationRequestEvent(
-        confirmation_id="abc",
-        tool_name="run_terminal_command",
-        arguments={"command": "ls -la"},
-        risk_level="high",
-        reason="Dangerous command",
-    )
-    sent = MagicMock()
-    sent.message_id = 7
-    approvals._bot.send_message = AsyncMock(return_value=sent)
+    agent = MagicMock()
+    agent.tools = MagicMock()
+    agent.subagents = None
+    bus = MagicMock()
+    guard = init_action_guard(event_bus=bus, confirmation_timeout=0)
+    agent.tools._action_guard = guard
+    session.agent = agent
 
-    await approvals.on_confirmation_request(event)
+    loop = asyncio.new_event_loop()
+    try:
+        future = loop.create_future()
+        guard._pending_confirmations["confirm_1_tg_default_100"] = future
+        token = _register_callback_token(
+            session.approval_callback_tokens,
+            "confirm_1_tg_default_100",
+        )
+        assert approvals.resolve_confirmation_callback(token, "1") is True
+        assert future.result() == ConfirmationChoice.ALLOW_ONCE
+    finally:
+        loop.close()
 
-    call = approvals._bot.send_message.await_args
-    assert call is not None
-    text = call.args[1] if len(call.args) > 1 else call.kwargs.get("text", "")
-    assert "ls -la" in text
-    assert call.kwargs.get("reply_markup") is not None
-    assert approvals._session.pending_confirmation_message_id == 7
+
+def test_resolve_confirmation_fallback_to_latest_pending(
+    approvals: TelegramApprovals, session: ChatSession
+) -> None:
+    agent = MagicMock()
+    agent.tools = MagicMock()
+    agent.subagents = None
+    bus = MagicMock()
+    guard = init_action_guard(event_bus=bus, confirmation_timeout=0)
+    agent.tools._action_guard = guard
+    session.agent = agent
+
+    loop = asyncio.new_event_loop()
+    try:
+        future = loop.create_future()
+        guard._pending_confirmations["confirm_2_tg_default_100"] = future
+        # Wrong/stale id from an old inline keyboard — should still resolve latest.
+        assert approvals.resolve_confirmation_callback("stale_token", "2") is True
+        assert future.result() == ConfirmationChoice.ALLOW_SESSION
+    finally:
+        loop.close()

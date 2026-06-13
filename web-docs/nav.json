@@ -30,6 +30,18 @@
     "file_key": "CONFIGURATION"
   },
   {
+    "slug": "profiles",
+    "en": "Profiles & Isolation",
+    "ru": "Профили и изоляция",
+    "file_key": "PROFILES"
+  },
+  {
+    "slug": "profile-encryption",
+    "en": "Profile Encryption",
+    "ru": "Шифрование профиля",
+    "file_key": "PROFILE_ENCRYPTION"
+  },
+  {
     "slug": "cli",
     "en": "CLI Reference",
     "ru": "Справочник CLI",
@@ -40,6 +52,12 @@
     "en": "Slash Commands",
     "ru": "Слэш-команды",
     "file_key": "SLASH_COMMANDS"
+  },
+  {
+    "slug": "execution-modes",
+    "en": "Execution Modes",
+    "ru": "Режимы работы",
+    "file_key": "EXECUTION_MODES"
   },
   {
     "slug": "tui",
@@ -60,16 +78,22 @@
     "file_key": "GATEWAY"
   },
   {
+    "slug": "gateway-api",
+    "en": "Complete API Reference",
+    "ru": "Полный справочник API",
+    "file_key": "GATEWAY_API"
+  },
+  {
     "slug": "telegram",
     "en": "Telegram",
     "ru": "Telegram",
     "file_key": "TELEGRAM"
   },
   {
-    "slug": "max",
-    "en": "MAX Messenger",
-    "ru": "MAX",
-    "file_key": "MAX"
+    "slug": "telegram-multi-profile",
+    "en": "Telegram Multi-Profile",
+    "ru": "Telegram: несколько профилей",
+    "file_key": "TELEGRAM_MULTI_PROFILE"
   },
   {
     "slug": "browser-tools",
@@ -90,6 +114,12 @@
     "file_key": "SECURITY"
   },
   {
+    "slug": "terminal-security",
+    "en": "Terminal Security",
+    "ru": "Безопасность команд",
+    "file_key": "TERMINAL_SECURITY"
+  },
+  {
     "slug": "deployment",
     "en": "Deployment",
     "ru": "Деплой",
@@ -98,7 +128,7 @@
   {
     "slug": "doctor",
     "en": "Doctor",
-    "ru": "Doctor",
+    "ru": "Доктор",
     "file_key": "DOCTOR"
   },
   {

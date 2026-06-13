@@ -11,41 +11,37 @@ Covers:
 """
 
 import asyncio
-import json
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from core.agent_events import (
     AgentEventBus,
     EventType,
+    PlanCompletedEvent,
     PlanGeneratedEvent,
     PlanStepCompletedEvent,
-    PlanCompletedEvent,
 )
-from core.plan_review.review_guard import (
-    PlanReviewChoice,
-    PlanReviewGuard,
-    init_plan_review_guard,
-    get_plan_review_guard,
+from core.plan_review.plan_storage import (
+    PLAN_DIR,
+    InvalidPlanIdError,
+    _format_plan_markdown,
+    list_plans,
+    load_plan,
+    resolve_plan_path,
+    save_plan,
 )
 from core.plan_review.review_events import (
     PlanReviewEventType,
     PlanReviewRequestEvent,
     PlanReviewResponseEvent,
 )
-from core.plan_review.plan_storage import (
-    InvalidPlanIdError,
-    save_plan,
-    load_plan,
-    list_plans,
-    PLAN_DIR,
-    resolve_plan_path,
-    _format_plan_markdown,
+from core.plan_review.review_guard import (
+    PlanReviewChoice,
+    PlanReviewGuard,
+    get_plan_review_guard,
+    init_plan_review_guard,
 )
-
 
 # ─── PlanReviewChoice ──────────────────────────────────────────────────────
 
@@ -179,6 +175,7 @@ class TestPlanStorage:
     def teardown_method(self):
         """Clean up temp directory."""
         import shutil
+
         import core.plan_review.plan_storage as ps
         ps.PLAN_DIR = self._original_plan_dir
         ps._TEST_PLAN_DIR = None
@@ -317,11 +314,11 @@ class TestPlanEvents:
 # ─── Graph State ────────────────────────────────────────────────────────────
 
 class TestGraphStatePlanReviewFields:
-    """Tests for the new plan_review fields in HelixGraphState."""
+    """Tests for the new plan_review fields in HolixGraphState."""
 
     def test_state_has_plan_review_fields(self):
-        from core.graph.state import HelixGraphState
-        state = HelixGraphState(
+        from core.graph.state import HolixGraphState
+        state = HolixGraphState(
             plan_status="pending_review",
             plan_review_id="",
             plan_refinement_feedback="",

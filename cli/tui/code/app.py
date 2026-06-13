@@ -1,5 +1,5 @@
 """
-Strict Helix TUI (Claude Code / Grok Build style).
+Strict Holix TUI (Claude Code / Grok Build style).
 
 Single-column transcript, compact tool lines, status footer — no sidebar, no command palette.
 """
@@ -10,18 +10,21 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
-from rich.markdown import Markdown
+from core.agent import HolixAgent
+from core.agent_events import AgentEvent
+from core.plan_review.review_events import PlanReviewRequestEvent
+from core.security.confirmation import ConfirmationChoice
+from core.security.confirmation_events import ConfirmationRequestEvent
 from rich.panel import Panel
 from rich.syntax import Syntax
-
 from textual import events, on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import Static, TextArea
 
-from cli.core import HELIX_HOME, ProfileConfig, ProfileManager, init_profile
+from cli.core import HOLIX_HOME, ProfileConfig, ProfileManager, init_profile
 from cli.tui.code.handlers import CodeEventHandler, SlashCommandsCore
 from cli.tui.code.styles import CODE_TUI_CSS
 from cli.tui.code.widgets import (
@@ -33,10 +36,9 @@ from cli.tui.code.widgets import (
     SlashCommandSuggestions,
     TranscriptPanel,
 )
-from cli.tui.shared.slash_suggestions import match_slash_commands
+from cli.tui.modals import ModalStack, TranscriptViewerScreen
 from cli.tui.shared.clipboard import copy_text_best_effort
 from cli.tui.shared.copy_bar import COPY_BAR_ID, hide_copy_bar, show_copy_bar
-from cli.tui.modals import ModalStack, TranscriptViewerScreen
 from cli.tui.shared.keyboard_layout import (
     code_tui_bindings,
     is_macos,
@@ -47,15 +49,11 @@ from cli.tui.shared.keyboard_layout import (
     slash_command_prefix,
     terminal_copy_hint,
 )
+from cli.tui.shared.slash_suggestions import match_slash_commands
 from cli.tui.shared.transcript_store import TranscriptStore, plain_from_rich_write
-from core.agent import HelixAgent
-from core.agent_events import AgentEvent
-from core.plan_review.review_events import PlanReviewRequestEvent, PlanReviewResponseEvent
-from core.security.confirmation import ConfirmationChoice
-from core.security.confirmation_events import ConfirmationRequestEvent, ConfirmationResponseEvent
 
 
-class HelixCodeApp(App):
+class HolixCodeApp(App):
     """Code-style strict TUI."""
 
     ENABLE_MOUSE_SUPPORT = True
@@ -63,12 +61,12 @@ class HelixCodeApp(App):
 
     BINDINGS = code_tui_bindings()
 
-    def __init__(self, profile: str = "default", config: Optional[ProfileConfig] = None):
+    def __init__(self, profile: str = "default", config: ProfileConfig | None = None):
         super().__init__()
         self.profile = profile
         self.config = config or init_profile(profile)
         self.profile_manager = ProfileManager()
-        self.agent: Optional[HelixAgent] = None
+        self.agent: HolixAgent | None = None
         self._resolved_model = self.config.model
         self.active_model_slot = "main"
         self.active_model_label = ""
@@ -100,6 +98,7 @@ class HelixCodeApp(App):
         self._execution_modes = ["react", "plan_and_execute", "hybrid", "auto"]
         self._execution_mode_index = 0
         self._cached_context_display: str | None = None
+        self._last_context_refresh: float = 0.0
 
         self._pending_confirmation: Any | None = None
         self._action_guard_reference: Any | None = None
@@ -123,9 +122,9 @@ class HelixCodeApp(App):
         yield CodePrompt()
 
     async def on_mount(self) -> None:
-        self.title = "Helix"
+        self.title = "Holix"
         self._load_ui_state()
-        self.transcript_write("[bold]Helix[/bold]  [dim]code ui[/dim]")
+        self.transcript_write("[bold]Holix[/bold]  [dim]code ui[/dim]")
         hints = (
             "[dim]Enter send · Shift+Enter newline · / — command menu (↑↓ pick) · "
             "/models — switch LLM · /hub — skill catalog · F2 /open — copy window · "
@@ -237,7 +236,7 @@ class HelixCodeApp(App):
     # --- Persistence ---
 
     def _state_path(self) -> Path:
-        return HELIX_HOME / "tui-state.json"
+        return HOLIX_HOME / "tui-state.json"
 
     def _load_ui_state(self) -> None:
         try:
@@ -300,10 +299,11 @@ class HelixCodeApp(App):
             self._resolved_model = "—"
             return
 
-        self.agent = HelixAgent(config=runtime_config)
+        self.agent = HolixAgent(config=runtime_config)
         self.agent.events.subscribe(self._on_agent_event)
         await self.agent.initialize()
         await self._load_conversation_history()
+        await self._ensure_session_context()
         await self._load_known_sessions()
         self.transcript_write("[dim]ready — type a message or /help[/dim]\n")
         self.set_status_line("ready")
@@ -341,6 +341,25 @@ class HelixCodeApp(App):
                 )
         except Exception:
             pass
+
+    async def _ensure_session_context(self) -> None:
+        """Compress persisted history when usage exceeds threshold (e.g. after restart)."""
+        if not self.agent:
+            return
+        try:
+            from core.runtime.context_session import ensure_conversation_context
+
+            if await ensure_conversation_context(self.agent, self.conversation_id):
+                self.transcript_write("[dim]· context compressed on load[/dim]")
+        except Exception:
+            pass
+
+    def _maybe_refresh_context_display(self, *, min_interval_s: float = 2.0) -> None:
+        now = time.monotonic()
+        if now - self._last_context_refresh < min_interval_s:
+            return
+        self._last_context_refresh = now
+        self.run_worker(self._update_context_display_async())
 
     async def _load_conversation_history(self) -> None:
         if not self.agent:
@@ -393,9 +412,9 @@ class HelixCodeApp(App):
             return
         mode = self._execution_modes[self._execution_mode_index]
         try:
-            from core.runtime.executor import run_helix
+            from core.runtime.executor import run_holix
 
-            async for event in run_helix(
+            async for event in run_holix(
                 self.agent,
                 user_input,
                 self.conversation_id,
@@ -805,7 +824,7 @@ class HelixCodeApp(App):
         if not body.strip():
             self._clipboard_notify("transcript empty")
             return
-        self.push_screen(TranscriptViewerScreen(body, title="Helix transcript"))
+        self.push_screen(TranscriptViewerScreen(body, title="Holix transcript"))
 
     def copy_text(self, text: str, *, label: str = "copied") -> None:
         if not text or not text.strip():
@@ -953,7 +972,7 @@ class HelixCodeApp(App):
             cfg = manager.load_profile(self.profile)
             servers = getattr(cfg, "mcp_servers", {}) or {}
             if not servers:
-                self.transcript_write("[dim]No MCP servers. Use terminal: helix mcp install[/dim]")
+                self.transcript_write("[dim]No MCP servers. Use terminal: holix mcp install[/dim]")
                 return
             lines = ["MCP servers:"]
             for name, data in servers.items():
@@ -965,13 +984,14 @@ class HelixCodeApp(App):
 
     async def _mcp_install(self, what: str = "") -> None:
         if not what:
-            self.transcript_write("Usage: /mcp install <key|git-url>\nKeys: compass, context7, filesystem, github...\nOr use terminal `helix mcp install` for full interactive.")
+            self.transcript_write("Usage: /mcp install <key|git-url>\nKeys: compass, context7, filesystem, github...\nOr use terminal `holix mcp install` for full interactive.")
             return
         self.transcript_write(f"[dim]Installing '{what}'... (using core logic)[/dim]")
         try:
-            from cli.core import get_profile_manager
             from core.mcp.installer import build_config_from_popular, install_from_git
             from core.mcp.popular import get_popular_by_key
+
+            from cli.core import get_profile_manager
 
             manager = get_profile_manager()
             cfg = manager.load_profile(self.profile)
@@ -1009,7 +1029,7 @@ class HelixCodeApp(App):
 
             pop = get_popular_by_key(what)
             if not pop:
-                self.transcript_write(f"Unknown key '{what}'. See terminal `helix mcp list-popular`.")
+                self.transcript_write(f"Unknown key '{what}'. See terminal `holix mcp list-popular`.")
                 return
 
             data = build_config_from_popular(pop, {})
@@ -1043,7 +1063,7 @@ class HelixCodeApp(App):
                 if mcp_ts:
                     self.transcript_write(f"[dim]MCP tools now active ({len(mcp_ts)}): use /mcp tools[/dim]")
         except Exception as e:
-            self.transcript_write(f"Install error: {e}. Fall back to terminal: helix mcp install {what}")
+            self.transcript_write(f"Install error: {e}. Fall back to terminal: holix mcp install {what}")
 
     async def _mcp_assign(self, rest: str = "") -> None:
         if not rest:
@@ -1080,8 +1100,9 @@ class HelixCodeApp(App):
             return
         self.transcript_write(f"[dim]Testing {name}...[/dim]")
         try:
-            from cli.core import get_profile_manager
             from core.mcp.manager import MCPManager
+
+            from cli.core import get_profile_manager
             manager = get_profile_manager()
             cfg = manager.load_profile(self.profile)
             servers = getattr(cfg, "mcp_servers", {}) or {}
@@ -1163,9 +1184,14 @@ class HelixCodeApp(App):
             if not results:
                 self.transcript_write("[dim]no hits[/dim]")
                 return
-            for i, mem in enumerate(results, 1):
-                content = (mem.get("content") or "")[:300]
-                self.transcript_write(f"  {i}. {content}")
+            text = self.agent.format_memory_results(
+                results,
+                conversation_id=self.conversation_id,
+                include_current=True,
+            )
+            for line in text.split("\n"):
+                if line.strip():
+                    self.transcript_write(f"  {line}")
         except Exception as e:
             self.transcript_write(f"[red]{e}[/red]")
 
@@ -1229,6 +1255,7 @@ class HelixCodeApp(App):
         self._recent_tool_results.clear()
         self.transcript_write(f"[dim]switched → {new_id}[/dim]\n")
         await self._load_conversation_history()
+        await self._ensure_session_context()
         self._save_ui_state()
         from core.session_models import restore_session_model
 
@@ -1259,13 +1286,15 @@ class HelixCodeApp(App):
         except Exception:
             return ["default"]
 
-    async def _switch_profile(self, new_profile: str) -> None:
+    async def _switch_profile(self, new_profile: str, *, profile_key: str | None = None) -> None:
+        from core.profile_keys import ProfileKeyError, profile_has_access_key
+
         if new_profile == self.profile:
             self.transcript_write(f"[dim]already on {new_profile}[/dim]")
             return
         self.transcript_write(f"[dim]profile → {new_profile}[/dim]")
         try:
-            new_config = self.profile_manager.load_profile(new_profile)
+            new_config = init_profile(new_profile, profile_key=profile_key, prompt_key=False)
             from core.di import resolve_runtime_config
 
             runtime_config = resolve_runtime_config(new_config)
@@ -1284,7 +1313,7 @@ class HelixCodeApp(App):
             except Exception:
                 pass
 
-            new_agent = HelixAgent(config=runtime_config)
+            new_agent = HolixAgent(config=runtime_config)
             await new_agent.initialize()
             self.agent = new_agent
             self.profile = new_profile
@@ -1292,6 +1321,10 @@ class HelixCodeApp(App):
             self.agent.events.subscribe(self._on_agent_event)
             await self._create_new_session()
             self.transcript_write(f"[dim]profile {new_profile} active[/dim]")
+        except ProfileKeyError as exc:
+            self.transcript_write(f"[red]{exc}[/red]")
+            if profile_has_access_key(new_profile) and not profile_key:
+                self.transcript_write("[dim]/profile <name> <access-key>[/dim]")
         except Exception as e:
             self.transcript_write(f"[red]{e}[/red]")
 
@@ -1357,17 +1390,17 @@ class HelixCodeApp(App):
 
 
 def run_tui(profile: str = "default") -> None:
-    """Launch strict code-style TUI (default for helix tui)."""
+    """Launch strict code-style TUI (default for holix tui)."""
     import os
 
-    if os.environ.get("HELIX_TUI_LEGACY", "").strip() in ("1", "true", "yes"):
+    if os.environ.get("HOLIX_TUI_LEGACY", "").strip() in ("1", "true", "yes"):
         from cli.tui.legacy.app import run_tui_legacy
 
         run_tui_legacy(profile=profile)
         return
 
     config = init_profile(profile)
-    HelixCodeApp(profile=profile, config=config).run()
+    HolixCodeApp(profile=profile, config=config).run()
 
 
 if __name__ == "__main__":

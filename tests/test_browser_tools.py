@@ -6,7 +6,6 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from core.tools.browser.policy import parse_allowed_hosts_csv, validate_browser_url
 from core.tools.browser.tools import (
     BrowserClickTool,
@@ -99,7 +98,7 @@ async def test_browser_snapshot_builds_refs():
     tool = BrowserSnapshotTool()
     session = _mock_session()
     snapshot_text = "URL: https://example.com\nTitle: T\n[e1] button \"OK\""
-    refs = {"e1": '[data-helix-ref="e1"]'}
+    refs = {"e1": '[data-holix-ref="e1"]'}
 
     token = conversation_scope("c1")
     try:
@@ -123,7 +122,7 @@ async def test_browser_snapshot_builds_refs():
 @pytest.mark.asyncio
 async def test_browser_click_by_ref():
     tool = BrowserClickTool()
-    session = _mock_session(refs={"e2": '[data-helix-ref="e2"]'})
+    session = _mock_session(refs={"e2": '[data-holix-ref="e2"]'})
 
     token = conversation_scope("c1")
     try:
@@ -134,7 +133,7 @@ async def test_browser_click_by_ref():
         reset_conversation_scope(token)
 
     assert "Clicked e2" in result
-    session.page.locator.assert_called_with('[data-helix-ref="e2"]')
+    session.page.locator.assert_called_with('[data-holix-ref="e2"]')
 
 
 @pytest.mark.asyncio
@@ -157,7 +156,7 @@ async def test_browser_click_unknown_ref():
 @pytest.mark.asyncio
 async def test_browser_fill():
     tool = BrowserFillTool()
-    session = _mock_session(refs={"e1": '[data-helix-ref="e1"]'})
+    session = _mock_session(refs={"e1": '[data-holix-ref="e1"]'})
 
     token = conversation_scope("c1")
     try:

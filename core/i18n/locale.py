@@ -1,13 +1,12 @@
-"""UI locale persistence (per Helix profile)."""
+"""UI locale persistence (per Holix profile)."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-from pydantic import BaseModel, Field
-
 from cli.core import ProfileManager
+from pydantic import BaseModel
 
 DEFAULT_LOCALE = "en"
 SUPPORTED_LOCALES = frozenset({"en", "ru"})

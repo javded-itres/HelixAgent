@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
+from core.cron import active_runs
 from core.cron.runner import run_cron_job
 from core.cron.store import CronStore
 
@@ -17,8 +18,8 @@ TICK_SECONDS = 30
 def _parse_utc_iso(value: str) -> datetime:
     dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
 
 
 def _job_is_due(job, *, now: datetime) -> bool:
@@ -36,7 +37,6 @@ class CronScheduler:
     def __init__(self, profile: str = "default") -> None:
         self.profile = profile
         self._store = CronStore(profile)
-        self._running_jobs: set[str] = set()
         self._lock = asyncio.Lock()
 
     async def run_forever(self) -> None:
@@ -52,25 +52,22 @@ class CronScheduler:
             await asyncio.sleep(TICK_SECONDS)
 
     async def tick(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for job in self._store.list_jobs(enabled_only=True):
-            if job.id in self._running_jobs:
+            if active_runs.is_active(job.id):
                 continue
             if job.last_status == "running":
                 continue
             if not _job_is_due(job, now=now):
                 continue
             async with self._lock:
-                if job.id in self._running_jobs:
+                if active_runs.is_active(job.id):
                     continue
-                self._running_jobs.add(job.id)
 
-            asyncio.create_task(self._run_wrapped(job.id), name=f"cron-{job.id}")
+            task = asyncio.create_task(self._run_wrapped(job.id), name=f"cron-{job.id}")
+            active_runs.register_task(job.id, task)
 
     async def _run_wrapped(self, job_id: str) -> None:
-        try:
-            job = self._store.get(job_id)
-            if job and job.enabled:
-                await run_cron_job(job)
-        finally:
-            self._running_jobs.discard(job_id)
+        job = self._store.get(job_id)
+        if job and job.enabled:
+            await run_cron_job(job)

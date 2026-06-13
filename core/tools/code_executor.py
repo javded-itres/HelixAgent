@@ -1,9 +1,7 @@
 import asyncio
-import sys
-import os
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
-from contextlib import redirect_stdout, redirect_stderr
-from typing import Dict, Any
+
 from config import settings
 from core.tools.base import BaseTool
 
@@ -50,7 +48,7 @@ class PythonExecutorTool(BaseTool):
             Execution result
         """
         if not settings.enable_code_executor:
-            return "Error: Code executor is disabled (HELIX_ENABLE_CODE_EXECUTOR=false)"
+            return "Error: Code executor is disabled (HOLIX_ENABLE_CODE_EXECUTOR=false)"
 
         try:
             # Run in separate process for safety
@@ -60,7 +58,7 @@ class PythonExecutorTool(BaseTool):
             )
             return result
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return f"Error: Code execution timed out after {timeout} seconds"
         except Exception as e:
             return f"Error: {str(e)}"

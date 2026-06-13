@@ -2,18 +2,24 @@
 
 from __future__ import annotations
 
-import os
-
 import pytest
-
 from core.models.catalog import (
     get_provider_preset,
     list_provider_presets,
     parse_host_value,
     resolve_preset_base_url,
 )
-from core.models.client_factory import build_default_headers, resolve_provider_api_key
-from core.models.setup_helpers import build_provider_entry, resolve_api_key_for_preset
+from core.models.client_factory import (
+    build_default_headers,
+    resolve_provider_api_key,
+    resolve_verify_ssl,
+)
+from core.models.setup_helpers import (
+    apply_ssl_override,
+    build_provider_entry,
+    resolve_api_key_for_preset,
+    resolve_ssl_metadata_extra,
+)
 
 
 def test_catalog_includes_major_providers():
@@ -72,9 +78,9 @@ def test_openrouter_preset_metadata():
 
 def test_openrouter_headers_from_env(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("OPENROUTER_HTTP_REFERER", "https://example.com")
-    headers = build_default_headers({"auth_type": "openrouter", "x_title": "Helix"})
+    headers = build_default_headers({"auth_type": "openrouter", "x_title": "Holix"})
     assert headers.get("HTTP-Referer") == "https://example.com"
-    assert headers.get("X-Title") == "Helix"
+    assert headers.get("X-Title") == "Holix"
 
 
 def test_resolve_api_key_placeholder():
@@ -89,6 +95,33 @@ def test_resolve_api_key_from_env(monkeypatch: pytest.MonkeyPatch):
     preset = get_provider_preset("deepseek")
     assert preset is not None
     assert resolve_provider_api_key("${DEEPSEEK_API_KEY}") == "sk-test"
+
+
+def test_resolve_ssl_metadata_extra_no_verify():
+    assert resolve_ssl_metadata_extra(no_verify_ssl=True) == {"verify_ssl": False}
+    assert resolve_ssl_metadata_extra(
+        "https://gpu.local/v1",
+        no_verify_ssl=True,
+    ) == {"verify_ssl": False}
+
+
+def test_apply_ssl_override():
+    assert apply_ssl_override({"auth_type": "bearer"}, no_verify_ssl=True) == {
+        "auth_type": "bearer",
+        "verify_ssl": False,
+    }
+    assert apply_ssl_override({"verify_ssl": True}, no_verify_ssl=False) == {
+        "verify_ssl": True,
+    }
+
+
+def test_resolve_verify_ssl_defaults_true():
+    assert resolve_verify_ssl(None) is True
+    assert resolve_verify_ssl({}) is True
+    assert resolve_verify_ssl({"verify_ssl": True}) is True
+    assert resolve_verify_ssl({"verify_ssl": False}) is False
+    assert resolve_verify_ssl({"verify_ssl": "false"}) is False
+    assert resolve_verify_ssl({"ssl_verify": "0"}) is False
 
 
 def test_build_provider_entry_merges_popular_models():

@@ -1,15 +1,16 @@
 """Memory management commands."""
 
-import typer
 import asyncio
-from pathlib import Path
 import sys
+from pathlib import Path
+
+import typer
 
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from cli.utils.rich_console import print_table, print_info, print_error, console
+from cli.utils.rich_console import console, print_info
 
-app = typer.Typer(help="Search and manage Helix memory")
+app = typer.Typer(help="Search and manage Holix memory")
 
 
 @app.command("search")
@@ -41,13 +42,10 @@ async def _search_memory_async(query: str, top_k: int, config):
 
     if results:
         console.print(f"\n[cyan]Found {len(results)} results:[/cyan]\n")
-        for i, result in enumerate(results, 1):
-            content = result.get("content", "")
-            metadata = result.get("metadata", {})
+        from core.memory.session_search import format_memory_hit_line
 
-            console.print(f"[bold]{i}.[/bold] {content[:200]}...")
-            if metadata:
-                console.print(f"   [dim]Conversation: {metadata.get('conversation_id', 'N/A')}[/dim]")
+        for i, result in enumerate(results, 1):
+            console.print(format_memory_hit_line(result, index=i, content_limit=200))
             console.print()
     else:
         print_info("No results found")

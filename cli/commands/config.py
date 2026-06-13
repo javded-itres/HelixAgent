@@ -1,13 +1,14 @@
 """Configuration management commands."""
 
-import typer
-import subprocess
 import os
+import subprocess
 
-from cli.core import get_profile_manager, get_current_config
-from cli.utils.rich_console import print_info, print_error, print_success
+import typer
 
-app = typer.Typer(help="Manage Helix configuration")
+from cli.core import get_profile_manager
+from cli.utils.rich_console import print_error, print_info, print_success
+
+app = typer.Typer(help="Manage Holix configuration")
 
 
 @app.command("edit")
@@ -30,7 +31,7 @@ def edit_config(ctx: typer.Context):
     try:
         subprocess.run([editor, str(config_file)])
         print_success("Configuration updated")
-        print_info("Restart Helix for changes to take effect")
+        print_info("Restart Holix for changes to take effect")
     except Exception as e:
         print_error(f"Failed to open editor: {e}")
 
@@ -38,8 +39,9 @@ def edit_config(ctx: typer.Context):
 @app.command("show")
 def show_config(ctx: typer.Context):
     """Show current configuration."""
-    from cli.utils.rich_console import print_panel
     import yaml
+
+    from cli.utils.rich_console import print_panel
 
     config = ctx.obj["config"]
 

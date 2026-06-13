@@ -4,36 +4,34 @@ from __future__ import annotations
 
 import json
 
-from rich.panel import Panel
-from rich.syntax import Syntax
-
 from cli.tui.shared.formatters import (
     format_write_file_diff_display,
     split_write_file_result,
 )
-
 from core.agent_events import (
     AgentEvent,
-    ThinkingEvent,
-    ToolCallStartEvent,
-    ToolCallResultEvent,
-    ToolCallErrorEvent,
     AssistantDeltaEvent,
-    FinalResponseEvent,
-    ErrorEvent,
     ContextCompressedEvent,
     ContextWarningEvent,
-    PlanStepCompletedEvent,
+    ErrorEvent,
+    FinalResponseEvent,
     PlanCompletedEvent,
+    PlanStepCompletedEvent,
+    ThinkingEvent,
+    ToolCallErrorEvent,
+    ToolCallResultEvent,
+    ToolCallStartEvent,
 )
 from core.plan_review.review_events import PlanReviewRequestEvent, PlanReviewResponseEvent
 from core.security.confirmation_events import ConfirmationRequestEvent
 from core.subagents.interaction_events import SubAgentQuestionEvent
+from rich.panel import Panel
+from rich.syntax import Syntax
 from textual.widgets import RichLog
 
 
 class AgentEventHandler:
-    """Maps AgentEvent stream to Helix TUI widgets (via app reference)."""
+    """Maps AgentEvent stream to Holix TUI widgets (via app reference)."""
 
     def __init__(self, app) -> None:
         self.app = app
@@ -43,7 +41,7 @@ class AgentEventHandler:
         All event processing is wrapped so that a bad event never crashes the TUI.
         """
         try:
-            chat_log = self.app.query_one("#chat-log", RichLog)
+            self.app.query_one("#chat-log", RichLog)
         except Exception:
             return  # Widgets not ready yet — ignore safely
 
@@ -257,10 +255,10 @@ class AgentEventHandler:
 
                 try:
                     from rich.markdown import Markdown
-                    self.app._append_to_log(f"[bold green]Helix:{regen_tag}[/bold green]")
+                    self.app._append_to_log(f"[bold green]Holix:{regen_tag}[/bold green]")
                     self.app._append_to_log(Markdown(event.content))
                 except Exception:
-                    self.app._append_to_log(f"[bold green]Helix:{regen_tag}[/bold green]")
+                    self.app._append_to_log(f"[bold green]Holix:{regen_tag}[/bold green]")
                     self.app._append_to_log(event.content)
 
                 self.app._scroll_chat_to_bottom()

@@ -1,13 +1,12 @@
-"""Tests for helix docs command."""
+"""Tests for holix docs command."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from typer.testing import CliRunner
-
 from cli.main import app
 from cli.services.docs_site import build_docs_site, resolve_web_docs_dir
+from typer.testing import CliRunner
 
 
 def test_resolve_web_docs_dir_finds_index() -> None:
@@ -36,3 +35,5 @@ def test_docs_build_cli() -> None:
     assert result.exit_code == 0
     root = resolve_web_docs_dir()
     assert Path(root / "search-index.json").stat().st_size > 1000
+    assert (root / "search-chunks.json").is_file()
+    assert (root / "search-vectors.npz").is_file()

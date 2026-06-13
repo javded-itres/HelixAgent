@@ -5,8 +5,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from core.i18n import host_locale, t
+
 from integrations.telegram.keyboards import (
     MODE_LABELS,
+    SKILLS_PAGE_SIZE,
     mode_picker_html,
     mode_picker_keyboard,
     models_provider_keyboard,
@@ -14,10 +16,12 @@ from integrations.telegram.keyboards import (
     parse_callback,
     profile_picker_keyboard,
     sessions_picker_keyboard,
+    skills_picker_keyboard,
     status_menu_keyboard,
     stream_picker_keyboard,
     tools_picker_keyboard,
 )
+from integrations.telegram.markdown import escape_html
 from integrations.telegram.model_switch import (
     MODELS_PAGE_SIZE,
     PROVIDERS_PAGE_SIZE,
@@ -26,7 +30,6 @@ from integrations.telegram.model_switch import (
     build_models_menu,
     current_model_label,
 )
-from integrations.telegram.markdown import escape_html
 
 if TYPE_CHECKING:
     from integrations.telegram.host import TelegramHost
@@ -72,17 +75,35 @@ class TelegramInteractive:
     def _session(self) -> Any:
         return self._host._session
 
+    async def _deny_menu_command(self, command_token: str) -> bool:
+        from integrations.telegram.command_access import is_command_allowed
+
+        if is_command_allowed(
+            command_token,
+            self._session.bot_profile,
+            self._session.user_id,
+        ):
+            return False
+        lang = host_locale(self._host)
+        await self._host._send_html(escape_html(t("tg.menu_unavailable", lang)))
+        return True
+
     async def handle_slash(self, command: str) -> bool:
         """Return True if handled (skip AgentCommands)."""
         from cli.shared.slash_input import (
             is_mode_slash,
             is_models_slash,
             normalize_slash_input,
+            slash_command_token,
         )
 
         cmd = normalize_slash_input(command.strip())
         lower = cmd.lower()
         parts = lower.split()
+        cmd_token = slash_command_token(cmd)
+
+        if await self._deny_menu_command(cmd_token.lstrip("/").split()[0]):
+            return True
 
         if is_models_slash(cmd):
             await self.show_models()
@@ -116,6 +137,12 @@ class TelegramInteractive:
             await self.show_profile_picker()
             return True
 
+        if lower.startswith("/message"):
+            from integrations.telegram.admin_broadcast import handle_admin_message_command
+
+            await handle_admin_message_command(self._host, cmd)
+            return True
+
         if lower in ("/sessions",):
             await self.show_sessions_picker()
             return True
@@ -130,7 +157,7 @@ class TelegramInteractive:
             await self.show_tools_picker()
             return True
 
-        if lower == "/skills" or lower.startswith("/skills "):
+        if cmd_token == "/skills":
             from cli.shared.commands.skills_commands import run_skills_command
 
             await run_skills_command(self._host, cmd)
@@ -165,9 +192,9 @@ class TelegramInteractive:
     async def show_cron_menu(self) -> None:
         """Cron jobs list with enable/disable/delete buttons."""
         from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
         from cli.shared.commands.cron_commands import format_jobs_message
         from core.cron.store import CronStore
+
         from integrations.telegram.keyboards import _cb
 
         host = self._host
@@ -231,7 +258,7 @@ class TelegramInteractive:
                 "<b>Добавить cron</b>\n"
                 "<code>/cron add every day at 9 :: текст задачи</code>\n"
                 "<code>/cron add 0 9 * * * :: текст задачи</code>\n\n"
-                "Планировщик работает в <code>helix gateway</code>."
+                "Планировщик работает в <code>holix gateway</code>."
             )
             return
 
@@ -275,6 +302,7 @@ class TelegramInteractive:
     async def show_mcp_menu(self, command: str = "/mcp") -> None:
         """Show MCP management menu with inline keyboard."""
         from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
         from integrations.telegram.markdown import escape_html
 
         cmd = command.lower()
@@ -290,36 +318,56 @@ class TelegramInteractive:
             cfg = None
 
         servers = getattr(cfg, "mcp_servers", {}) if cfg else {}
-        assignments = getattr(cfg, "mcp_assignments", {}) if cfg else {}
+        getattr(cfg, "mcp_assignments", {}) if cfg else {}
 
         text_lines = [f"<b>MCP Servers</b> · профиль <code>{escape_html(profile)}</code>"]
 
         if not servers:
             text_lines.append("\nНет настроенных MCP серверов.")
-            text_lines.append("Используй /mcp install или helix mcp install в терминале.")
+            text_lines.append("Используй /mcp install или holix mcp install в терминале.")
         else:
             for name, data in list(servers.items())[:8]:
                 src = data.get("_source", "manual")
                 trans = data.get("transport", "stdio")
                 text_lines.append(f"• <code>{escape_html(name)}</code> ({trans}) [{src}]")
 
-        kb_rows = [
+        from integrations.telegram.command_access import is_mcp_management_allowed
+
+        can_manage_mcp = is_mcp_management_allowed(
+            self._session.bot_profile,
+            self._session.user_id,
+        )
+        kb_rows: list[list[InlineKeyboardButton]] = [
             [
                 InlineKeyboardButton(text="📋 List", callback_data="mcp:list"),
-                InlineKeyboardButton(text="🛠 Install popular", callback_data="mcp:install-popular"),
-            ],
-            [
-                InlineKeyboardButton(text="➕ Install from git", callback_data="mcp:install-git"),
-                InlineKeyboardButton(text="🔗 Assign to agents", callback_data="mcp:assign"),
-            ],
-            [
-                InlineKeyboardButton(text="🧪 Test server", callback_data="mcp:test"),
-                InlineKeyboardButton(text="🗑 Remove server", callback_data="mcp:remove"),
+                InlineKeyboardButton(text="🔧 Tools", callback_data="mcp:tools"),
             ],
             [
                 InlineKeyboardButton(text="🔄 Refresh", callback_data="mcp:refresh"),
             ],
         ]
+        if can_manage_mcp:
+            kb_rows = [
+                [
+                    InlineKeyboardButton(text="📋 List", callback_data="mcp:list"),
+                    InlineKeyboardButton(text="🛠 Install popular", callback_data="mcp:install-popular"),
+                ],
+                [
+                    InlineKeyboardButton(text="➕ Install from git", callback_data="mcp:install-git"),
+                    InlineKeyboardButton(text="🔗 Assign to agents", callback_data="mcp:assign"),
+                ],
+                [
+                    InlineKeyboardButton(text="🧪 Test server", callback_data="mcp:test"),
+                    InlineKeyboardButton(text="🗑 Remove server", callback_data="mcp:remove"),
+                ],
+                [
+                    InlineKeyboardButton(text="🔄 Refresh", callback_data="mcp:refresh"),
+                ],
+            ]
+        elif not servers:
+            text_lines.append(
+                f"\n<i>{escape_html(t('tg.mcp_read_only_empty', host_locale(host)))}</i>"
+            )
 
         # If specific subcommand, handle simply
         if len(parts) > 1:
@@ -333,6 +381,12 @@ class TelegramInteractive:
                 else:
                     await host._mcp_list_tools()
                 return
+            if sub in ("install", "add", "assign", "remove", "rm", "delete", "test"):
+                if not can_manage_mcp:
+                    await self._host._send_html(
+                        escape_html(t("tg.mcp_read_only", host_locale(host)))
+                    )
+                    return
             if sub in ("install", "add"):
                 arg = " ".join(parts[2:]) if len(parts) > 2 else ""
                 host.run_worker(host._mcp_install(arg))
@@ -367,6 +421,13 @@ class TelegramInteractive:
             if 0 <= idx < len(profiles):
                 name = profiles[idx]
                 if name != self._host.profile:
+                    from integrations.telegram.profile_visibility import is_profile_list_hidden
+
+                    if is_profile_list_hidden(
+                        self._session.bot_profile,
+                        self._session.user_id,
+                    ):
+                        return t("tg.profile_switch_by_key", lang)
                     await self._host._switch_profile(name)
                     return t("tg.profile", lang, name=name)
                 return t("tg.profile_same", lang, name=name)
@@ -407,6 +468,35 @@ class TelegramInteractive:
         if action == "t":
             self._host._show_full_tool_result(int(value))
             return t("tg.tool_result", host_locale(self._host))
+
+        if action == "sk":
+            names = self._session.ui_skills
+            idx = int(value)
+            if 0 <= idx < len(names):
+                from cli.shared.commands.skills_commands import _load_skills
+
+                mgr, slot, _ = _load_skills(self._host)
+                name = names[idx]
+                skill = mgr.all_skills.get(name, {})
+                desc = escape_html((skill.get("description") or "—")[:500])
+                src = skill.get("_source", "")
+                body = (skill.get("content") or skill.get("body") or "").strip()
+                text = f"<b>{escape_html(name)}</b>"
+                if src:
+                    text += f" · <i>{escape_html(src)}</i>"
+                text += f"\n<i>agent: {escape_html(slot)}</i>\n\n{desc}"
+                if body:
+                    preview = escape_html(body[:900])
+                    if len(body) > 900:
+                        preview += "…"
+                    text += f"\n\n<code>{preview}</code>"
+                await self._host._send_html(text)
+                return name[:40]
+            return "invalid skill"
+
+        if action == "skp":
+            await self.show_skills_picker(page=int(value))
+            return ""
 
         if action == "mp":
             label = await apply_preset_index(self._host, int(value))
@@ -459,6 +549,17 @@ class TelegramInteractive:
         return t("tg.unknown_action", host_locale(self._host))
 
     async def _refresh(self, kind: str) -> None:
+        from integrations.telegram.command_access import is_menu_action_allowed
+
+        if not is_menu_action_allowed(
+            kind,
+            self._session.bot_profile,
+            self._session.user_id,
+        ):
+            lang = host_locale(self._host)
+            await self._host._send_html(escape_html(t("tg.menu_unavailable", lang)))
+            return
+
         if kind == "compress":
             from cli.shared.commands.context_compress import run_context_compress
 
@@ -472,6 +573,7 @@ class TelegramInteractive:
             "stream": self.show_stream_picker,
             "models": self.show_models,
             "tools": self.show_tools_picker,
+            "skills": self.show_skills_picker,
             "status": self.show_status,
             "mcp": self.show_mcp_menu,
             "cron": self.show_cron_menu,
@@ -497,14 +599,55 @@ class TelegramInteractive:
         await self._host._send_html_with_keyboard(text, stream_picker_keyboard(on))
 
     async def show_profile_picker(self) -> None:
+        from integrations.telegram.profile_visibility import is_profile_list_hidden
+
         profiles = self._host._get_available_profiles()
         self._session.ui_profiles = profiles
+        lang = host_locale(self._host)
+        current = self._host.profile
+
+        if is_profile_list_hidden(self._session.bot_profile, self._session.user_id):
+            await self._host._send_html(
+                f"<b>{escape_html(t('profiles_title', lang))}</b>\n"
+                f"{escape_html(t('tg.profile_current', lang, name=current))}\n\n"
+                f"<i>{escape_html(t('tg.profile_switch_by_key', lang))}</i>"
+            )
+            return
+
+        lines = [
+            f"<b>{escape_html(t('profiles_title', lang))}</b>",
+            escape_html(t("tg.profile_current", lang, name=current)),
+            "",
+        ]
+        for name in profiles[:12]:
+            mark = " ✓" if name == current else ""
+            lines.append(f"• <code>{escape_html(name)}</code>{mark}")
+        await self._host._send_html_with_keyboard(
+            "\n".join(lines),
+            profile_picker_keyboard(profiles, current),
+        )
+
+    async def _deny_mcp_management(self) -> None:
+        lang = host_locale(self._host)
+        await self._host._send_html(escape_html(t("tg.mcp_read_only", lang)))
 
     async def _handle_mcp_callback(self, value: str) -> None:
         """Handle mcp:* callbacks from the MCP menu."""
+        from integrations.telegram.command_access import is_mcp_management_allowed
+
         host = self._host
+        can_manage = is_mcp_management_allowed(
+            self._session.bot_profile,
+            self._session.user_id,
+        )
         if value == "list" or value == "refresh":
             await host._mcp_list()
+            return
+        if value == "tools":
+            await host._mcp_list_tools()
+            return
+        if not can_manage:
+            await self._deny_mcp_management()
             return
         if value == "install-popular":
             await self._show_mcp_popular_picker()
@@ -513,7 +656,7 @@ class TelegramInteractive:
             await host._send_html(
                 "Чтобы установить из git, напиши:\n"
                 "<code>/mcp install https://github.com/owner/repo</code>\n\n"
-                "Или используй в терминале: <code>helix mcp install &lt;url&gt;</code>"
+                "Или используй в терминале: <code>holix mcp install &lt;url&gt;</code>"
             )
             return
         if value == "assign":
@@ -563,7 +706,6 @@ class TelegramInteractive:
         )
 
     async def _show_mcp_assign_picker(self) -> None:
-        from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
         from cli.core import get_profile_manager
 
         try:
@@ -579,12 +721,13 @@ class TelegramInteractive:
 
         # Simple: send list and instruct to use /mcp assign or CLI
         text = "MCP серверы для назначения:\n" + "\n".join(f"• {s}" for s in servers)
-        text += "\n\nИспользуй: <code>/mcp assign &lt;server&gt; main,researcher</code> или helix mcp assign в терминале."
+        text += "\n\nИспользуй: <code>/mcp assign &lt;server&gt; main,researcher</code> или holix mcp assign в терминале."
         await self._host._send_html(text)
 
     async def _show_mcp_remove_picker(self) -> None:
         from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
         from cli.core import get_profile_manager
+
         from integrations.telegram.markdown import escape_html
 
         try:
@@ -608,16 +751,6 @@ class TelegramInteractive:
         await self._host._send_html_with_keyboard(
             "<b>Выберите MCP сервер для удаления:</b>",
             kb
-        )
-        lines = [
-            "<b>Профиль Helix</b>",
-            f"Сейчас: <code>{escape_html(self._host.profile)}</code>",
-            "",
-            "<i>Профиль задаёт модели, память и skills. Смена создаёт новую сессию.</i>",
-        ]
-        await self._host._send_html_with_keyboard(
-            "\n".join(lines),
-            profile_picker_keyboard(profiles, self._host.profile),
         )
 
     async def show_sessions_picker(self, *, page: int = 0) -> None:
@@ -664,6 +797,50 @@ class TelegramInteractive:
             tools_picker_keyboard(tools),
         )
 
+    async def show_skills_picker(self, *, page: int = 0) -> None:
+        from cli.shared.commands.skills_commands import _load_skills
+
+        mgr, slot, config = _load_skills(self._host)
+        names = mgr.list_skill_names_for_agent(slot)
+        self._session.ui_skills = names
+        self._session.ui_skills_page = page
+
+        skills_dir = getattr(config, "skills_dir", "") or mgr.skills_dir
+        if not names:
+            await self._host._send_html(
+                "<b>Skills</b>\n\n"
+                "<i>Нет skills в профиле. Установите через "
+                "<code>/hub</code> или <code>holix hub install</code>.</i>"
+            )
+            return
+
+        start = page * SKILLS_PAGE_SIZE
+        chunk = names[start : start + SKILLS_PAGE_SIZE]
+        total_pages = max(1, (len(names) + SKILLS_PAGE_SIZE - 1) // SKILLS_PAGE_SIZE)
+
+        lines = [
+            "<b>Skills</b>",
+            f"Профиль: <code>{escape_html(self._host.profile)}</code>",
+            f"Агент: <code>{escape_html(slot)}</code> · всего {len(names)}",
+            f"dir: <code>{escape_html(str(skills_dir))}</code>",
+            "",
+            f"<i>Стр. {page + 1}/{total_pages} — нажмите skill для описания</i>",
+            "",
+        ]
+        for name in chunk:
+            skill = mgr.all_skills.get(name, {})
+            desc = escape_html((skill.get("description") or "")[:56])
+            src = skill.get("_source", "")
+            tag = f" <i>[{escape_html(src)}]</i>" if src else ""
+            lines.append(f"• <code>{escape_html(name)}</code>{tag}")
+            if desc:
+                lines.append(f"  {desc}")
+
+        await self._host._send_html_with_keyboard(
+            "\n".join(lines),
+            skills_picker_keyboard(names, page=page),
+        )
+
     def _load_models_menu(self) -> None:
         state = build_models_menu(self._host.profile)
         self._session.ui_model_presets = list(state.presets)
@@ -687,7 +864,7 @@ class TelegramInteractive:
             "<b>Провайдеры</b> — список моделей без префикса",
         ]
         if not presets and not providers:
-            lines.append("\n<b>Нет моделей</b> — <code>helix models setup</code>")
+            lines.append("\n<b>Нет моделей</b> — <code>holix models setup</code>")
             await self._host._send_html("\n".join(lines))
             return
 
@@ -756,7 +933,7 @@ class TelegramInteractive:
                 subagents = "выкл"
 
         lines = [
-            "<b>Helix — статус</b>",
+            "<b>Holix — статус</b>",
             f"Профиль: <code>{escape_html(self._host.profile)}</code>",
             f"Модель: <code>{escape_html(model_line)}</code>",
             f"Режим: <code>{escape_html(mode)}</code> ({escape_html(mode_title)})",
@@ -764,9 +941,12 @@ class TelegramInteractive:
             f"Субагенты: <code>{subagents}</code>",
             f"Сессия: <code>{escape_html(self._host.conversation_id)}</code>",
         ]
+        from integrations.telegram.access_approval import is_telegram_admin
+
+        is_admin = is_telegram_admin(self._session.bot_profile, self._session.user_id)
         await self._host._send_html_with_keyboard(
             "\n".join(lines),
-            status_menu_keyboard(host_locale(self._host)),
+            status_menu_keyboard(host_locale(self._host), is_admin=is_admin),
         )
 
 
