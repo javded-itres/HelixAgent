@@ -164,5 +164,5 @@ def test_build_agent_prompt_reuses_telegram_helper() -> None:
     ]
     prompt = build_agent_prompt("analyze", files)
     assert "analyze" in prompt
-    assert "/data/x.txt" in prompt
+    assert files[0].path.as_posix() in prompt.replace("\\", "/")
     assert "content" in prompt
