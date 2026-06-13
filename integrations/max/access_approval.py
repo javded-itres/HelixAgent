@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Any
 
 from cli.core import (
     ProfileManager,
@@ -20,6 +21,7 @@ from integrations.max.access_requests import (
     resolve_access_request,
 )
 from integrations.max.admin import (
+    is_max_admin,
     load_admin_holix_profile,
     load_admin_user_id,
     set_admin_user,
@@ -162,9 +164,25 @@ def approve_access_request(
         holix_profile=target_profile,
     )
 
+    notify_error: str | None = None
+    try:
+        from integrations.max.notify import notify_access_approved_sync
+
+        notify_access_approved_sync(
+            bot_profile,
+            user_id,
+            target_profile,
+            access_key=access_key,
+            key_already_set=key_already_set and not access_key,
+        )
+    except Exception as exc:
+        notify_error = str(exc)
+
     message = f"Доступ одобрен: {req.display_name} → профиль «{target_profile}»"
     if access_key:
-        message += ". Ключ доступа создан (отправка в MAX — в следующих фазах)."
+        message += ". Ключ отправлен пользователю в MAX."
+    if notify_error:
+        message += f" (уведомление: {notify_error})"
 
     return AccessApprovalResult(
         ok=True,
@@ -181,8 +199,135 @@ def reject_access_request_op(bot_profile: str, user_id: int) -> AccessApprovalRe
     if req is None:
         raise ValueError(f"No pending request for user id {user_id}")
 
+    notify_error: str | None = None
+    try:
+        from integrations.max.notify import notify_access_rejected_sync
+
+        notify_access_rejected_sync(bot_profile, user_id)
+    except Exception as exc:
+        notify_error = str(exc)
+
+    message = f"Запрос отклонён: {req.display_name}"
+    if notify_error:
+        message += f" ({notify_error})"
     return AccessApprovalResult(
         ok=True,
-        message=f"Запрос отклонён: {req.display_name}",
+        message=message,
         user_display=req.display_name,
     )
+
+
+def list_profiles_for_picker() -> list[str]:
+    try:
+        profiles = ProfileManager().list_profiles()
+        return profiles or ["default"]
+    except Exception:
+        return ["default"]
+
+
+async def handle_access_admin_callback(
+    bot_profile: str,
+    *,
+    actor_user_id: int,
+    action: str,
+    value: str,
+    client: Any,
+    message_id: str | None = None,
+    reply_user_id: int | None = None,
+) -> str:
+    """Process admin inline buttons for access requests."""
+    from integrations.max.keyboards import (
+        access_request_admin_keyboard,
+        access_request_profile_keyboard,
+        format_access_resolved_admin_text,
+    )
+    from integrations.max.markdown import plain_to_max_html
+    from integrations.max.notify import format_access_request_admin_message
+
+    if not is_max_admin(bot_profile, actor_user_id):
+        return "Только администратор бота может одобрять доступ."
+
+    async def _update_admin_message(text: str, *, keyboard: dict | None = None) -> None:
+        attachments = [keyboard] if keyboard else None
+        html = plain_to_max_html(text)
+        if message_id:
+            try:
+                await client.edit_message(message_id, html, fmt="html")
+                return
+            except Exception:
+                pass
+        if reply_user_id is not None:
+            await client.send_message(
+                html,
+                user_id=reply_user_id,
+                fmt="html",
+                attachments=attachments,
+            )
+
+    if action == "ara":
+        user_id = int(value)
+        result = approve_access_request(bot_profile, user_id, create_profile=None)
+        await _update_admin_message(format_access_resolved_admin_text(result, approved=True))
+        return result.message
+
+    if action == "arr":
+        user_id = int(value)
+        result = reject_access_request_op(bot_profile, user_id)
+        await _update_admin_message(format_access_resolved_admin_text(result, approved=False))
+        return result.message
+
+    if action == "arb":
+        user_id = int(value)
+        req = get_access_request(bot_profile, user_id)
+        if req is None:
+            return "Запрос не найден."
+        await _update_admin_message(
+            format_access_request_admin_message(req, bot_profile),
+            keyboard=access_request_admin_keyboard(user_id),
+        )
+        return "Запрос доступа"
+
+    if action == "arl":
+        user_id = int(value)
+        req = get_access_request(bot_profile, user_id)
+        if req is None or req.status != STATUS_PENDING:
+            return "Запрос уже обработан."
+        profiles = list_profiles_for_picker()
+        suggested = suggest_holix_profile_name(req)
+        await _update_admin_message(
+            format_access_request_admin_message(req, bot_profile, pick_profile=True),
+            keyboard=access_request_profile_keyboard(
+                user_id,
+                profiles,
+                suggested=suggested,
+            ),
+        )
+        return "Выберите профиль"
+
+    if action == "arp":
+        user_part, _, idx_part = value.partition(":")
+        user_id = int(user_part)
+        idx = int(idx_part)
+        req = get_access_request(bot_profile, user_id)
+        if req is None or req.status != STATUS_PENDING:
+            return "Запрос уже обработан."
+        profiles = list_profiles_for_picker()
+        suggested = suggest_holix_profile_name(req)
+        if idx == len(profiles):
+            result = approve_access_request(
+                bot_profile,
+                user_id,
+                create_profile=suggested,
+            )
+        elif 0 <= idx < len(profiles):
+            result = approve_access_request(
+                bot_profile,
+                user_id,
+                holix_profile=profiles[idx],
+            )
+        else:
+            return "Неверный профиль"
+        await _update_admin_message(format_access_resolved_admin_text(result, approved=True))
+        return result.message
+
+    return "Неизвестное действие"

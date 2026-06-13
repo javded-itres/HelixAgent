@@ -16,6 +16,8 @@ class MaxChatSession:
     user_id: int
     profile: str
     conversation_id: str
+    bot_profile: str = "default"
+    profile_manual_override: bool = False
     reply_user_id: int | None = None
     reply_chat_id: int | None = None
     chat_type: str = ""

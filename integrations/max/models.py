@@ -198,6 +198,47 @@ def callback_reply_target(update: dict[str, Any]) -> tuple[int | None, int | Non
     return uid, update.get("chat_id") if isinstance(update.get("chat_id"), int) else None
 
 
+def user_meta_from_update(update: dict[str, Any]) -> dict[str, Any]:
+    """Extract user_id, username, first_name, last_name from a MAX update."""
+    user: dict[str, Any] | None = None
+    kind = update_type(update)
+    if kind == "bot_started":
+        raw = update.get("user")
+        user = raw if isinstance(raw, dict) else None
+    elif kind == "message_created":
+        msg = message_from_update(update)
+        if msg is not None:
+            sender = msg.get("sender")
+            user = sender if isinstance(sender, dict) else None
+    elif kind == "message_callback":
+        cb = update.get("callback")
+        if isinstance(cb, dict):
+            raw = cb.get("user")
+            user = raw if isinstance(raw, dict) else None
+
+    if user is None:
+        uid = user_id_from_update(update)
+        return {"user_id": uid} if uid is not None else {}
+
+    uid = user.get("user_id")
+    if isinstance(uid, str) and uid.isdigit():
+        uid = int(uid)
+    name = str(user.get("name") or "").strip()
+    first_name = str(user.get("first_name") or "").strip()
+    last_name = str(user.get("last_name") or "").strip()
+    if not first_name and name:
+        parts = name.split(None, 1)
+        first_name = parts[0]
+        last_name = parts[1] if len(parts) > 1 else ""
+    username = user.get("username")
+    return {
+        "user_id": uid if isinstance(uid, int) else None,
+        "username": str(username).strip() if username else None,
+        "first_name": first_name or None,
+        "last_name": last_name or None,
+    }
+
+
 def user_id_from_update(update: dict[str, Any]) -> int | None:
     if update_type(update) == "message_created":
         msg = message_from_update(update)

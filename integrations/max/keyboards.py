@@ -264,6 +264,57 @@ def confirmation_keyboard(confirmation_id: str) -> dict[str, Any]:
     )
 
 
+def access_request_admin_keyboard(user_id: int) -> dict[str, Any]:
+    uid = str(int(user_id))
+    return inline_keyboard(
+        [
+            [
+                _callback_btn("✅ Одобрить", _cb("ara", uid)),
+                _callback_btn("❌ Отклонить", _cb("arr", uid)),
+            ],
+            [_callback_btn("📁 Выбрать профиль", _cb("arl", uid))],
+        ]
+    )
+
+
+def access_request_profile_keyboard(
+    user_id: int,
+    profiles: list[str],
+    *,
+    suggested: str,
+) -> dict[str, Any]:
+    uid = str(int(user_id))
+    rows: list[list[dict[str, str]]] = []
+    row: list[dict[str, str]] = []
+    for i, name in enumerate(profiles[:10]):
+        short = name if len(name) <= 18 else name[:16] + "…"
+        row.append(_callback_btn(short, _cb("arp", f"{uid}:{i}")))
+        if len(row) == 2:
+            rows.append(row)
+            row = []
+    if row:
+        rows.append(row)
+    rows.append(
+        [_callback_btn(f"＋ Создать «{suggested[:14]}»", _cb("arp", f"{uid}:{len(profiles[:10])}"))]
+    )
+    rows.append([_callback_btn("← Назад", _cb("arb", uid))])
+    return inline_keyboard(rows)
+
+
+def format_access_resolved_admin_text(result: Any, *, approved: bool) -> str:
+    from integrations.max.access_approval import AccessApprovalResult
+    from integrations.max.markdown import escape_html
+
+    if not isinstance(result, AccessApprovalResult):
+        return "Готово."
+    status = "одобрен" if approved else "отклонён"
+    name = escape_html(result.user_display or "пользователь")
+    lines = [f"✅ <b>Запрос {status}</b>", "", f"<b>Пользователь:</b> {name}"]
+    if approved and result.holix_profile:
+        lines.append(f"<b>Профиль Holix:</b> <code>{escape_html(result.holix_profile)}</code>")
+    return "\n".join(lines)
+
+
 def plan_review_keyboard(review_id: str) -> dict[str, Any]:
     rid = review_id
     return inline_keyboard(

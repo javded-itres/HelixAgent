@@ -36,6 +36,7 @@ from api.routers import (
     holix_models,
     holix_profiles,
     holix_skills,
+    holix_max,
     holix_telegram,
     legacy_v1,
 )
@@ -144,6 +145,7 @@ app.include_router(holix_mcp.router)
 app.include_router(holix_config.router)
 app.include_router(holix_global.router)
 app.include_router(holix_telegram.router)
+app.include_router(holix_max.router)
 app.include_router(docs_chat_router)
 
 from integrations.max.gateway_routes import register_max_routes

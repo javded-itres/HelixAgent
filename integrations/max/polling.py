@@ -23,6 +23,10 @@ async def run_polling(settings: MaxSettings | None = None, *, profile: str = "de
     token = settings.access_token.strip()
     if not token:
         raise RuntimeError("MAX_ACCESS_TOKEN is not set. Run: helix max setup")
+    if not settings.can_start_without_allowlist() and not settings.allowed_user_ids.strip():
+        raise RuntimeError(
+            "Set HOLIX_MAX_ALLOWED_USERS or enable HOLIX_MAX_ACCESS_REQUESTS / HOLIX_MAX_ALLOW_ALL"
+        )
 
     bot = HelixMaxBot(settings, profile=profile)
     marker: int | None = None

@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 from integrations.messenger.access_requests import (
+    STATUS_APPROVED,
+    STATUS_PENDING,
+    STATUS_REJECTED,
     MessengerAccessRequest,
 )
 from integrations.messenger.access_requests import (
@@ -31,6 +34,21 @@ from integrations.messenger.platforms import MAX_PLATFORM
 _PLATFORM = MAX_PLATFORM
 ACCESS_REQUESTS_FILE = _PLATFORM.access_requests_filename
 MaxAccessRequest = MessengerAccessRequest
+
+__all__ = [
+    "ACCESS_REQUESTS_FILE",
+    "MaxAccessRequest",
+    "STATUS_APPROVED",
+    "STATUS_PENDING",
+    "STATUS_REJECTED",
+    "access_requests_path",
+    "get_access_request",
+    "list_pending_requests",
+    "load_access_requests",
+    "register_access_request",
+    "reject_access_request",
+    "resolve_access_request",
+]
 
 
 def access_requests_path(bot_profile: str):
